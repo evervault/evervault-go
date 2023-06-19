@@ -145,14 +145,14 @@ func TestRunFunction(t *testing.T) {
 	defer server.Close()
 
 	testClient := mockedClient(server)
-	c, _ := testClient.InitClient("test")
+	client, _ := testClient.InitClient("test")
 	payload := map[string]interface{}{
 		"name": "john",
 		"age":  30,
 	}
 	runToken := "test_token"
 
-	res, _ := c.RunFunction("test_function", payload, runToken)
+	res, _ := client.RunFunction("test_function", payload, runToken)
 	if string(res.Result) != string(functionResponsePayload) {
 		t.Errorf("Expected encrypted string, got %s", res)
 	}

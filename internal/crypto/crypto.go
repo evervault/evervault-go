@@ -7,8 +7,8 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
+	"fmt"
 	"io"
-	"log"
 	"strings"
 
 	"github.com/evervault/evervault-go/internal/datatypes"
@@ -24,7 +24,7 @@ const (
 		"0101034200"
 )
 
-func DeriveKDFAESKey(publicKey []byte, sharedECDHSecret []byte) []byte {
+func DeriveKDFAESKey(publicKey []byte, sharedECDHSecret []byte) ([]byte, error) {
 	padding := []byte{0x00, 0x00, 0x00, 0x01}
 	hash := sha256.New()
 	hexEncodedEphemeralPublicKey := hex.EncodeToString(publicKey)
@@ -32,13 +32,13 @@ func DeriveKDFAESKey(publicKey []byte, sharedECDHSecret []byte) []byte {
 
 	encodedANS1EncodedPublicKey, err := hex.DecodeString(ANS1EncodedPublicKey)
 	if err != nil {
-		log.Fatalf("Error: %v", err)
+		return nil, fmt.Errorf("error decoding public key %w", err)
 	}
 
 	concatenatedArray := append(append(sharedECDHSecret, padding...), encodedANS1EncodedPublicKey...)
 	hash.Write(concatenatedArray)
 
-	return hash.Sum(nil)
+	return hash.Sum(nil), nil
 }
 
 func CompressPublicKey(keyToCompress []byte) []byte {
@@ -58,25 +58,25 @@ func EncryptValue(
 	appPublicKey []byte,
 	value string,
 	datatype datatypes.Datatype,
-) string {
+) (string, error) {
 	block, err := aes.NewCipher(aesKey)
 	if err != nil {
-		log.Fatalf("Error: %v", err)
+		return "", fmt.Errorf("unable to create cipher %w", err)
 	}
 
 	nonce := make([]byte, nonceSize)
-	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
-		panic(err.Error())
+	if _, err = io.ReadFull(rand.Reader, nonce); err != nil {
+		return "", fmt.Errorf("unable seed rand values %w", err)
 	}
 
 	aesgcm, err := cipher.NewGCM(block)
 	if err != nil {
-		panic(err.Error())
+		return "", fmt.Errorf("unable to encrypt block %w", err)
 	}
 
 	ciphertext := aesgcm.Seal(nil, nonce, []byte(value), appPublicKey)
 
-	return evFormat(ciphertext, nonce, ephemeralPublicKey, datatype)
+	return evFormat(ciphertext, nonce, ephemeralPublicKey, datatype), nil
 }
 
 func evFormat(cipherText []byte, iv []byte, publicKey []byte, datatype datatypes.Datatype) string {
