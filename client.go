@@ -115,9 +115,7 @@ func (c *Client) runFunction(functionName string, payload interface{}, runToken 
 	}
 
 	functionRunResponse := FunctionRunResponse{}
-
-	err = json.Unmarshal(resp, &functionRunResponse)
-	if err != nil {
+	if err := json.Unmarshal(resp, &functionRunResponse); err != nil {
 		return FunctionRunResponse{}, fmt.Errorf("Error parsing JSON response %w", err)
 	}
 
@@ -171,8 +169,8 @@ func (c *Client) buildRequestContext(clientRequest clientRequest) (*http.Request
 	}
 
 	bodyReader := bytes.NewReader(clientRequest.body)
-	req, err := http.NewRequestWithContext(ctx, clientRequest.method, clientRequest.url, bodyReader)
 
+	req, err := http.NewRequestWithContext(ctx, clientRequest.method, clientRequest.url, bodyReader)
 	if err != nil {
 		return nil, fmt.Errorf("Error creating request %w", err)
 	}
