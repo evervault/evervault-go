@@ -1,6 +1,7 @@
 package evervault
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json"
@@ -31,6 +32,14 @@ type FunctionRunResponse struct {
 	AppUUID string `json:"appUuid"`
 	RunID   string `json:"runId"`
 	Result  []byte `json:"result"`
+}
+
+type clientRequest struct {
+	url      string
+	method   string
+	body     []byte
+	apiKey   string
+	runToken string
 }
 
 func (c *Client) makeClient() (*Client, error) {
@@ -116,25 +125,15 @@ func (c *Client) runFunction(functionName string, payload interface{}, runToken 
 }
 
 func (c *Client) makeRequest(url string, method string, body []byte, runToken string) ([]byte, error) {
-	ctx := context.Background()
-
-	req, err := http.NewRequestWithContext(ctx, method, url, nil)
+	req, err := c.buildRequestContext(clientRequest{
+		url:      url,
+		method:   method,
+		body:     body,
+		apiKey:   c.Config.apiKey,
+		runToken: runToken,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("Error creating request %w", err)
-	}
-
-	if runToken != "" {
-		req.Header = http.Header{
-			"Authorization": {fmt.Sprintf("Bearer %s", runToken)},
-			"Content-Type":  {"application/json"},
-			"user-agent":    {fmt.Sprintf("evervault-go/%s", ClientVersion)},
-		}
-	} else {
-		req.Header = http.Header{
-			"API-KEY":      {c.Config.apiKey},
-			"Content-Type": {"application/json"},
-			"user-agent":   {fmt.Sprintf("evervault-go/%s", ClientVersion)},
-		}
 	}
 
 	client := &http.Client{}
@@ -156,4 +155,43 @@ func (c *Client) makeRequest(url string, method string, body []byte, runToken st
 	}
 
 	return respBody, nil
+}
+
+func (c *Client) buildRequestContext(clientRequest clientRequest) (*http.Request, error) {
+	ctx := context.Background()
+	if clientRequest.method == "GET" {
+		req, err := http.NewRequestWithContext(ctx, clientRequest.method, clientRequest.url, nil)
+		if err != nil {
+			return nil, fmt.Errorf("Error creating request %w", err)
+		}
+
+		setRequestHeaders(req, clientRequest.apiKey, clientRequest.runToken)
+
+		return req, nil
+	}
+
+	bodyReader := bytes.NewReader(clientRequest.body)
+	req, err := http.NewRequestWithContext(ctx, clientRequest.method, clientRequest.url, bodyReader)
+
+	if err != nil {
+		return nil, fmt.Errorf("Error creating request %w", err)
+	}
+
+	return req, nil
+}
+
+func setRequestHeaders(req *http.Request, apiKey string, runToken string) {
+	if runToken != "" {
+		req.Header = http.Header{
+			"Authorization": {fmt.Sprintf("Bearer %s", runToken)},
+			"Content-Type":  {"application/json"},
+			"user-agent":    {fmt.Sprintf("evervault-go/%s", ClientVersion)},
+		}
+	} else {
+		req.Header = http.Header{
+			"API-KEY":      {apiKey},
+			"Content-Type": {"application/json"},
+			"user-agent":   {fmt.Sprintf("evervault-go/%s", ClientVersion)},
+		}
+	}
 }

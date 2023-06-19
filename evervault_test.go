@@ -41,7 +41,7 @@ func TestEncryptInt(t *testing.T) {
 	testClient.InitClient("test")
 
 	res, _ := testClient.Encrypt(123)
-	if !isValidEncryptedString(res, datatypes.String) {
+	if !isValidEncryptedString(res, datatypes.Number) {
 		t.Errorf("Expected encrypted string, got %s", res)
 	}
 }
@@ -56,7 +56,7 @@ func TestEncryptBoolean(t *testing.T) {
 	testClient.InitClient("test")
 
 	res, _ := testClient.Encrypt(true)
-	if !isValidEncryptedString(res, datatypes.String) {
+	if !isValidEncryptedString(res, datatypes.Boolean) {
 		t.Errorf("Expected encrypted string, got %s", res)
 	}
 }
@@ -220,7 +220,9 @@ func isValidEncryptedString(encryptedString string, datatype datatypes.Datatype)
 	}
 
 	if datatype == datatypes.Number || datatype == datatypes.Boolean {
-		if len(parts) < 7 {
+		correctDataType := parts[2] == "number" || parts[2] == "boolean"
+
+		if len(parts) < 7 && !correctDataType {
 			return false
 		}
 	}
