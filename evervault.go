@@ -4,7 +4,7 @@ import (
 	"crypto/ecdh"
 	"crypto/rand"
 	"errors"
-	"log"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -47,42 +47,52 @@ func (c *Client) InitClient(apiKey string) (*Client, error) {
 // ErrCryptoKeyImportError is returned. For anyother error ErrCryptoUnableToPerformEncryption is returned.
 func (c *Client) Encrypt(value interface{}) (string, error) {
 	ephemeralECDHCurve := ecdh.P256()
-	ephemeralECDHKey, _ := ephemeralECDHCurve.GenerateKey(rand.Reader)
+
+	ephemeralECDHKey, err := ephemeralECDHCurve.GenerateKey(rand.Reader)
+	if err != nil {
+		return "", fmt.Errorf("error generating ephemeral curve %w", err)
+	}
 
 	appPublicKeyCurve := ecdh.P256()
 
 	appPubKey, err := appPublicKeyCurve.NewPublicKey(c.p256PublicKeyUncompressed)
 	if err != nil {
-		log.Fatalf("App PublicKey parse error: %v", err)
 		return "", ErrCryptoKeyImportError
 	}
 
 	shared, err := ephemeralECDHKey.ECDH(appPubKey)
 	if err != nil {
-		log.Fatalf("Error: %v", err)
+		return "", fmt.Errorf("Error generating ephermeral key %w", err)
 	}
 
 	ephemeralPublicECDHKeyBytes := ephemeralECDHKey.PublicKey().Bytes()
-	compressedEpemeralPublicKey := crypto.CompressPublicKey(ephemeralPublicECDHKeyBytes)
-	aesKey := crypto.DeriveKDFAESKey(ephemeralPublicECDHKeyBytes, shared)
+	compressedEphemeralPublicKey := crypto.CompressPublicKey(ephemeralPublicECDHKeyBytes)
 
+	aesKey, err := crypto.DeriveKDFAESKey(ephemeralPublicECDHKeyBytes, shared)
+	if err != nil {
+		return "", err
+	}
+
+	return c.encryptValue(value, aesKey, compressedEphemeralPublicKey)
+}
+
+func (c *Client) encryptValue(value interface{}, aesKey []byte, ephemeralPublicKey []byte) (string, error) {
 	switch valueType := value.(type) {
 	case string:
-		return crypto.EncryptValue(aesKey, compressedEpemeralPublicKey, c.p256PublicKeyCompressed, valueType, datatypes.String), nil
+		return crypto.EncryptValue(aesKey, ephemeralPublicKey, c.p256PublicKeyCompressed, valueType, datatypes.String)
 	case int:
 		val := strconv.Itoa(valueType)
-		return crypto.EncryptValue(aesKey, compressedEpemeralPublicKey, c.p256PublicKeyCompressed, val, datatypes.Number), nil
+		return crypto.EncryptValue(aesKey, ephemeralPublicKey, c.p256PublicKeyCompressed, val, datatypes.Number)
 	case float64:
 		val := strconv.FormatFloat(valueType, 'f', -1, 64)
-		return crypto.EncryptValue(aesKey, compressedEpemeralPublicKey, c.p256PublicKeyCompressed, val, datatypes.Number), nil
+		return crypto.EncryptValue(aesKey, ephemeralPublicKey, c.p256PublicKeyCompressed, val, datatypes.Number)
 	case bool:
 		val := strconv.FormatBool(valueType)
-		return crypto.EncryptValue(aesKey, compressedEpemeralPublicKey, c.p256PublicKeyCompressed, val, datatypes.Boolean), nil
+		return crypto.EncryptValue(aesKey, ephemeralPublicKey, c.p256PublicKeyCompressed, val, datatypes.Boolean)
 	case []byte:
 		val := string(valueType)
-		return crypto.EncryptValue(aesKey, compressedEpemeralPublicKey, c.p256PublicKeyCompressed, val, datatypes.String), nil
+		return crypto.EncryptValue(aesKey, ephemeralPublicKey, c.p256PublicKeyCompressed, val, datatypes.String)
 	default:
-		log.Fatalf("Error: %v", valueType)
 		return "", ErrInvalidDataType
 	}
 }
@@ -91,11 +101,10 @@ func (c *Client) Encrypt(value interface{}) (string, error) {
 func (c *Client) OutboundRelayClient() (*http.Client, error) {
 	caCertResponse, err := c.makeRequest(c.Config.evervaultCaURL, "GET", nil, "")
 	if err != nil {
-		log.Fatalf("Error: %v", err)
 		return nil, err
 	}
 
-	return c.relayClient(caCertResponse), nil
+	return c.relayClient(caCertResponse)
 }
 
 // Passing the name of your Evervault Function along with the data to be sent to that function will
@@ -104,7 +113,6 @@ func (c *Client) OutboundRelayClient() (*http.Client, error) {
 func (c *Client) CreateFunctionRunToken(functionName string, payload interface{}) (RunTokenResponse, error) {
 	tokenResponse, err := c.createRunToken(functionName, payload)
 	if err != nil {
-		log.Fatalf("Error: %v", err)
 		return RunTokenResponse{}, err
 	}
 
@@ -117,7 +125,6 @@ func (c *Client) CreateFunctionRunToken(functionName string, payload interface{}
 func (c *Client) RunFunction(functionName string, payload interface{}, runToken string) (FunctionRunResponse, error) {
 	functionResponse, err := c.runFunction(functionName, payload, runToken)
 	if err != nil {
-		log.Fatalf("Error: %v", err)
 		return FunctionRunResponse{}, err
 	}
 

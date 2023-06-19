@@ -70,3 +70,6 @@ force-err-cuddling = true
 
 [linters-settings.varnamelen]
 ignore-names = ["err", "iv"]
+
+[linters-settings.wrapcheck]
+ignorePackageGlobs = ["github.com/evervault/*"]

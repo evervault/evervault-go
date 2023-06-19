@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 )
 
@@ -42,12 +41,12 @@ func (c *Client) makeClient() (*Client, error) {
 
 	decodedPublicKeyUncompressed, err := base64.StdEncoding.DecodeString(keysResponse.EcdhP256KeyUncompressed)
 	if err != nil {
-		log.Fatalf("Error: %v", err)
+		return nil, fmt.Errorf("error decoding uncompressed public key %w", err)
 	}
 
 	decodedPublicKeyCompressed, err := base64.StdEncoding.DecodeString(keysResponse.EcdhP256Key)
 	if err != nil {
-		log.Fatalf("Error: %v", err)
+		return nil, fmt.Errorf("error decoding compressed public key %w", err)
 	}
 
 	c.p256PublicKeyUncompressed = decodedPublicKeyUncompressed
@@ -121,7 +120,6 @@ func (c *Client) makeRequest(url string, method string, body []byte, runToken st
 
 	req, err := http.NewRequestWithContext(ctx, method, url, nil)
 	if err != nil {
-		log.Fatal(err)
 		return nil, fmt.Errorf("Error creating request %w", err)
 	}
 
@@ -143,7 +141,6 @@ func (c *Client) makeRequest(url string, method string, body []byte, runToken st
 
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Fatal(err)
 		return nil, fmt.Errorf("Error making request %w", err)
 	}
 
@@ -155,7 +152,6 @@ func (c *Client) makeRequest(url string, method string, body []byte, runToken st
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatal(err)
 		return nil, fmt.Errorf("Error serialising body %w", err)
 	}
 
