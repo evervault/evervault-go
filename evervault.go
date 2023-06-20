@@ -14,6 +14,8 @@ import (
 	"crypto/ecdh"
 	"crypto/rand"
 	"fmt"
+	"net/http"
+	"reflect"
 	"strconv"
 
 	"github.com/evervault/evervault-go/internal/crypto"
@@ -23,7 +25,17 @@ import (
 // Current version of the evervault SDK.
 const ClientVersion = "0.2.0"
 
-// MakeClient creates a new Client instance if an API key and Evervault App UUID is provided. The client
+
+var (
+	ErrClientNotInitilization          = errors.New("evervault client unable to initialize")
+	ErrAPIKeyRequired                  = errors.New("evervault client requires an api key")
+	ErrCryptoKeyImportError            = errors.New("unable to import crypto key")
+	ErrCryptoUnableToPerformEncryption = errors.New("unable to perform encryption")
+	ErrInvalidDataType                 = errors.New("Error: Invalid datatype")
+	ErrAppUuidRequired                 = errors.New("Evervautl client requires an app ID")
+)
+
+// MakeClient creates a new Client instance if an API key is provided. The client
 // will connect to Evervaults API to retrieve the public keys from your Evervault App.
 //
 //	import "github.com/evervault/evervault-go"
@@ -31,9 +43,9 @@ const ClientVersion = "0.2.0"
 //
 // If an apiKey is not passed then ErrAppCredentialsRequired is returned. If the client cannot
 // be created then nil will be returned.
-func MakeClient(apiKey, appUUID string) (*Client, error) {
+func MakeClient(apiKey string, appUuid string) (*Client, error) {
 	config := MakeConfig()
-	return MakeCustomClient(apiKey, appUUID, config)
+	return MakeCustomClient(apiKey, appUuid, config)
 }
 
 // MakeCustomClient creates a new Client instance but can be specified with a Config. The client
@@ -41,13 +53,23 @@ func MakeClient(apiKey, appUUID string) (*Client, error) {
 //
 // If an apiKey or appUUID is not passed then ErrAppCredentialsRequired is returned. If the client cannot
 // be created then nil will be returned.
-func MakeCustomClient(apiKey, appUUID string, config Config) (*Client, error) {
-	if apiKey == "" || appUUID == "" {
-		return nil, ErrAppCredentialsRequired
+func MakeCustomClient(apiKey string, appUuid string, config Config) (*Client, error) {
+	if apiKey == "" {
+		return nil, ErrAPIKeyRequired
 	}
 
-	client := &Client{apiKey: apiKey, appUUID: appUUID, Config: config}
-	if err := client.initClient(); err != nil {
+	if appUuid == "" {
+		return nil, ErrAppUuidRequired
+	}
+
+	client := &Client{
+		apiKey: apiKey,
+		appUuid: appUuid,
+		Config: config,
+	}
+
+	err := client.initClient()
+	if err != nil {
 		return nil, err
 	}
 
@@ -111,4 +133,51 @@ func (c *Client) encryptValue(value any, aesKey, ephemeralPublicKey []byte) (str
 	default:
 		return "", ErrInvalidDataType
 	}
+}
+
+func (c *Client) Decrypt(encryptedData interface{}) (map[string]interface{}, error) {
+	if reflect.ValueOf(encryptedData).IsZero() {
+		return nil, ErrInvalidDataType
+	}
+
+	decryptResponse, err := c.decrypt(encryptedData)
+	if err != nil {
+		return nil, err
+	}
+
+	return decryptResponse, nil
+} 
+
+// Will return a http.Client that is configured to use the Evervault Relay as a proxy.
+func (c *Client) OutboundRelayClient() (*http.Client, error) {
+	caCertResponse, err := c.makeRequest(c.Config.EvervaultCaURL, "GET", nil, "")
+	if err != nil {
+		return nil, err
+	}
+
+	return c.relayClient(caCertResponse)
+}
+
+// Passing the name of your Evervault Function along with the data to be sent to that function will
+// return a RunTokenResponse. This response contains a token that can be returned to your
+// client for Function invocation.
+func (c *Client) CreateFunctionRunToken(functionName string, payload interface{}) (RunTokenResponse, error) {
+	tokenResponse, err := c.createRunToken(functionName, payload)
+	if err != nil {
+		return RunTokenResponse{}, err
+	}
+
+	return tokenResponse, nil
+}
+
+// Passing the name of your Evervault Function along with the data to be sent to that
+// function will invoke a function in your Evervault App. The response from the function
+// will be returned as a FunctionRunResponse.
+func (c *Client) RunFunction(functionName string, payload interface{}, runToken string) (FunctionRunResponse, error) {
+	functionResponse, err := c.runFunction(functionName, payload, runToken)
+	if err != nil {
+		return FunctionRunResponse{}, err
+	}
+
+	return functionResponse, nil
 }
