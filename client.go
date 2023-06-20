@@ -11,6 +11,7 @@ import (
 )
 
 type Client struct {
+	apiKey                    string
 	Config                    Config
 	p256PublicKeyUncompressed []byte
 	p256PublicKeyCompressed   []byte
@@ -42,26 +43,26 @@ type clientRequest struct {
 	runToken string
 }
 
-func (c *Client) makeClient() (*Client, error) {
+func (c *Client) makeClient() error {
 	keysResponse, err := c.getPublicKey()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	decodedPublicKeyUncompressed, err := base64.StdEncoding.DecodeString(keysResponse.EcdhP256KeyUncompressed)
 	if err != nil {
-		return nil, fmt.Errorf("error decoding uncompressed public key %w", err)
+		return fmt.Errorf("error decoding uncompressed public key %w", err)
 	}
 
 	decodedPublicKeyCompressed, err := base64.StdEncoding.DecodeString(keysResponse.EcdhP256Key)
 	if err != nil {
-		return nil, fmt.Errorf("error decoding compressed public key %w", err)
+		return fmt.Errorf("error decoding compressed public key %w", err)
 	}
 
 	c.p256PublicKeyUncompressed = decodedPublicKeyUncompressed
 	c.p256PublicKeyCompressed = decodedPublicKeyCompressed
 
-	return c, nil
+	return nil
 }
 
 func (c *Client) getPublicKey() (KeysResponse, error) {
@@ -127,7 +128,7 @@ func (c *Client) makeRequest(url string, method string, body []byte, runToken st
 		url:      url,
 		method:   method,
 		body:     body,
-		apiKey:   c.Config.apiKey,
+		apiKey:   c.apiKey,
 		runToken: runToken,
 	})
 	if err != nil {

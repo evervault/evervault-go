@@ -20,7 +20,7 @@ func (c *Client) relayClient(caCert []byte) (*http.Client, error) {
 }
 
 func (c *Client) transport(caCert []byte) (*http.Transport, error) {
-	proxyURL, err := url.Parse(c.Config.RelayURL)
+	proxyURL, err := url.Parse(c.Config.relayURL)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing relay URL %w", err)
 	}
