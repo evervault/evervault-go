@@ -5,10 +5,10 @@ import (
 )
 
 type Config struct {
-	evervaultCaURL string
-	relayURL       string
-	functionRunURL string
-	evAPIURL       string
+	EvervaultCaURL string
+	RelayURL       string
+	FunctionRunURL string
+	EvAPIURL       string
 }
 
 func MakeConfig() Config {
@@ -33,9 +33,9 @@ func MakeConfig() Config {
 	}
 
 	return Config{
-		evervaultCaURL: caURL,
-		relayURL:       evRelayURL,
-		functionRunURL: evFunctionRun,
-		evAPIURL:       evAPIURL,
+		EvervaultCaURL: caURL,
+		RelayURL:       evRelayURL,
+		FunctionRunURL: evFunctionRun,
+		EvAPIURL:       evAPIURL,
 	}
 }

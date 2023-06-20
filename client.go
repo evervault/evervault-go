@@ -66,7 +66,7 @@ func (c *Client) initClient() error {
 }
 
 func (c *Client) getPublicKey() (KeysResponse, error) {
-	publicKeyURL := fmt.Sprintf("%s/cages/key", c.Config.evAPIURL)
+	publicKeyURL := fmt.Sprintf("%s/cages/key", c.Config.EvAPIURL)
 
 	keys, err := c.makeRequest(publicKeyURL, "GET", nil, "")
 	if err != nil {
@@ -87,7 +87,7 @@ func (c *Client) createRunToken(functionName string, payload interface{}) (RunTo
 		return RunTokenResponse{}, fmt.Errorf("Error parsing payload as json %w", err)
 	}
 
-	runTokenURL := fmt.Sprintf("%s/v2/functions/%s/run-token", c.Config.evAPIURL, functionName)
+	runTokenURL := fmt.Sprintf("%s/v2/functions/%s/run-token", c.Config.EvAPIURL, functionName)
 
 	runToken, err := c.makeRequest(runTokenURL, "POST", pBytes, "")
 	if err != nil {
@@ -108,7 +108,7 @@ func (c *Client) runFunction(functionName string, payload interface{}, runToken 
 		return FunctionRunResponse{}, fmt.Errorf("Error parsing payload as json %w", err)
 	}
 
-	runFunctionURL := fmt.Sprintf("%s/%s", c.Config.functionRunURL, functionName)
+	runFunctionURL := fmt.Sprintf("%s/%s", c.Config.FunctionRunURL, functionName)
 
 	resp, err := c.makeRequest(runFunctionURL, "POST", pBytes, runToken)
 	if err != nil {

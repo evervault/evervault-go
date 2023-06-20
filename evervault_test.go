@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"strings"
 	"testing"
 
@@ -22,7 +21,7 @@ func TestEncryptString(t *testing.T) {
 	server := startMockHTTPServer(nil)
 	defer server.Close()
 
-	testClient := mockedClient(server)
+	testClient := mockedClient(t, server)
 
 	res, _ := testClient.Encrypt("plaintext")
 	if !isValidEncryptedString(res, datatypes.String) {
@@ -36,7 +35,7 @@ func TestEncryptInt(t *testing.T) {
 	server := startMockHTTPServer(nil)
 	defer server.Close()
 
-	testClient := mockedClient(server)
+	testClient := mockedClient(t, server)
 
 	res, _ := testClient.Encrypt(123)
 	if !isValidEncryptedString(res, datatypes.Number) {
@@ -50,7 +49,7 @@ func TestEncryptBoolean(t *testing.T) {
 	server := startMockHTTPServer(nil)
 	defer server.Close()
 
-	testClient := mockedClient(server)
+	testClient := mockedClient(t, server)
 
 	res, _ := testClient.Encrypt(true)
 	if !isValidEncryptedString(res, datatypes.Boolean) {
@@ -64,7 +63,7 @@ func TestEncryptByte(t *testing.T) {
 	server := startMockHTTPServer(nil)
 	defer server.Close()
 
-	testClient := mockedClient(server)
+	testClient := mockedClient(t, server)
 
 	res, _ := testClient.Encrypt([]byte("plaintext"))
 	if !isValidEncryptedString(res, datatypes.String) {
@@ -102,7 +101,7 @@ func TestOutboundClientRoutesToOutboundRelay(t *testing.T) {
 
 	server := startMockHTTPServer(nil)
 
-	testClient := mockedClient(server)
+	testClient := mockedClient(t, server)
 
 	relayClient, _ := testClient.OutboundRelayClient()
 
@@ -119,7 +118,7 @@ func TestGetFunctionRunToken(t *testing.T) {
 
 	server := startMockHTTPServer(nil)
 	defer server.Close()
-	testClient := mockedClient(server)
+	testClient := mockedClient(t, server)
 
 	res, _ := testClient.CreateFunctionRunToken("test_function", "test_payload")
 
@@ -136,7 +135,7 @@ func TestRunFunction(t *testing.T) {
 
 	defer server.Close()
 
-	testClient := mockedClient(server)
+	testClient := mockedClient(t, server)
 	payload := map[string]interface{}{
 		"name": "john",
 		"age":  30,
@@ -191,17 +190,19 @@ func startMockHTTPServer(mockResponse []byte) *httptest.Server {
 	return server
 }
 
-func mockedClient(server *httptest.Server) *evervault.Client {
-	os.Setenv("ENVIRONMENT", "testing")
-	os.Setenv("EV_API_URL", server.URL)
-	os.Setenv("EV_RELAY_URL", server.URL)
-	os.Setenv("EV_FUNCTION_RUN_URL", server.URL)
+func mockedClient(t *testing.T, server *httptest.Server) *evervault.Client {
+	t.Helper()
 
-	config := evervault.MakeConfig()
+	config := evervault.Config{
+		EvervaultCaURL: server.URL,
+		EvAPIURL:       server.URL,
+		FunctionRunURL: server.URL,
+		RelayURL:       server.URL,
+	}
 
 	client, err := evervault.MakeCustomClient("test_api_key", config)
 	if err != nil {
-		panic(err)
+		t.Fail()
 	}
 
 	return client
