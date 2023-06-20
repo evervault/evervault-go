@@ -199,9 +199,11 @@ func mockedClient(server *httptest.Server) *evervault.Client {
 
 	config := evervault.MakeConfig()
 	client, err := evervault.MakeCustomClient("test_api_key", config)
+
 	if err != nil {
 		panic(err)
 	}
+
 	return client
 }
 
