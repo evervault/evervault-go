@@ -18,6 +18,8 @@ import (
 //   - Create Cage clients
 //   - run evervault Functions.
 type Client struct {
+	apiKey                    string
+	appUuid                   string
 	Config                    Config
 	apiKey                    string
 	appUUID                   string
@@ -39,6 +41,7 @@ type clientRequest struct {
 	method   string
 	body     []byte
 	apiKey   string
+	appUuid  string
 	runToken string
 }
 
@@ -81,12 +84,76 @@ func (c *Client) getPublicKey() (KeysResponse, error) {
 	return res, nil
 }
 
-func (c *Client) makeRequest(url, method string, body []byte, runToken string) ([]byte, error) {
+func (c *Client) decrypt(encryptedData interface{}) (map[string]interface{}, error) {
+	pBytes, err := json.Marshal(encryptedData)
+	if err != nil {
+		return nil, fmt.Errorf("Error marshalling payload to json %w", err)
+	}
+
+	decryptUrl := fmt.Sprintf("%s/decrypt", c.Config.EvAPIURL)
+
+	decryptedData, err := c.makeRequest(decryptUrl, "POST", pBytes, "")
+	if err != nil {
+		return nil, err
+	}
+
+	var res map[string]interface{}
+	if err := json.Unmarshal(decryptedData, &res); err != nil {
+		return nil, fmt.Errorf("Error parsing JSON response %w", err)
+	}
+
+	return res, nil
+}
+
+func (c *Client) createRunToken(functionName string, payload interface{}) (RunTokenResponse, error) {
+	pBytes, err := json.Marshal(payload)
+	if err != nil {
+		return RunTokenResponse{}, fmt.Errorf("Error parsing payload as json %w", err)
+	}
+
+	runTokenURL := fmt.Sprintf("%s/v2/functions/%s/run-token", c.Config.EvAPIURL, functionName)
+
+	runToken, err := c.makeRequest(runTokenURL, "POST", pBytes, "")
+	if err != nil {
+		return RunTokenResponse{}, err
+	}
+
+	res := RunTokenResponse{}
+	if err := json.Unmarshal(runToken, &res); err != nil {
+		return RunTokenResponse{}, fmt.Errorf("Error parsing JSON response %w", err)
+	}
+
+	return res, nil
+}
+
+func (c *Client) runFunction(functionName string, payload interface{}, runToken string) (FunctionRunResponse, error) {
+	pBytes, err := json.Marshal(payload)
+	if err != nil {
+		return FunctionRunResponse{}, fmt.Errorf("Error parsing payload as json %w", err)
+	}
+
+	runFunctionURL := fmt.Sprintf("%s/%s", c.Config.FunctionRunURL, functionName)
+
+	resp, err := c.makeRequest(runFunctionURL, "POST", pBytes, runToken)
+	if err != nil {
+		return FunctionRunResponse{}, err
+	}
+
+	functionRunResponse := FunctionRunResponse{}
+	if err := json.Unmarshal(resp, &functionRunResponse); err != nil {
+		return FunctionRunResponse{}, fmt.Errorf("Error parsing JSON response %w", err)
+	}
+
+	return functionRunResponse, nil
+}
+
+func (c *Client) makeRequest(url string, method string, body []byte, runToken string) ([]byte, error) {
 	req, err := c.buildRequestContext(clientRequest{
 		url:      url,
 		method:   method,
 		body:     body,
 		apiKey:   c.apiKey,
+		appUuid:  c.appUuid,
 		runToken: runToken,
 	})
 	if err != nil {
@@ -122,7 +189,7 @@ func (c *Client) buildRequestContext(clientRequest clientRequest) (*http.Request
 			return nil, fmt.Errorf("Error creating request %w", err)
 		}
 
-		setRequestHeaders(req, clientRequest.apiKey, clientRequest.runToken)
+		setRequestHeaders(req, clientRequest.apiKey, clientRequest.appUuid, clientRequest.runToken)
 
 		return req, nil
 	}
@@ -139,7 +206,7 @@ func (c *Client) buildRequestContext(clientRequest clientRequest) (*http.Request
 	return req, nil
 }
 
-func setRequestHeaders(req *http.Request, apiKey, runToken string) {
+func setRequestHeaders(req *http.Request, apiKey string, appUuid string, runToken string) {
 	if runToken != "" {
 		req.Header = http.Header{
 			"Authorization": {fmt.Sprintf("Bearer %s", runToken)},
@@ -148,6 +215,7 @@ func setRequestHeaders(req *http.Request, apiKey, runToken string) {
 		}
 	} else {
 		req.Header = http.Header{
+			"Authorization": {fmt.Sprintf("Bearer %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", apiKey, appUuid))))},
 			"API-KEY":      {apiKey},
 			"Content-Type": {"application/json"},
 			"user-agent":   {fmt.Sprintf("evervault-go/%s", ClientVersion)},
