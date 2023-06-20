@@ -43,7 +43,7 @@ type clientRequest struct {
 	runToken string
 }
 
-func (c *Client) makeClient() error {
+func (c *Client) initClient() error {
 	keysResponse, err := c.getPublicKey()
 	if err != nil {
 		return err

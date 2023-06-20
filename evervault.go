@@ -49,7 +49,7 @@ func MakeCustomClient(apiKey string, config Config) (*Client, error) {
 		Config: config,
 	}
 
-	err := client.makeClient()
+	err := client.initClient()
 	if err != nil {
 		return nil, err
 	}
