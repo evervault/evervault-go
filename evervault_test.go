@@ -157,6 +157,7 @@ func TestRunFunctionWithRunToken(t *testing.T) {
 
 func TestRunFunctionWithApiKey(t *testing.T) {
 	t.Parallel()
+
 	functionResponsePayload := map[string]interface{}{
 		"appUuid": "app_89a080d2228e",
 		"result": map[string]interface{}{
@@ -165,6 +166,7 @@ func TestRunFunctionWithApiKey(t *testing.T) {
 		},
 		"runId": "func_run_65bc5168cb8b",
 	}
+
 	server := startMockHTTPServer(functionResponsePayload)
 
 	defer server.Close()
@@ -192,10 +194,22 @@ func startMockHTTPServer(mockResponse map[string]interface{}) *httptest.Server {
 			}
 			writer.WriteHeader(http.StatusOK)
 			writer.Header().Set("Content-Type", "application/json")
+			appUUIDResponse, appUUIDOk := mockResponse["appUuid"].(string)
+			if !appUUIDOk {
+				appUUIDResponse = ""
+			}
+			runIDResposne, ok := mockResponse["runId"].(string)
+			if !ok {
+				runIDResposne = ""
+			}
+			resultResponse, ok := mockResponse["result"].(map[string]interface{})
+			if !ok {
+				resultResponse = map[string]interface{}{}
+			}
 			responseBody := evervault.FunctionRunResponse{
-				AppUUID: mockResponse["appUuid"].(string),
-				RunID:   mockResponse["runId"].(string),
-				Result:  mockResponse["result"].(map[string]interface{}),
+				AppUUID: appUUIDResponse,
+				RunID:   runIDResposne,
+				Result:  resultResponse,
 			}
 			json.NewEncoder(writer).Encode(responseBody)
 
