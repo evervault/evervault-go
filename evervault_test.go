@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -151,6 +152,8 @@ func TestRunFunction(t *testing.T) {
 func startMockHTTPServer(mockResponse []byte) *httptest.Server {
 	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, reader *http.Request) {
 		if reader.URL.Path == "/test_function" {
+			apiKey := reader.Header.Get("api-key")
+			fmt.Println(apiKey)
 			writer.WriteHeader(http.StatusOK)
 			writer.Header().Set("Content-Type", "application/json")
 			responseBody := evervault.FunctionRunResponse{
