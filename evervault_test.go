@@ -127,7 +127,7 @@ func TestGetFunctionRunToken(t *testing.T) {
 	}
 }
 
-func TestRunFunction(t *testing.T) {
+func TestRunFunctionWithRunToken(t *testing.T) {
 	t.Parallel()
 
 	functionResponsePayload := []byte("{\"name\": \"ev:fdfksjdfksjdfjsdfsf\", \"age\": \"ev:dfkjsdfkjsdfjsdfjsdf\"}")
@@ -148,9 +148,35 @@ func TestRunFunction(t *testing.T) {
 	}
 }
 
+func TestRunFunctionWithApiKey(t *testing.T) {
+	t.Parallel()
+
+	functionResponsePayload := []byte("{\"name\": \"ev:fdfksjdfksjdfjsdfsf\", \"age\": \"ev:dfkjsdfkjsdfjsdfjsdf\"}")
+	server := startMockHTTPServer(functionResponsePayload)
+
+	defer server.Close()
+
+	testClient := mockedClient(t, server)
+	payload := map[string]interface{}{
+		"name": "john",
+		"age":  30,
+	}
+
+	res, _ := testClient.RunFunction("test_function", payload, "")
+	if string(res.Result) != string(functionResponsePayload) {
+		t.Errorf("Expected encrypted string, got %s", res)
+	}
+}
+
 func startMockHTTPServer(mockResponse []byte) *httptest.Server {
 	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, reader *http.Request) {
 		if reader.URL.Path == "/test_function" {
+			apiKey := reader.Header.Get("API-KEY")
+			authHeader := reader.Header.Get("Authorization")
+			if apiKey == "" && authHeader == "" {
+				writer.WriteHeader(http.StatusUnauthorized)
+				return
+			}
 			writer.WriteHeader(http.StatusOK)
 			writer.Header().Set("Content-Type", "application/json")
 			responseBody := evervault.FunctionRunResponse{

@@ -176,6 +176,8 @@ func (c *Client) buildRequestContext(clientRequest clientRequest) (*http.Request
 		return nil, fmt.Errorf("Error creating request %w", err)
 	}
 
+	setRequestHeaders(req, clientRequest.apiKey, clientRequest.runToken)
+
 	return req, nil
 }
 
