@@ -12,7 +12,7 @@ import (
 	"github.com/evervault/evervault-go/internal/datatypes"
 )
 
-const clientVersion = "0.0.1"
+const clientVersion = "0.1.3"
 
 var ClientVersion = clientVersion
 
