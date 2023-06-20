@@ -12,6 +12,7 @@ import (
 
 type Client struct {
 	apiKey                    string
+	appUuid                   string
 	Config                    Config
 	p256PublicKeyUncompressed []byte
 	p256PublicKeyCompressed   []byte
@@ -40,6 +41,7 @@ type clientRequest struct {
 	method   string
 	body     []byte
 	apiKey   string
+	appUuid  string
 	runToken string
 }
 
@@ -76,6 +78,27 @@ func (c *Client) getPublicKey() (KeysResponse, error) {
 	res := KeysResponse{}
 	if err := json.Unmarshal(keys, &res); err != nil {
 		return KeysResponse{}, fmt.Errorf("Error parsing JSON response %w", err)
+	}
+
+	return res, nil
+}
+
+func (c *Client) decrypt(encryptedData interface{}) (map[string]interface{}, error) {
+	pBytes, err := json.Marshal(encryptedData)
+	if err != nil {
+		return nil, fmt.Errorf("Error marshalling payload to json %w", err)
+	}
+
+	decryptUrl := fmt.Sprintf("%s/decrypt", c.Config.EvAPIURL)
+
+	decryptedData, err := c.makeRequest(decryptUrl, "POST", pBytes, "")
+	if err != nil {
+		return nil, err
+	}
+
+	var res map[string]interface{}
+	if err := json.Unmarshal(decryptedData, &res); err != nil {
+		return nil, fmt.Errorf("Error parsing JSON response %w", err)
 	}
 
 	return res, nil
@@ -129,6 +152,7 @@ func (c *Client) makeRequest(url string, method string, body []byte, runToken st
 		method:   method,
 		body:     body,
 		apiKey:   c.apiKey,
+		appUuid:  c.appUuid,
 		runToken: runToken,
 	})
 	if err != nil {
@@ -164,7 +188,7 @@ func (c *Client) buildRequestContext(clientRequest clientRequest) (*http.Request
 			return nil, fmt.Errorf("Error creating request %w", err)
 		}
 
-		setRequestHeaders(req, clientRequest.apiKey, clientRequest.runToken)
+		setRequestHeaders(req, clientRequest.apiKey, clientRequest.appUuid, clientRequest.runToken)
 
 		return req, nil
 	}
@@ -179,7 +203,7 @@ func (c *Client) buildRequestContext(clientRequest clientRequest) (*http.Request
 	return req, nil
 }
 
-func setRequestHeaders(req *http.Request, apiKey string, runToken string) {
+func setRequestHeaders(req *http.Request, apiKey string, appUuid string, runToken string) {
 	if runToken != "" {
 		req.Header = http.Header{
 			"Authorization": {fmt.Sprintf("Bearer %s", runToken)},
@@ -188,6 +212,7 @@ func setRequestHeaders(req *http.Request, apiKey string, runToken string) {
 		}
 	} else {
 		req.Header = http.Header{
+			"Authorization": {fmt.Sprintf("Bearer %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", apiKey, appUuid))))},
 			"API-KEY":      {apiKey},
 			"Content-Type": {"application/json"},
 			"user-agent":   {fmt.Sprintf("evervault-go/%s", ClientVersion)},

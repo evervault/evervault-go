@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -14,6 +15,35 @@ import (
 	"github.com/evervault/evervault-go/internal/crypto"
 	"github.com/evervault/evervault-go/internal/datatypes"
 )
+
+func TestDecrypt(t *testing.T) {
+	t.Parallel()
+
+	server := startMockHTTPServer(nil)
+	defer server.Close()
+
+	testClient := mockedClient(t, server)
+
+	type EncryptedCardData struct {
+		number string
+		cvv string
+		expiry string
+	}
+
+	var stringType = reflect.TypeOf("")
+	var floatType = reflect.TypeOf(1.0)
+
+	res, _ := testClient.Decrypt(EncryptedCardData{"ev:abc123", "ev:def456", "ev:ghi789"})
+	if reflect.TypeOf(res["number"]) != stringType {
+		t.Errorf("Expected encrypted string, got %s", res["number"])
+	}
+	if reflect.TypeOf(res["cvv"]) != floatType {
+		t.Errorf("Expected encrypted string, got %s", res["cvv"])
+	}
+	if reflect.TypeOf(res["expiry"]) != stringType {
+		t.Errorf("Expected encrypted string, got %s", res["expiry"])
+	}
+}
 
 func TestEncryptString(t *testing.T) {
 	t.Parallel()
@@ -77,7 +107,7 @@ func TestClientInitClientErrorWithoutApiKey(t *testing.T) {
 	server := startMockHTTPServer(nil)
 	defer server.Close()
 
-	_, err := evervault.MakeClient("")
+	_, err := evervault.MakeClient("", "")
 
 	if err.Error() != evervault.ErrAPIKeyRequired.Error() {
 		t.Errorf("Unexpected error, got error message %s", err)
@@ -171,6 +201,19 @@ func startMockHTTPServer(mockResponse []byte) *httptest.Server {
 			return
 		}
 
+		if reader.URL.Path == "/decrypt" {
+			writer.WriteHeader(http.StatusOK)
+			writer.Header().Set("Content-Type", "application/json")
+
+			returnData := map[string]interface{}{
+				"number": "4242424242424242",
+				"cvv": 123,
+				"expiry": "01/24",
+			}
+			json.NewEncoder(writer).Encode(returnData)
+			return
+		}
+
 		ephemeralECDHCurve := ecdh.P256()
 		ephemeralECDHKey, _ := ephemeralECDHCurve.GenerateKey(rand.Reader)
 		ephemeralPublicKey := ephemeralECDHKey.PublicKey().Bytes()
@@ -200,7 +243,7 @@ func mockedClient(t *testing.T, server *httptest.Server) *evervault.Client {
 		RelayURL:       server.URL,
 	}
 
-	client, err := evervault.MakeCustomClient("test_api_key", config)
+	client, err := evervault.MakeCustomClient("test_api_key", "test_app_uuid", config)
 	if err != nil {
 		t.Fail()
 	}

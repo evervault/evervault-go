@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"reflect"
 	"strconv"
 
 	"github.com/evervault/evervault-go/internal/crypto"
@@ -22,6 +23,7 @@ var (
 	ErrCryptoKeyImportError            = errors.New("unable to import crypto key")
 	ErrCryptoUnableToPerformEncryption = errors.New("unable to perform encryption")
 	ErrInvalidDataType                 = errors.New("Error: Invalid datatype")
+	ErrAppUuidRequired                 = errors.New("Evervautl client requires an app ID")
 )
 
 // MakeClient creates a new Client instance if an API key is provided. The client
@@ -29,9 +31,9 @@ var (
 //
 // If an apiKey is not passed then ErrAPIKeyRequired is returned. If the client cannot
 // be created then nil will be returned.
-func MakeClient(apiKey string) (*Client, error) {
+func MakeClient(apiKey string, appUuid string) (*Client, error) {
 	config := MakeConfig()
-	return MakeCustomClient(apiKey, config)
+	return MakeCustomClient(apiKey, appUuid, config)
 }
 
 // MakeCustomClient creates a new Client instance but can be specified with a Config. The client
@@ -39,13 +41,18 @@ func MakeClient(apiKey string) (*Client, error) {
 //
 // If an apiKey is not passed then ErrAPIKeyRequired is returned. If the client cannot
 // be created then nil will be returned.
-func MakeCustomClient(apiKey string, config Config) (*Client, error) {
+func MakeCustomClient(apiKey string, appUuid string, config Config) (*Client, error) {
 	if apiKey == "" {
 		return nil, ErrAPIKeyRequired
 	}
 
+	if appUuid == "" {
+		return nil, ErrAppUuidRequired
+	}
+
 	client := &Client{
 		apiKey: apiKey,
+		appUuid: appUuid,
 		Config: config,
 	}
 
@@ -113,6 +120,19 @@ func (c *Client) encryptValue(value interface{}, aesKey []byte, ephemeralPublicK
 		return "", ErrInvalidDataType
 	}
 }
+
+func (c *Client) Decrypt(encryptedData interface{}) (map[string]interface{}, error) {
+	if reflect.ValueOf(encryptedData).IsZero() {
+		return nil, ErrInvalidDataType
+	}
+
+	decryptResponse, err := c.decrypt(encryptedData)
+	if err != nil {
+		return nil, err
+	}
+
+	return decryptResponse, nil
+} 
 
 // Will return a http.Client that is configured to use the Evervault Relay as a proxy.
 func (c *Client) OutboundRelayClient() (*http.Client, error) {
