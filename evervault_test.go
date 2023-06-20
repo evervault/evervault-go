@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"strings"
 	"testing"
 
@@ -22,8 +21,7 @@ func TestEncryptString(t *testing.T) {
 	server := startMockHTTPServer(nil)
 	defer server.Close()
 
-	testClient := mockedClient(server)
-	testClient.InitClient("test")
+	testClient := mockedClient(t, server)
 
 	res, _ := testClient.Encrypt("plaintext")
 	if !isValidEncryptedString(res, datatypes.String) {
@@ -37,8 +35,7 @@ func TestEncryptInt(t *testing.T) {
 	server := startMockHTTPServer(nil)
 	defer server.Close()
 
-	testClient := mockedClient(server)
-	testClient.InitClient("test")
+	testClient := mockedClient(t, server)
 
 	res, _ := testClient.Encrypt(123)
 	if !isValidEncryptedString(res, datatypes.Number) {
@@ -52,8 +49,7 @@ func TestEncryptBoolean(t *testing.T) {
 	server := startMockHTTPServer(nil)
 	defer server.Close()
 
-	testClient := mockedClient(server)
-	testClient.InitClient("test")
+	testClient := mockedClient(t, server)
 
 	res, _ := testClient.Encrypt(true)
 	if !isValidEncryptedString(res, datatypes.Boolean) {
@@ -67,8 +63,7 @@ func TestEncryptByte(t *testing.T) {
 	server := startMockHTTPServer(nil)
 	defer server.Close()
 
-	testClient := mockedClient(server)
-	testClient.InitClient("test")
+	testClient := mockedClient(t, server)
 
 	res, _ := testClient.Encrypt([]byte("plaintext"))
 	if !isValidEncryptedString(res, datatypes.String) {
@@ -82,9 +77,8 @@ func TestClientInitClientErrorWithoutApiKey(t *testing.T) {
 	server := startMockHTTPServer(nil)
 	defer server.Close()
 
-	testClient := mockedClient(server)
+	_, err := evervault.MakeClient("")
 
-	_, err := testClient.InitClient("")
 	if err.Error() != evervault.ErrAPIKeyRequired.Error() {
 		t.Errorf("Unexpected error, got error message %s", err)
 	}
@@ -107,11 +101,9 @@ func TestOutboundClientRoutesToOutboundRelay(t *testing.T) {
 
 	server := startMockHTTPServer(nil)
 
-	testClient := mockedClient(server)
-	client, _ := testClient.InitClient("test_api_key")
+	testClient := mockedClient(t, server)
 
-	client.Config.RelayURL = server.URL
-	relayClient, _ := client.OutboundRelayClient()
+	relayClient, _ := testClient.OutboundRelayClient()
 
 	resp, _ := relayClient.Get(targetURL)
 	if resp.StatusCode != http.StatusOK {
@@ -126,10 +118,9 @@ func TestGetFunctionRunToken(t *testing.T) {
 
 	server := startMockHTTPServer(nil)
 	defer server.Close()
-	testClient := mockedClient(server)
+	testClient := mockedClient(t, server)
 
-	c, _ := testClient.InitClient("test")
-	res, _ := c.CreateFunctionRunToken("test_function", "test_payload")
+	res, _ := testClient.CreateFunctionRunToken("test_function", "test_payload")
 
 	if res.Token != "test_token" {
 		t.Errorf("Expected encrypted string, got %s", res)
@@ -144,15 +135,14 @@ func TestRunFunction(t *testing.T) {
 
 	defer server.Close()
 
-	testClient := mockedClient(server)
-	client, _ := testClient.InitClient("test")
+	testClient := mockedClient(t, server)
 	payload := map[string]interface{}{
 		"name": "john",
 		"age":  30,
 	}
 	runToken := "test_token"
 
-	res, _ := client.RunFunction("test_function", payload, runToken)
+	res, _ := testClient.RunFunction("test_function", payload, runToken)
 	if string(res.Result) != string(functionResponsePayload) {
 		t.Errorf("Expected encrypted string, got %s", res)
 	}
@@ -200,17 +190,22 @@ func startMockHTTPServer(mockResponse []byte) *httptest.Server {
 	return server
 }
 
-func mockedClient(server *httptest.Server) evervault.Client {
-	os.Setenv("ENVIRONMENT", "testing")
-	os.Setenv("EV_API_URL", server.URL)
-	os.Setenv("EV_RELAY_URL", server.URL)
-	os.Setenv("EV_FUNCTION_RUN_URL", server.URL)
+func mockedClient(t *testing.T, server *httptest.Server) *evervault.Client {
+	t.Helper()
 
-	config, _ := evervault.MakeConfig("test_api_key")
-
-	return evervault.Client{
-		Config: config,
+	config := evervault.Config{
+		EvervaultCaURL: server.URL,
+		EvAPIURL:       server.URL,
+		FunctionRunURL: server.URL,
+		RelayURL:       server.URL,
 	}
+
+	client, err := evervault.MakeCustomClient("test_api_key", config)
+	if err != nil {
+		t.Fail()
+	}
+
+	return client
 }
 
 func isValidEncryptedString(encryptedString string, datatype datatypes.Datatype) bool {

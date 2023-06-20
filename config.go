@@ -5,18 +5,13 @@ import (
 )
 
 type Config struct {
-	apiKey         string
-	evervaultCaURL string
+	EvervaultCaURL string
 	RelayURL       string
-	functionRunURL string
-	evAPIURL       string
+	FunctionRunURL string
+	EvAPIURL       string
 }
 
-func MakeConfig(apiKey string) (Config, error) {
-	if apiKey == "" {
-		return Config{}, ErrAPIKeyRequired
-	}
-
+func MakeConfig() Config {
 	caURL := os.Getenv("EV_CA_URL")
 	if caURL == "" {
 		caURL = "https://ca.evervault.com"
@@ -38,10 +33,9 @@ func MakeConfig(apiKey string) (Config, error) {
 	}
 
 	return Config{
-		apiKey:         apiKey,
-		evervaultCaURL: caURL,
+		EvervaultCaURL: caURL,
 		RelayURL:       evRelayURL,
-		functionRunURL: evFunctionRun,
-		evAPIURL:       evAPIURL,
-	}, nil
+		FunctionRunURL: evFunctionRun,
+		EvAPIURL:       evAPIURL,
+	}
 }

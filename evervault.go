@@ -24,20 +24,37 @@ var (
 	ErrInvalidDataType                 = errors.New("Error: Invalid datatype")
 )
 
-// InitClient creates a new Client instance if an API key is provided. The client
+// MakeClient creates a new Client instance if an API key is provided. The client
 // will connect to Evervaults API to retrieve the public keys from your Evervault App.
 //
 // If an apiKey is not passed then ErrAPIKeyRequired is returned. If the client cannot
 // be created then nil will be returned.
-func (c *Client) InitClient(apiKey string) (*Client, error) {
-	config, err := MakeConfig(apiKey)
+func MakeClient(apiKey string) (*Client, error) {
+	config := MakeConfig()
+	return MakeCustomClient(apiKey, config)
+}
+
+// MakeCustomClient creates a new Client instance but can be specified with a Config. The client
+// will connect to Evervaults API to retrieve the public keys from your Evervault App.
+//
+// If an apiKey is not passed then ErrAPIKeyRequired is returned. If the client cannot
+// be created then nil will be returned.
+func MakeCustomClient(apiKey string, config Config) (*Client, error) {
+	if apiKey == "" {
+		return nil, ErrAPIKeyRequired
+	}
+
+	client := &Client{
+		apiKey: apiKey,
+		Config: config,
+	}
+
+	err := client.initClient()
 	if err != nil {
 		return nil, err
 	}
 
-	c.Config = config
-
-	return c.makeClient()
+	return client, nil
 }
 
 // Encrypt encrypts the value passed to it using the Evervault Encryption Scheme.
@@ -99,7 +116,7 @@ func (c *Client) encryptValue(value interface{}, aesKey []byte, ephemeralPublicK
 
 // Will return a http.Client that is configured to use the Evervault Relay as a proxy.
 func (c *Client) OutboundRelayClient() (*http.Client, error) {
-	caCertResponse, err := c.makeRequest(c.Config.evervaultCaURL, "GET", nil, "")
+	caCertResponse, err := c.makeRequest(c.Config.EvervaultCaURL, "GET", nil, "")
 	if err != nil {
 		return nil, err
 	}

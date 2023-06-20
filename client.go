@@ -11,6 +11,7 @@ import (
 )
 
 type Client struct {
+	apiKey                    string
 	Config                    Config
 	p256PublicKeyUncompressed []byte
 	p256PublicKeyCompressed   []byte
@@ -42,30 +43,30 @@ type clientRequest struct {
 	runToken string
 }
 
-func (c *Client) makeClient() (*Client, error) {
+func (c *Client) initClient() error {
 	keysResponse, err := c.getPublicKey()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	decodedPublicKeyUncompressed, err := base64.StdEncoding.DecodeString(keysResponse.EcdhP256KeyUncompressed)
 	if err != nil {
-		return nil, fmt.Errorf("error decoding uncompressed public key %w", err)
+		return fmt.Errorf("error decoding uncompressed public key %w", err)
 	}
 
 	decodedPublicKeyCompressed, err := base64.StdEncoding.DecodeString(keysResponse.EcdhP256Key)
 	if err != nil {
-		return nil, fmt.Errorf("error decoding compressed public key %w", err)
+		return fmt.Errorf("error decoding compressed public key %w", err)
 	}
 
 	c.p256PublicKeyUncompressed = decodedPublicKeyUncompressed
 	c.p256PublicKeyCompressed = decodedPublicKeyCompressed
 
-	return c, nil
+	return nil
 }
 
 func (c *Client) getPublicKey() (KeysResponse, error) {
-	publicKeyURL := fmt.Sprintf("%s/cages/key", c.Config.evAPIURL)
+	publicKeyURL := fmt.Sprintf("%s/cages/key", c.Config.EvAPIURL)
 
 	keys, err := c.makeRequest(publicKeyURL, "GET", nil, "")
 	if err != nil {
@@ -86,7 +87,7 @@ func (c *Client) createRunToken(functionName string, payload interface{}) (RunTo
 		return RunTokenResponse{}, fmt.Errorf("Error parsing payload as json %w", err)
 	}
 
-	runTokenURL := fmt.Sprintf("%s/v2/functions/%s/run-token", c.Config.evAPIURL, functionName)
+	runTokenURL := fmt.Sprintf("%s/v2/functions/%s/run-token", c.Config.EvAPIURL, functionName)
 
 	runToken, err := c.makeRequest(runTokenURL, "POST", pBytes, "")
 	if err != nil {
@@ -107,7 +108,7 @@ func (c *Client) runFunction(functionName string, payload interface{}, runToken 
 		return FunctionRunResponse{}, fmt.Errorf("Error parsing payload as json %w", err)
 	}
 
-	runFunctionURL := fmt.Sprintf("%s/%s", c.Config.functionRunURL, functionName)
+	runFunctionURL := fmt.Sprintf("%s/%s", c.Config.FunctionRunURL, functionName)
 
 	resp, err := c.makeRequest(runFunctionURL, "POST", pBytes, runToken)
 	if err != nil {
@@ -127,7 +128,7 @@ func (c *Client) makeRequest(url string, method string, body []byte, runToken st
 		url:      url,
 		method:   method,
 		body:     body,
-		apiKey:   c.Config.apiKey,
+		apiKey:   c.apiKey,
 		runToken: runToken,
 	})
 	if err != nil {
