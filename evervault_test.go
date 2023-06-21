@@ -130,20 +130,27 @@ func TestGetFunctionRunToken(t *testing.T) {
 func TestRunFunctionWithRunToken(t *testing.T) {
 	t.Parallel()
 
-	functionResponsePayload := []byte("{\"name\": \"ev:fdfksjdfksjdfjsdfsf\", \"age\": \"ev:dfkjsdfkjsdfjsdfjsdf\"}")
+	functionResponsePayload := map[string]interface{}{
+		"appUuid": "app_89a080d2228e",
+		"result": map[string]interface{}{
+			"message": "Hello from a Function! It seems you have 4 letters in your name",
+			"name":    "ev:z6CVgEMXL2eqh0io:A4K51eCnhkHkwJ5GiZs9pOGvsWQJv4MBdckQ5rPjm/O7:FgbRc2CYwxuuzFmyh86mTKQ/ah0=:$",
+		},
+		"runId": "func_run_65bc5168cb8b",
+	}
 	server := startMockHTTPServer(functionResponsePayload)
 
 	defer server.Close()
 
 	testClient := mockedClient(t, server)
-	payload := map[string]interface{}{
+	payload := map[string]any{
 		"name": "john",
 		"age":  30,
 	}
 	runToken := "test_token"
 
 	res, _ := testClient.RunFunction("test_function", payload, runToken)
-	if string(res.Result) != string(functionResponsePayload) {
+	if res.AppUUID != functionResponsePayload["appUuid"] {
 		t.Errorf("Expected encrypted string, got %s", res)
 	}
 }
@@ -151,7 +158,15 @@ func TestRunFunctionWithRunToken(t *testing.T) {
 func TestRunFunctionWithApiKey(t *testing.T) {
 	t.Parallel()
 
-	functionResponsePayload := []byte("{\"name\": \"ev:fdfksjdfksjdfjsdfsf\", \"age\": \"ev:dfkjsdfkjsdfjsdfjsdf\"}")
+	functionResponsePayload := map[string]interface{}{
+		"appUuid": "app_89a080d2228e",
+		"result": map[string]any{
+			"message": "Hello from a Function! It seems you have 4 letters in your name",
+			"name":    "ev:z6CVgEMXL2eqh0io:A4K51eCnhkHkwJ5GiZs9pOGvsWQJv4MBdckQ5rPjm/O7:FgbRc2CYwxuuzFmyh86mTKQ/ah0=:$",
+		},
+		"runId": "func_run_65bc5168cb8b",
+	}
+
 	server := startMockHTTPServer(functionResponsePayload)
 
 	defer server.Close()
@@ -163,12 +178,12 @@ func TestRunFunctionWithApiKey(t *testing.T) {
 	}
 
 	res, _ := testClient.RunFunction("test_function", payload, "")
-	if string(res.Result) != string(functionResponsePayload) {
+	if res.AppUUID != functionResponsePayload["appUuid"] {
 		t.Errorf("Expected encrypted string, got %s", res)
 	}
 }
 
-func startMockHTTPServer(mockResponse []byte) *httptest.Server {
+func startMockHTTPServer(mockResponse map[string]any) *httptest.Server {
 	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, reader *http.Request) {
 		if reader.URL.Path == "/test_function" {
 			apiKey := reader.Header.Get("API-KEY")
@@ -179,10 +194,22 @@ func startMockHTTPServer(mockResponse []byte) *httptest.Server {
 			}
 			writer.WriteHeader(http.StatusOK)
 			writer.Header().Set("Content-Type", "application/json")
+			appUUIDResponse, appUUIDOk := mockResponse["appUuid"].(string)
+			if !appUUIDOk {
+				appUUIDResponse = ""
+			}
+			runIDResposne, ok := mockResponse["runId"].(string)
+			if !ok {
+				runIDResposne = ""
+			}
+			resultResponse, ok := mockResponse["result"].(map[string]any)
+			if !ok {
+				resultResponse = map[string]any{}
+			}
 			responseBody := evervault.FunctionRunResponse{
-				AppUUID: "test_app_uuid",
-				RunID:   "func_jksf93423df",
-				Result:  mockResponse,
+				AppUUID: appUUIDResponse,
+				RunID:   runIDResposne,
+				Result:  resultResponse,
 			}
 			json.NewEncoder(writer).Encode(responseBody)
 

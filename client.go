@@ -30,9 +30,9 @@ type RunTokenResponse struct {
 }
 
 type FunctionRunResponse struct {
-	AppUUID string `json:"appUuid"`
-	RunID   string `json:"runId"`
-	Result  []byte `json:"result"`
+	AppUUID string         `json:"appUuid"`
+	RunID   string         `json:"runId"`
+	Result  map[string]any `json:"result"`
 }
 
 type clientRequest struct {

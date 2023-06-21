@@ -34,6 +34,9 @@ func (c *Client) transport(caCert []byte) (*http.Transport, error) {
 		DisableKeepAlives: true,
 		TLSClientConfig:   tlsClientConfig,
 		Proxy:             http.ProxyURL(proxyURL),
+		ProxyConnectHeader: http.Header{
+			"Proxy-Authorization": []string{c.apiKey},
+		},
 	}, nil
 }
 
