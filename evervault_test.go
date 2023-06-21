@@ -143,7 +143,7 @@ func TestRunFunctionWithRunToken(t *testing.T) {
 	defer server.Close()
 
 	testClient := mockedClient(t, server)
-	payload := map[string]interface{}{
+	payload := map[string]any{
 		"name": "john",
 		"age":  30,
 	}
@@ -160,7 +160,7 @@ func TestRunFunctionWithApiKey(t *testing.T) {
 
 	functionResponsePayload := map[string]interface{}{
 		"appUuid": "app_89a080d2228e",
-		"result": map[string]interface{}{
+		"result": map[string]any{
 			"message": "Hello from a Function! It seems you have 4 letters in your name",
 			"name":    "ev:z6CVgEMXL2eqh0io:A4K51eCnhkHkwJ5GiZs9pOGvsWQJv4MBdckQ5rPjm/O7:FgbRc2CYwxuuzFmyh86mTKQ/ah0=:$",
 		},
@@ -183,7 +183,7 @@ func TestRunFunctionWithApiKey(t *testing.T) {
 	}
 }
 
-func startMockHTTPServer(mockResponse map[string]interface{}) *httptest.Server {
+func startMockHTTPServer(mockResponse map[string]any) *httptest.Server {
 	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, reader *http.Request) {
 		if reader.URL.Path == "/test_function" {
 			apiKey := reader.Header.Get("API-KEY")
@@ -202,9 +202,9 @@ func startMockHTTPServer(mockResponse map[string]interface{}) *httptest.Server {
 			if !ok {
 				runIDResposne = ""
 			}
-			resultResponse, ok := mockResponse["result"].(map[string]interface{})
+			resultResponse, ok := mockResponse["result"].(map[string]any)
 			if !ok {
-				resultResponse = map[string]interface{}{}
+				resultResponse = map[string]any{}
 			}
 			responseBody := evervault.FunctionRunResponse{
 				AppUUID: appUUIDResponse,
