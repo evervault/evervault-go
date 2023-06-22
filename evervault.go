@@ -27,7 +27,7 @@ var (
 // MakeClient creates a new Client instance if an API key and Evervault App UUID is provided. The client
 // will connect to Evervaults API to retrieve the public keys from your Evervault App.
 //
-// If an apiKey is not passed then ErrAPIKeyRequired is returned. If the client cannot
+// If an apiKey is not passed then ErrAppCredentialsRequired is returned. If the client cannot
 // be created then nil will be returned.
 func MakeClient(apiKey string, appUUID string) (*Client, error) {
 	config := MakeConfig()
@@ -37,7 +37,7 @@ func MakeClient(apiKey string, appUUID string) (*Client, error) {
 // MakeCustomClient creates a new Client instance but can be specified with a Config. The client
 // will connect to Evervaults API to retrieve the public keys from your Evervault App.
 //
-// If an apiKey is not passed then ErrAPIKeyRequired is returned. If the client cannot
+// If an apiKey or appUUID is not passed then ErrAppCredentialsRequired is returned. If the client cannot
 // be created then nil will be returned.
 func MakeCustomClient(apiKey string, appUUID string, config Config) (*Client, error) {
 	if apiKey == "" || appUUID == "" {
