@@ -18,20 +18,20 @@ var ClientVersion = clientVersion
 
 var (
 	ErrClientNotInitilization          = errors.New("evervault client unable to initialize")
-	ErrAPIKeyRequired                  = errors.New("evervault client requires an api key")
+	ErrAppCredentialsRequired          = errors.New("evervault client requires an api key and app uuid")
 	ErrCryptoKeyImportError            = errors.New("unable to import crypto key")
 	ErrCryptoUnableToPerformEncryption = errors.New("unable to perform encryption")
 	ErrInvalidDataType                 = errors.New("Error: Invalid datatype")
 )
 
-// MakeClient creates a new Client instance if an API key is provided. The client
+// MakeClient creates a new Client instance if an API key and Evervault App UUID is provided. The client
 // will connect to Evervaults API to retrieve the public keys from your Evervault App.
 //
 // If an apiKey is not passed then ErrAPIKeyRequired is returned. If the client cannot
 // be created then nil will be returned.
-func MakeClient(apiKey string) (*Client, error) {
+func MakeClient(apiKey string, appUUID string) (*Client, error) {
 	config := MakeConfig()
-	return MakeCustomClient(apiKey, config)
+	return MakeCustomClient(apiKey, appUUID, config)
 }
 
 // MakeCustomClient creates a new Client instance but can be specified with a Config. The client
@@ -39,14 +39,15 @@ func MakeClient(apiKey string) (*Client, error) {
 //
 // If an apiKey is not passed then ErrAPIKeyRequired is returned. If the client cannot
 // be created then nil will be returned.
-func MakeCustomClient(apiKey string, config Config) (*Client, error) {
-	if apiKey == "" {
-		return nil, ErrAPIKeyRequired
+func MakeCustomClient(apiKey string, appUUID string, config Config) (*Client, error) {
+	if apiKey == "" || appUUID == "" {
+		return nil, ErrAppCredentialsRequired
 	}
 
 	client := &Client{
-		apiKey: apiKey,
-		Config: config,
+		apiKey:  apiKey,
+		appUUID: appUUID,
+		Config:  config,
 	}
 
 	err := client.initClient()

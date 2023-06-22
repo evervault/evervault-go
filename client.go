@@ -12,6 +12,7 @@ import (
 
 type Client struct {
 	apiKey                    string
+	appUUID                   string
 	Config                    Config
 	p256PublicKeyUncompressed []byte
 	p256PublicKeyCompressed   []byte

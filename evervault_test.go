@@ -77,9 +77,14 @@ func TestClientInitClientErrorWithoutApiKey(t *testing.T) {
 	server := startMockHTTPServer(nil)
 	defer server.Close()
 
-	_, err := evervault.MakeClient("")
+	_, err := evervault.MakeClient("", "")
 
-	if err.Error() != evervault.ErrAPIKeyRequired.Error() {
+	if err.Error() != evervault.ErrAppCredentialsRequired.Error() {
+		t.Errorf("Unexpected error, got error message %s", err)
+	}
+
+	_, err = evervault.MakeCustomClient("test_api_key", "", evervault.MakeConfig())
+	if err.Error() != evervault.ErrAppCredentialsRequired.Error() {
 		t.Errorf("Unexpected error, got error message %s", err)
 	}
 }
@@ -253,7 +258,7 @@ func mockedClient(t *testing.T, server *httptest.Server) *evervault.Client {
 		RelayURL:       server.URL,
 	}
 
-	client, err := evervault.MakeCustomClient("test_api_key", config)
+	client, err := evervault.MakeCustomClient("test_api_key", "test_app_uuid", config)
 	if err != nil {
 		t.Fail()
 	}
