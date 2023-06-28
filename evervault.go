@@ -148,3 +148,11 @@ func (c *Client) RunFunction(functionName string, payload interface{}, runToken 
 
 	return functionResponse, nil
 }
+
+func (c *Client) CageClient(cageHostname string) (bool, error) {
+	cert, err := c.extractCageTLSCert(cageHostname)
+	if err != nil {
+		return false, err
+	}
+	return crypto.AttestConnection(cert)
+}

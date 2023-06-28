@@ -3,6 +3,7 @@ package evervault
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -180,6 +181,19 @@ func (c *Client) buildRequestContext(clientRequest clientRequest) (*http.Request
 	setRequestHeaders(req, clientRequest.apiKey, clientRequest.runToken)
 
 	return req, nil
+}
+
+func (c *Client) extractCageTLSCert(cageHostname string) ([]byte, error) {
+	conf := &tls.Config{
+		InsecureSkipVerify: true,
+	}
+	conn, err := tls.Dial("tcp", cageHostname, conf)
+	if err != nil {
+		return nil, fmt.Errorf("Error connecting to cage %w", err)
+	}
+	defer conn.Close()
+	cert := conn.ConnectionState().PeerCertificates[0]
+	return cert.Raw, nil
 }
 
 func setRequestHeaders(req *http.Request, apiKey string, runToken string) {

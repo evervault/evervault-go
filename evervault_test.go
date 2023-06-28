@@ -188,6 +188,15 @@ func TestRunFunctionWithApiKey(t *testing.T) {
 	}
 }
 
+func TestCageClient(t *testing.T) {
+	t.Parallel()
+	testClient, _ := evervault.MakeClient("test_api_key", "test_app_name")
+	cageClient, _ := testClient.CageClient("hello-cage-2.app_89a080d2228e.cages.evervault.com:443")
+	if cageClient == false {
+		t.Errorf("Expected cage client to be true, got %t", cageClient)
+	}
+}
+
 func startMockHTTPServer(mockResponse map[string]any) *httptest.Server {
 	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, reader *http.Request) {
 		if reader.URL.Path == "/test_function" {
