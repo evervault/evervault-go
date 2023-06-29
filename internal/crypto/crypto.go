@@ -5,7 +5,6 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"crypto/sha256"
-	"crypto/x509"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
@@ -78,29 +77,6 @@ func EncryptValue(
 	ciphertext := aesgcm.Seal(nil, nonce, []byte(value), appPublicKey)
 
 	return evFormat(ciphertext, nonce, ephemeralPublicKey, datatype), nil
-}
-
-func AttestConnection(cert []byte) (bool, error) {
-	// 1) extract the X509Certificate certificate from the bytes
-	certificate, err := x509.ParseCertificate(cert)
-	if err != nil {
-		return false, fmt.Errorf("unable to parse certificate %w", err)
-	}
-	largestIndex := 0 // Assume the first string is the largest
-
-	for i := 1; i < len(certificate.DNSNames); i++ {
-		if len(certificate.DNSNames[i]) > len(certificate.DNSNames[largestIndex]) {
-			largestIndex = i
-		}
-	}
-
-	coseDNSValue := certificate.DNSNames[largestIndex]
-	coseSig := strings.Split(coseDNSValue, ".")[0]
-	fmt.Println(coseSig)
-	// 2) extract cose signature from the certificate
-	// 3) parse attestation docs from cose signature
-	// 4) verify the public key is the same as the one we have on file
-	return true, nil
 }
 
 func evFormat(cipherText []byte, iv []byte, publicKey []byte, datatype datatypes.Datatype) string {

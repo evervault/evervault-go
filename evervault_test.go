@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -190,11 +191,31 @@ func TestRunFunctionWithApiKey(t *testing.T) {
 
 func TestCageClient(t *testing.T) {
 	t.Parallel()
-	testClient, _ := evervault.MakeClient("test_api_key", "test_app_name")
-	cageClient, _ := testClient.CageClient("hello-cage-2.app_89a080d2228e.cages.evervault.com:443")
-	if cageClient == false {
-		t.Errorf("Expected cage client to be true, got %t", cageClient)
+	testClient, err := evervault.MakeClient("<API_KEY>", "<APP_UUID>")
+	if err != nil {
+		t.Errorf("Unexpected error, got error message %s", err)
 	}
+	expectedPCRs := evervault.PCRs{
+		PCR0: "2f1d96a6a897cf7b9d15f2198355ac4cf13ab1b5e4f06b249e5b91bb3e1637b8d6d071f29c64ce89825a5b507c6656a9",
+		PCR1: "bcdf05fefccaa8e55bf2c8d6dee9e79bbff31e34bf28a99aa19e6b29c37ee80b214a414b7607236edf26fcb78654e63f",
+		PCR2: "64c193500432b8e551e82438b3636ddc0ca43413e9bcf75112e3074e9f97e62260ff5835f763bfd6b32aa55d6e3d8474",
+		PCR8: "8da2e6c5b1d3c885a586014345cdcd4dbc078938f6f8694b84ed197a3d2ab3be1c5e78b52d18ae6a88d188fa37864497",
+	}
+
+	cageClient, err := testClient.CageClient("hello-cage-2.app_89a080d2228e.cages.evervault.com:443", []evervault.PCRs{expectedPCRs})
+	if err != nil {
+		t.Errorf("Error creating cage client: %s", err)
+	}
+
+	req, err := http.NewRequest("GET", "https://hello-cage-2.app_89a080d2228e.cages.evervault.com/hello", nil)
+	req.Close = true
+	req.Header.Set("API-KEY", "ev:key:1:4fTeWFYVZ3qbA3OB5nh9hKaKNFh54Dx7nYdOMbS6sTnL16ywlcbylqwTQETPnM8Zl:rT3a05:pOtY5v")
+
+	resp, err := cageClient.Do(req)
+	if err != nil {
+		t.Errorf("Error making request: %s", err)
+	}
+	fmt.Println(resp)
 }
 
 func startMockHTTPServer(mockResponse map[string]any) *httptest.Server {

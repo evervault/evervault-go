@@ -5,16 +5,22 @@ import (
 )
 
 type Config struct {
-	EvervaultCaURL string
-	RelayURL       string
-	FunctionRunURL string
-	EvAPIURL       string
+	EvervaultCaURL      string
+	EvervaultCagesCaUrl string
+	RelayURL            string
+	FunctionRunURL      string
+	EvAPIURL            string
 }
 
 func MakeConfig() Config {
 	caURL := os.Getenv("EV_CA_URL")
 	if caURL == "" {
 		caURL = "https://ca.evervault.com"
+	}
+
+	cagesCageUrl := os.Getenv("EV_CAGES_CA_URL")
+	if cagesCageUrl == "" {
+		cagesCageUrl = "https://cages-ca.evervault.com/cages-ca.crt"
 	}
 
 	evAPIURL := os.Getenv("EV_API_URL")
@@ -33,9 +39,10 @@ func MakeConfig() Config {
 	}
 
 	return Config{
-		EvervaultCaURL: caURL,
-		RelayURL:       evRelayURL,
-		FunctionRunURL: evFunctionRun,
-		EvAPIURL:       evAPIURL,
+		EvervaultCaURL:      caURL,
+		EvervaultCagesCaUrl: cagesCageUrl,
+		RelayURL:            evRelayURL,
+		FunctionRunURL:      evFunctionRun,
+		EvAPIURL:            evAPIURL,
 	}
 }

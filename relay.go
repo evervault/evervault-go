@@ -3,9 +3,15 @@ package evervault
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/hex"
 	"fmt"
+	"net"
 	"net/http"
 	"net/url"
+	"strings"
+	"time"
+
+	"github.com/hf/nitrite"
 )
 
 func (c *Client) relayClient(caCert []byte) (*http.Client, error) {
@@ -17,6 +23,73 @@ func (c *Client) relayClient(caCert []byte) (*http.Client, error) {
 	return &http.Client{
 		Transport: transport,
 	}, nil
+}
+
+func (c *Client) cagesClient(caCert []byte) (*http.Client, error) {
+	transport, err := c.cagesTransport(caCert)
+	if err != nil {
+		return nil, err
+	}
+	return &http.Client{
+		Transport: transport,
+	}, nil
+}
+
+func AttestConnection(cert []byte, expectedPCRs []PCRs) (bool, error) {
+	// 1) extract the X509Certificate certificate from the bytes
+	certificate, err := x509.ParseCertificate(cert)
+	if err != nil {
+		return false, fmt.Errorf("unable to parse certificate %w", err)
+	}
+	// Extract the largest DNS name from the certificate
+	largestIndex := 0
+	for i := 1; i < len(certificate.DNSNames); i++ {
+		if len(certificate.DNSNames[i]) > len(certificate.DNSNames[largestIndex]) {
+			largestIndex = i
+		}
+	}
+	coseDNSValue := certificate.DNSNames[largestIndex]
+	// extract the COSE signature from the DNS name
+	coseSig := strings.Split(coseDNSValue, ".")[0]
+	// decode the hex encoded COSE signature
+	hexDecodedDNS, err := hex.DecodeString(coseSig)
+	if err != nil {
+		return false, fmt.Errorf("unable to decode certificate %w", err)
+	}
+
+	res, err := nitrite.Verify(hexDecodedDNS, nitrite.VerifyOptions{CurrentTime: time.Now()})
+	if err != nil {
+		return false, fmt.Errorf("unable to verify certificate %w", err)
+	}
+
+	verified, err := VerifyPCRs(expectedPCRs, *res.Document)
+
+	return verified, nil
+}
+
+func VerifyPCRs(expectedPCRs []PCRs, attestationDocument nitrite.Document) (bool, error) {
+	attestationPCRs := mapAttestationPCRs(attestationDocument)
+	for _, expectedPCR := range expectedPCRs {
+		isEqual := expectedPCR == attestationPCRs
+		return isEqual, nil
+	}
+
+	return false, nil
+}
+
+func mapAttestationPCRs(attestationPCRs nitrite.Document) PCRs {
+	// We verify a subset of non zero PCRs
+	PCR0 := attestationPCRs.PCRs[0]
+	PCR1 := attestationPCRs.PCRs[1]
+	PCR2 := attestationPCRs.PCRs[2]
+	PCR8 := attestationPCRs.PCRs[8]
+
+	return PCRs{
+		PCR0: hex.EncodeToString(PCR0),
+		PCR1: hex.EncodeToString(PCR1),
+		PCR2: hex.EncodeToString(PCR2),
+		PCR8: hex.EncodeToString(PCR8),
+	}
 }
 
 func (c *Client) transport(caCert []byte) (*http.Transport, error) {
@@ -38,6 +111,62 @@ func (c *Client) transport(caCert []byte) (*http.Transport, error) {
 			"Proxy-Authorization": []string{c.apiKey},
 		},
 	}, nil
+}
+
+func (c *Client) cagesTransport(caCert []byte) (*http.Transport, error) {
+	rootCAs, err := x509.SystemCertPool()
+	if err != nil {
+		return nil, fmt.Errorf("error getting system cert pool %w", err)
+	}
+
+	rootCAs.AppendCertsFromPEM(caCert)
+	tlsConfig := &tls.Config{
+		InsecureSkipVerify: false,
+		RootCAs:            rootCAs,
+		MinVersion:         tls.VersionTLS12,
+		ServerName:         "hello-cage-2.app_89a080d2228e.cages.evervault.com",
+	}
+
+	if err != nil {
+		return nil, err
+	}
+	customDial := c.createDial(tlsConfig)
+
+	return &http.Transport{
+		DisableKeepAlives: true,
+		DialTLS:           customDial,
+	}, nil
+}
+
+func (c *Client) createDial(tlsConfig *tls.Config) func(network, addr string) (net.Conn, error) {
+	return func(network, addr string) (net.Conn, error) {
+		// Create a TCP connection
+		conn, err := net.DialTimeout(network, addr, 5*time.Second)
+		if err != nil {
+			return nil, err
+		}
+
+		// Perform TLS handshake with custom configuration
+		tlsConn := tls.Client(conn, tlsConfig)
+
+		err = tlsConn.Handshake()
+		if err != nil {
+			return nil, err
+		}
+
+		cert := tlsConn.ConnectionState().PeerCertificates[0]
+
+		attesationDoc, err := AttestConnection(cert.Raw, c.expectedPCRs)
+		if err != nil {
+			return nil, err
+		}
+
+		if !attesationDoc {
+			return nil, fmt.Errorf("attestation failed")
+		}
+
+		return tlsConn, nil
+	}
 }
 
 func tlsConfig(caCert []byte) (*tls.Config, error) {

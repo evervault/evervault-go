@@ -17,6 +17,7 @@ type Client struct {
 	Config                    Config
 	p256PublicKeyUncompressed []byte
 	p256PublicKeyCompressed   []byte
+	expectedPCRs              []PCRs
 }
 
 type KeysResponse struct {
@@ -63,6 +64,7 @@ func (c *Client) initClient() error {
 
 	c.p256PublicKeyUncompressed = decodedPublicKeyUncompressed
 	c.p256PublicKeyCompressed = decodedPublicKeyCompressed
+	c.expectedPCRs = []PCRs{}
 
 	return nil
 }

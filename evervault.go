@@ -24,6 +24,13 @@ var (
 	ErrInvalidDataType                 = errors.New("Error: Invalid datatype")
 )
 
+type PCRs struct {
+	PCR0 string
+	PCR1 string
+	PCR2 string
+	PCR8 string
+}
+
 // MakeClient creates a new Client instance if an API key and Evervault App UUID is provided. The client
 // will connect to Evervaults API to retrieve the public keys from your Evervault App.
 //
@@ -149,10 +156,18 @@ func (c *Client) RunFunction(functionName string, payload interface{}, runToken 
 	return functionResponse, nil
 }
 
-func (c *Client) CageClient(cageHostname string) (bool, error) {
-	cert, err := c.extractCageTLSCert(cageHostname)
+func (c *Client) CageClient(cageHostname string, expectedPCRs []PCRs) (*http.Client, error) {
+	c.expectedPCRs = expectedPCRs
+	caCertResponse, err := c.makeRequest(c.Config.EvervaultCagesCaUrl, "GET", nil, "")
+
 	if err != nil {
-		return false, err
+		return nil, err
 	}
-	return crypto.AttestConnection(cert)
+
+	cagesClient, err := c.cagesClient(caCertResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	return cagesClient, nil
 }
