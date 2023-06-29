@@ -209,7 +209,7 @@ func TestCageClient(t *testing.T) {
 
 	req, err := http.NewRequest("GET", "https://hello-cage-2.app_89a080d2228e.cages.evervault.com/hello", nil)
 	req.Close = true
-	req.Header.Set("API-KEY", "ev:key:1:4fTeWFYVZ3qbA3OB5nh9hKaKNFh54Dx7nYdOMbS6sTnL16ywlcbylqwTQETPnM8Zl:rT3a05:pOtY5v")
+	req.Header.Set("API-KEY", "<API_KEY>")
 
 	resp, err := cageClient.Do(req)
 	if err != nil {
