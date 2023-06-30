@@ -8,6 +8,16 @@ import (
 	"net/url"
 )
 
+// Will return a http.Client that is configured to use the Evervault Relay as a proxy.
+func (c *Client) OutboundRelayClient() (*http.Client, error) {
+	caCertResponse, err := c.makeRequest(c.Config.EvervaultCaURL, http.MethodGet, nil, "")
+	if err != nil {
+		return nil, err
+	}
+
+	return c.relayClient(caCertResponse)
+}
+
 func (c *Client) relayClient(caCert []byte) (*http.Client, error) {
 	transport, err := c.transport(caCert)
 	if err != nil {

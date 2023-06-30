@@ -27,16 +27,6 @@ type KeysResponse struct {
 	EcdhP256KeyUncompressed string `json:"ecdhP256KeyUncompressed"`
 }
 
-type RunTokenResponse struct {
-	Token string `json:"token"`
-}
-
-type FunctionRunResponse struct {
-	AppUUID string         `json:"appUuid"`
-	RunID   string         `json:"runId"`
-	Result  map[string]any `json:"result"`
-}
-
 type clientRequest struct {
 	url      string
 	method   string
@@ -82,48 +72,6 @@ func (c *Client) getPublicKey() (KeysResponse, error) {
 	}
 
 	return res, nil
-}
-
-func (c *Client) createRunToken(functionName string, payload interface{}) (RunTokenResponse, error) {
-	pBytes, err := json.Marshal(payload)
-	if err != nil {
-		return RunTokenResponse{}, fmt.Errorf("Error parsing payload as json %w", err)
-	}
-
-	runTokenURL := fmt.Sprintf("%s/v2/functions/%s/run-token", c.Config.EvAPIURL, functionName)
-
-	runToken, err := c.makeRequest(runTokenURL, http.MethodPost, pBytes, "")
-	if err != nil {
-		return RunTokenResponse{}, err
-	}
-
-	res := RunTokenResponse{}
-	if err := json.Unmarshal(runToken, &res); err != nil {
-		return RunTokenResponse{}, fmt.Errorf("Error parsing JSON response %w", err)
-	}
-
-	return res, nil
-}
-
-func (c *Client) runFunction(functionName string, payload interface{}, runToken string) (FunctionRunResponse, error) {
-	pBytes, err := json.Marshal(payload)
-	if err != nil {
-		return FunctionRunResponse{}, fmt.Errorf("Error parsing payload as json %w", err)
-	}
-
-	runFunctionURL := fmt.Sprintf("%s/%s", c.Config.FunctionRunURL, functionName)
-
-	resp, err := c.makeRequest(runFunctionURL, http.MethodPost, pBytes, runToken)
-	if err != nil {
-		return FunctionRunResponse{}, err
-	}
-
-	functionRunResponse := FunctionRunResponse{}
-	if err := json.Unmarshal(resp, &functionRunResponse); err != nil {
-		return FunctionRunResponse{}, fmt.Errorf("Error parsing JSON response %w", err)
-	}
-
-	return functionRunResponse, nil
 }
 
 func (c *Client) makeRequest(url string, method string, body []byte, runToken string) ([]byte, error) {

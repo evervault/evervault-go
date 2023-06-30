@@ -19,6 +19,30 @@ var (
 	cageDialTimeout     = 5 * time.Second
 )
 
+type PCRs struct {
+	PCR0 string
+	PCR1 string
+	PCR2 string
+	PCR8 string
+}
+
+// Will return a http.Client that is connected to a specified cage hostname with a fully attested client.
+func (c *Client) CageClient(cageHostname string, expectedPCRs []PCRs) (*http.Client, error) {
+	c.expectedPCRs = expectedPCRs
+
+	caCertResponse, err := c.makeRequest(c.Config.EvervaultCagesCaURL, http.MethodGet, nil, "")
+	if err != nil {
+		return nil, err
+	}
+
+	cagesClient, err := c.cagesClient(cageHostname, caCertResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	return cagesClient, nil
+}
+
 func (c *Client) cagesClient(cageHostname string, caCert []byte) (*http.Client, error) {
 	transport, err := c.cagesTransport(cageHostname, caCert)
 	if err != nil {

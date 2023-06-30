@@ -1,6 +1,17 @@
 package evervault
 
-import "strconv"
+import (
+	"errors"
+	"strconv"
+)
+
+var (
+	ErrClientNotInitilization          = errors.New("evervault client unable to initialize")
+	ErrAppCredentialsRequired          = errors.New("evervault client requires an api key and app uuid")
+	ErrCryptoKeyImportError            = errors.New("unable to import crypto key")
+	ErrCryptoUnableToPerformEncryption = errors.New("unable to perform encryption")
+	ErrInvalidDataType                 = errors.New("Error: Invalid datatype")
+)
 
 type APIError struct {
 	StatusCode int
