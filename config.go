@@ -6,7 +6,7 @@ import (
 
 type Config struct {
 	EvervaultCaURL      string
-	EvervaultCagesCaUrl string
+	EvervaultCagesCaURL string
 	RelayURL            string
 	FunctionRunURL      string
 	EvAPIURL            string
@@ -18,9 +18,9 @@ func MakeConfig() Config {
 		caURL = "https://ca.evervault.com"
 	}
 
-	cagesCageUrl := os.Getenv("EV_CAGES_CA_URL")
-	if cagesCageUrl == "" {
-		cagesCageUrl = "https://cages-ca.evervault.com/cages-ca.crt"
+	cagesCageURL := os.Getenv("EV_CAGES_CA_URL")
+	if cagesCageURL == "" {
+		cagesCageURL = "https://cages-ca.evervault.com/cages-ca.crt"
 	}
 
 	evAPIURL := os.Getenv("EV_API_URL")
@@ -40,7 +40,7 @@ func MakeConfig() Config {
 
 	return Config{
 		EvervaultCaURL:      caURL,
-		EvervaultCagesCaUrl: cagesCageUrl,
+		EvervaultCagesCaURL: cagesCageURL,
 		RelayURL:            evRelayURL,
 		FunctionRunURL:      evFunctionRun,
 		EvAPIURL:            evAPIURL,

@@ -12,9 +12,7 @@ import (
 	"github.com/evervault/evervault-go/internal/datatypes"
 )
 
-const clientVersion = "0.1.3"
-
-var ClientVersion = clientVersion
+const ClientVersion = "0.1.3"
 
 var (
 	ErrClientNotInitilization          = errors.New("evervault client unable to initialize")
@@ -124,7 +122,7 @@ func (c *Client) encryptValue(value interface{}, aesKey []byte, ephemeralPublicK
 
 // Will return a http.Client that is configured to use the Evervault Relay as a proxy.
 func (c *Client) OutboundRelayClient() (*http.Client, error) {
-	caCertResponse, err := c.makeRequest(c.Config.EvervaultCaURL, "GET", nil, "")
+	caCertResponse, err := c.makeRequest(c.Config.EvervaultCaURL, http.MethodGet, nil, "")
 	if err != nil {
 		return nil, err
 	}
@@ -158,13 +156,13 @@ func (c *Client) RunFunction(functionName string, payload interface{}, runToken 
 
 func (c *Client) CageClient(cageHostname string, expectedPCRs []PCRs) (*http.Client, error) {
 	c.expectedPCRs = expectedPCRs
-	caCertResponse, err := c.makeRequest(c.Config.EvervaultCagesCaUrl, "GET", nil, "")
 
+	caCertResponse, err := c.makeRequest(c.Config.EvervaultCagesCaURL, http.MethodGet, nil, "")
 	if err != nil {
 		return nil, err
 	}
 
-	cagesClient, err := c.cagesClient(caCertResponse)
+	cagesClient, err := c.cagesClient(cageHostname, caCertResponse)
 	if err != nil {
 		return nil, err
 	}

@@ -3,7 +3,6 @@ package evervault
 import (
 	"bytes"
 	"context"
-	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -72,7 +71,7 @@ func (c *Client) initClient() error {
 func (c *Client) getPublicKey() (KeysResponse, error) {
 	publicKeyURL := fmt.Sprintf("%s/cages/key", c.Config.EvAPIURL)
 
-	keys, err := c.makeRequest(publicKeyURL, "GET", nil, "")
+	keys, err := c.makeRequest(publicKeyURL, http.MethodGet, nil, "")
 	if err != nil {
 		return KeysResponse{}, err
 	}
@@ -93,7 +92,7 @@ func (c *Client) createRunToken(functionName string, payload interface{}) (RunTo
 
 	runTokenURL := fmt.Sprintf("%s/v2/functions/%s/run-token", c.Config.EvAPIURL, functionName)
 
-	runToken, err := c.makeRequest(runTokenURL, "POST", pBytes, "")
+	runToken, err := c.makeRequest(runTokenURL, http.MethodPost, pBytes, "")
 	if err != nil {
 		return RunTokenResponse{}, err
 	}
@@ -114,7 +113,7 @@ func (c *Client) runFunction(functionName string, payload interface{}, runToken 
 
 	runFunctionURL := fmt.Sprintf("%s/%s", c.Config.FunctionRunURL, functionName)
 
-	resp, err := c.makeRequest(runFunctionURL, "POST", pBytes, runToken)
+	resp, err := c.makeRequest(runFunctionURL, http.MethodPost, pBytes, runToken)
 	if err != nil {
 		return FunctionRunResponse{}, err
 	}
@@ -162,7 +161,7 @@ func (c *Client) makeRequest(url string, method string, body []byte, runToken st
 
 func (c *Client) buildRequestContext(clientRequest clientRequest) (*http.Request, error) {
 	ctx := context.Background()
-	if clientRequest.method == "GET" {
+	if clientRequest.method == http.MethodGet {
 		req, err := http.NewRequestWithContext(ctx, clientRequest.method, clientRequest.url, nil)
 		if err != nil {
 			return nil, fmt.Errorf("Error creating request %w", err)
@@ -183,19 +182,6 @@ func (c *Client) buildRequestContext(clientRequest clientRequest) (*http.Request
 	setRequestHeaders(req, clientRequest.apiKey, clientRequest.runToken)
 
 	return req, nil
-}
-
-func (c *Client) extractCageTLSCert(cageHostname string) ([]byte, error) {
-	conf := &tls.Config{
-		InsecureSkipVerify: true,
-	}
-	conn, err := tls.Dial("tcp", cageHostname, conf)
-	if err != nil {
-		return nil, fmt.Errorf("Error connecting to cage %w", err)
-	}
-	defer conn.Close()
-	cert := conn.ConnectionState().PeerCertificates[0]
-	return cert.Raw, nil
 }
 
 func setRequestHeaders(req *http.Request, apiKey string, runToken string) {
