@@ -5,7 +5,7 @@
 //   - Invoke Cages
 //   - Proxy requests through Outbound Relay
 //
-// For up to date usage docs please refer to [Evervault docs](https://docs.evervault.com/sdks/go) and
+// For up to date usage docs please refer to [Evervault docs](https://docs.evervault.com/sdks/go)
 package evervault
 
 import (
@@ -18,6 +18,7 @@ import (
 	"github.com/evervault/evervault-go/internal/datatypes"
 )
 
+// Current version of the evervault SDK.
 const ClientVersion = "0.2.0"
 
 // MakeClient creates a new Client instance if an API key and Evervault App UUID is provided. The client

@@ -10,16 +10,23 @@ import (
 	"net/http"
 )
 
+// Evervault Client.
+// Client will connect to Evervault API and retrieve public key.
+// The Client can be used to:
+// - perform encryptions
+// - Create Outbound relay client
+// - Create Cage clients
+// - run evervault Functions.
 type Client struct {
+	Config                    Config
 	apiKey                    string
 	appUUID                   string
-	Config                    Config
 	p256PublicKeyUncompressed []byte
 	p256PublicKeyCompressed   []byte
 	expectedPCRs              []PCRs
 }
 
-type KeysResponse struct {
+type keysResponse struct {
 	TeamUUID                string `json:"teamUuid"`
 	Key                     string `json:"key"`
 	EcdhKey                 string `json:"ecdhKey"`
@@ -58,17 +65,17 @@ func (c *Client) initClient() error {
 	return nil
 }
 
-func (c *Client) getPublicKey() (KeysResponse, error) {
+func (c *Client) getPublicKey() (keysResponse, error) {
 	publicKeyURL := fmt.Sprintf("%s/cages/key", c.Config.EvAPIURL)
 
 	keys, err := c.makeRequest(publicKeyURL, http.MethodGet, nil, "")
 	if err != nil {
-		return KeysResponse{}, err
+		return keysResponse{}, err
 	}
 
-	res := KeysResponse{}
+	res := keysResponse{}
 	if err := json.Unmarshal(keys, &res); err != nil {
-		return KeysResponse{}, fmt.Errorf("Error parsing JSON response %w", err)
+		return keysResponse{}, fmt.Errorf("Error parsing JSON response %w", err)
 	}
 
 	return res, nil
