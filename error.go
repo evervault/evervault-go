@@ -5,22 +5,22 @@ import (
 	"strconv"
 )
 
-// An Error with attesting the connection to a cage.
+// ErrAttestionFailure is retuned when a connection to a cage cannot be attested.
 var ErrAttestionFailure = errors.New("attestation failed")
 
-// Evervault client has not been initialized.
+// ErrClientNotInitilization is returned when Evervault client has not been initialized.
 var ErrClientNotInitilization = errors.New("evervault client unable to initialize")
 
-// Missing required application credentials for initialisation.
+// ErrAppCredentialsRequired is returned when the required application credentials for initialisation are missing.
 var ErrAppCredentialsRequired = errors.New("evervault client requires an api key and app uuid")
 
-// Unable the import Keys for crypto.
+// ErrCryptoKeyImportError is returned when the client is unable to the import Keys for crypto.
 var ErrCryptoKeyImportError = errors.New("unable to import crypto key")
 
-// Unable to encrypt data.
+// ErrCryptoUnableToPerformEncryption is reutrned when the encryption function is unable to encrypt data.
 var ErrCryptoUnableToPerformEncryption = errors.New("unable to perform encryption")
 
-// An unsupported data type was specified for encryption.
+// ErrInvalidDataType is returned when an unsupported data type was specified for encryption.
 var ErrInvalidDataType = errors.New("Error: Invalid datatype")
 
 // Evervault API Error. Returned from evervault servers when an error is encountered.

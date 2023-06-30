@@ -26,7 +26,7 @@ type Client struct {
 	expectedPCRs              []PCRs
 }
 
-type keysResponse struct {
+type KeysResponse struct {
 	TeamUUID                string `json:"teamUuid"`
 	Key                     string `json:"key"`
 	EcdhKey                 string `json:"ecdhKey"`
@@ -65,17 +65,17 @@ func (c *Client) initClient() error {
 	return nil
 }
 
-func (c *Client) getPublicKey() (keysResponse, error) {
+func (c *Client) getPublicKey() (KeysResponse, error) {
 	publicKeyURL := fmt.Sprintf("%s/cages/key", c.Config.EvAPIURL)
 
 	keys, err := c.makeRequest(publicKeyURL, http.MethodGet, nil, "")
 	if err != nil {
-		return keysResponse{}, err
+		return KeysResponse{}, err
 	}
 
-	res := keysResponse{}
+	res := KeysResponse{}
 	if err := json.Unmarshal(keys, &res); err != nil {
-		return keysResponse{}, fmt.Errorf("Error parsing JSON response %w", err)
+		return KeysResponse{}, fmt.Errorf("Error parsing JSON response %w", err)
 	}
 
 	return res, nil
