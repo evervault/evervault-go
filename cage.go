@@ -1,6 +1,7 @@
 package evervault
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/hex"
@@ -67,7 +68,7 @@ func (c *Client) cagesTransport(cageHostname string, caCert []byte) (*http.Trans
 
 	return &http.Transport{
 		DisableKeepAlives: true,
-		DialTLS:           customDial,
+		DialTLSContext:    customDial,
 	}, nil
 }
 
@@ -130,8 +131,8 @@ func mapAttestationPCRs(attestationPCRs nitrite.Document) PCRs {
 	}
 }
 
-func (c *Client) createDial(tlsConfig *tls.Config) func(network, addr string) (net.Conn, error) {
-	return func(network, addr string) (net.Conn, error) {
+func (c *Client) createDial(tlsConfig *tls.Config) func(ctx context.Context, network, addr string) (net.Conn, error) {
+	return func(ctx context.Context, network, addr string) (net.Conn, error) {
 		// Create a TCP connection
 		conn, err := net.DialTimeout(network, addr, cageDialTimeout)
 		if err != nil {

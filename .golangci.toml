@@ -60,7 +60,8 @@ exported-fields = true
 module-path = "github.com/evervault/evervault-go"
 
 [linters-settings.depguard.rules.main]
-allow = ["$gostd", "github.com/evervault/evervault-go", "github.com/hf/nitrite"]
+allow = ["$gostd", "github.com/evervault/evervault-go", "github.com/hf/nitrite","github.com/stretchr/testify/assert"]
+
 
 [linters-settings.nlreturn]
 block-size = 3
