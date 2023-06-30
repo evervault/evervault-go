@@ -1,5 +1,9 @@
 # Evervault Go SDK
 
+For up to date usage docs please refer to
+[Evervault docs](https://docs.evervault.com/sdks/go) and
+[godocs](https://pkg.go.dev/github.com/evervault/evervault-go)
+
 ## Testing
 
 To Test the sdk run

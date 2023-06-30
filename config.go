@@ -4,6 +4,7 @@ import (
 	"os"
 )
 
+// Configuration for Evervault Client.
 type Config struct {
 	EvervaultCaURL      string
 	EvervaultCagesCaURL string
@@ -12,6 +13,7 @@ type Config struct {
 	EvAPIURL            string
 }
 
+// Load Evervault client config from environment variables.
 func MakeConfig() Config {
 	caURL := os.Getenv("EV_CA_URL")
 	if caURL == "" {

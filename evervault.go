@@ -1,3 +1,11 @@
+// Evervault Go SDK.
+// Supported functions are:
+//   - Encrypt data server-side including files
+//   - Invoke Functions
+//   - Invoke Cages
+//   - Proxy requests through Outbound Relay
+//
+// For up to date usage docs please refer to [Evervault docs](https://docs.evervault.com/sdks/go) and
 package evervault
 
 import (

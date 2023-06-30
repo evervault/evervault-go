@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -14,11 +13,9 @@ import (
 	"github.com/hf/nitrite"
 )
 
-var (
-	ErrAttestionFailure = errors.New("attestation failed")
-	cageDialTimeout     = 5 * time.Second
-)
+var cageDialTimeout = 5 * time.Second
 
+// PCRs struct for attesting a cage connection against.
 type PCRs struct {
 	PCR0 string
 	PCR1 string
@@ -74,7 +71,8 @@ func (c *Client) cagesTransport(cageHostname string, caCert []byte) (*http.Trans
 	}, nil
 }
 
-func AttestConnection(cert []byte, expectedPCRs []PCRs) (bool, error) {
+// Attest that a given cert matches the expected PCRS.
+func attestCert(cert []byte, expectedPCRs []PCRs) (bool, error) {
 	// 1) extract the X509Certificate certificate from the bytes
 	certificate, err := x509.ParseCertificate(cert)
 	if err != nil {
@@ -102,12 +100,12 @@ func AttestConnection(cert []byte, expectedPCRs []PCRs) (bool, error) {
 		return false, fmt.Errorf("unable to verify certificate %w", err)
 	}
 
-	verified := VerifyPCRs(expectedPCRs, *res.Document)
+	verified := verifyPCRs(expectedPCRs, *res.Document)
 
 	return verified, nil
 }
 
-func VerifyPCRs(expectedPCRs []PCRs, attestationDocument nitrite.Document) bool {
+func verifyPCRs(expectedPCRs []PCRs, attestationDocument nitrite.Document) bool {
 	attestationPCRs := mapAttestationPCRs(attestationDocument)
 	for _, expectedPCR := range expectedPCRs {
 		isEqual := expectedPCR == attestationPCRs
@@ -150,7 +148,7 @@ func (c *Client) createDial(tlsConfig *tls.Config) func(network, addr string) (n
 
 		cert := tlsConn.ConnectionState().PeerCertificates[0]
 
-		attesationDoc, err := AttestConnection(cert.Raw, c.expectedPCRs)
+		attesationDoc, err := attestCert(cert.Raw, c.expectedPCRs)
 		if err != nil {
 			return nil, fmt.Errorf("Error attesting Connection %w", err)
 		}
