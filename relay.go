@@ -8,7 +8,17 @@ import (
 	"net/url"
 )
 
-// Will return a http.Client that is configured to use the Evervault Relay as a proxy.
+// Will return a http.Client that is configured to use the Evervault Relay as a proxy,
+// enabling decryption of data before it reaches the requests destination.
+//
+//	outboundRelayClient, err := evClient.OutboundRelayClient()
+//
+//	payload, err := json.Marshal(fmt.Sprintf(`{"encrypted": "%s"}`, encrypted))
+//	if err != nil {
+//	  panic(err)
+//	}
+//
+//	resp, err := outboundRelayClient.Post("https://example.com/", "application/json", bytes.NewBuffer(payload))
 func (c *Client) OutboundRelayClient() (*http.Client, error) {
 	caCertResponse, err := c.makeRequest(c.Config.EvervaultCaURL, http.MethodGet, nil, "")
 	if err != nil {

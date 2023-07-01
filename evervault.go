@@ -24,6 +24,9 @@ const ClientVersion = "0.2.0"
 // MakeClient creates a new Client instance if an API key and Evervault App UUID is provided. The client
 // will connect to Evervaults API to retrieve the public keys from your Evervault App.
 //
+//	import "github.com/evervault/evervault-go"
+//	evClient, err := evervault.MakeClient("<API_KEY>", "<APP_UUID>")
+//
 // If an apiKey is not passed then ErrAppCredentialsRequired is returned. If the client cannot
 // be created then nil will be returned.
 func MakeClient(apiKey string, appUUID string) (*Client, error) {
@@ -57,6 +60,8 @@ func MakeCustomClient(apiKey string, appUUID string, config Config) (*Client, er
 
 // Encrypt encrypts the value passed to it using the Evervault Encryption Scheme.
 // The encrypted value is returned as an Evervault formated encrypted string.
+//
+//	encrypted := evClient.Encrypt("Hello, world!");
 //
 // If an error occurs then nil is returned. If the error is due a problem with Key creation then
 // ErrCryptoKeyImportError is returned. For anyother error ErrCryptoUnableToPerformEncryption is returned.
