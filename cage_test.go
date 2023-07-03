@@ -137,7 +137,7 @@ func ExampleClient_CageClient() {
 
 	resp, err := cageClient.Do(req)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	defer resp.Body.Close()

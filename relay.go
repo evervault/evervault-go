@@ -15,7 +15,7 @@ import (
 //
 //	payload, err := json.Marshal(fmt.Sprintf(`{"encrypted": "%s"}`, encrypted))
 //	if err != nil {
-//	  panic(err)
+//	  log.Fatal(err)
 //	}
 //
 //	resp, err := outboundRelayClient.Post("https://example.com/", "application/json", bytes.NewBuffer(payload))
