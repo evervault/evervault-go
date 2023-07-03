@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"testing"
@@ -12,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const testCage = "staging-synthetic-cage.app_1bba8ba15402.cages.evervault.dev"
+const testCage = "go-sdk-hello-cage.app_869a0605f7c3.cages.evervault.com"
 
 func makeTestClient(t *testing.T) *evervault.Client {
 	t.Helper()
@@ -27,12 +28,7 @@ func makeTestClient(t *testing.T) *evervault.Client {
 		t.Skip("Skipping testing when no app uuid provided")
 	}
 
-	config := evervault.Config{
-		EvAPIURL:            "https://api.evervault.io",
-		EvervaultCagesCaURL: "https://cages-ca.evervault.io/cages-ca.crt",
-	}
-
-	testClient, err := evervault.MakeCustomClient(apiKey, appUUID, config)
+	testClient, err := evervault.MakeClient(apiKey, appUUID)
 	if err != nil {
 		t.Errorf("Unexpected error, got error message %s", err)
 	}
@@ -56,10 +52,10 @@ func TestCageClient(t *testing.T) {
 	assert := assert.New(t)
 	testClient := makeTestClient(t)
 	expectedPCRs := evervault.PCRs{
-		PCR0: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-		PCR1: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-		PCR2: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-		PCR8: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+		PCR0: "f039c31c536749ac6b2a9344fcb36881dd1cf066ca44afcaf9369a9877e2d3c85fa738c427d502e01e35994da7458e2d",
+		PCR1: "bcdf05fefccaa8e55bf2c8d6dee9e79bbff31e34bf28a99aa19e6b29c37ee80b214a414b7607236edf26fcb78654e63f",
+		PCR2: "71c478711438fe252fbd9b1da56218bea5d630da55aa56431257df77bd42f65a434601bf53be9a1901fcd61680e425c7",
+		PCR8: "1650274b27bf44fba6f1779602399763af9e4567927d771b1b37aeb1ac502c84fbd6a7ab7b05600656a257247529fbb8",
 	}
 
 	cageClient, err := testClient.CageClient(testCage, []evervault.PCRs{expectedPCRs})
@@ -78,11 +74,11 @@ func TestCageClient(t *testing.T) {
 
 	defer resp.Body.Close()
 
-	assert.Equal(resp.Status, "200 OK", "expect 200 ok")
+	assert.Equal("200 OK", resp.Status)
 	assert.Contains(resp.Header, "X-Evervault-Cage-Ctx")
 
 	respBody, _ := io.ReadAll(resp.Body)
-	assert.Contains(string(respBody), `{"test":true}`)
+	assert.Equal(`{"message":"Hello! I'm writing to you from within an enclave","body":{"test":true}}`, string(respBody))
 }
 
 func TestCageFailsOnIncorrectPCRs(t *testing.T) {
@@ -105,33 +101,36 @@ func TestCageFailsOnIncorrectPCRs(t *testing.T) {
 	req := buildCageRequest()
 
 	resp, err := cageClient.Do(req)
+	if err == nil {
+		resp.Body.Close() // OK
+	}
+
 	assert.ErrorIs(err, evervault.ErrAttestionFailure)
-	resp.Body.Close()
 }
 
-func Example_connectToCage() {
+func ExampleClient_CageClient() {
 	apiKey := os.Getenv("EV_API_KEY")
 	appUUID := os.Getenv("EV_APP_UUID")
 
 	evClient, err := evervault.MakeClient(apiKey, appUUID)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	expectedPCRs := evervault.PCRs{
-		PCR0: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-		PCR1: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-		PCR2: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-		PCR8: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+		PCR0: "f039c31c536749ac6b2a9344fcb36881dd1cf066ca44afcaf9369a9877e2d3c85fa738c427d502e01e35994da7458e2d",
+		PCR1: "bcdf05fefccaa8e55bf2c8d6dee9e79bbff31e34bf28a99aa19e6b29c37ee80b214a414b7607236edf26fcb78654e63f",
+		PCR2: "71c478711438fe252fbd9b1da56218bea5d630da55aa56431257df77bd42f65a434601bf53be9a1901fcd61680e425c7",
+		PCR8: "1650274b27bf44fba6f1779602399763af9e4567927d771b1b37aeb1ac502c84fbd6a7ab7b05600656a257247529fbb8",
 	}
 
 	cageClient, err := evClient.CageClient(testCage, []evervault.PCRs{expectedPCRs})
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	body := []byte(`{"test": true}`)
-	req, _ := http.NewRequest(http.MethodPost, fmt.Sprintf("https://%s/echo", testCage), bytes.NewBuffer(body))
+	req, _ := http.NewRequest(http.MethodPost, fmt.Sprintf("https://%s/", testCage), bytes.NewBuffer(body))
 	req.Close = true
 	req.Header.Set("API-KEY", apiKey)
 	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
@@ -145,5 +144,5 @@ func Example_connectToCage() {
 
 	respBody, _ := io.ReadAll(resp.Body)
 	fmt.Println(string(respBody))
-	// Output: {"test": true}
+	// Output: {"message":"Hello! I'm writing to you from within an enclave","body":{"test":true}}
 }
