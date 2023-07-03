@@ -16,12 +16,40 @@ import (
 
 var cageDialTimeout = 5 * time.Second
 
+func pcrEqual(p1 string, p2 string) bool {
+	return p1 != "" && p2 != "" && p1 == p2
+}
+
 // PCRs struct for attesting a cage connection against.
 type PCRs struct {
 	PCR0 string
 	PCR1 string
 	PCR2 string
 	PCR8 string
+}
+
+// Check if two PCRs are equal to each other.
+func (p *PCRs) Equal(pcrs PCRs) bool {
+	return pcrEqual(p.PCR0, pcrs.PCR0) ||
+		pcrEqual(p.PCR1, pcrs.PCR1) ||
+		pcrEqual(p.PCR2, pcrs.PCR2) ||
+		pcrEqual(p.PCR8, pcrs.PCR8)
+}
+
+func (p *PCRs) isNil() bool {
+	return p.PCR0 == "" && p.PCR1 == "" && p.PCR2 == "" && p.PCR8 == ""
+}
+
+func filterEmptyPCRs(expectedPCRs []PCRs) []PCRs {
+	var ret []PCRs
+
+	for _, pcrs := range expectedPCRs {
+		if !pcrs.isNil() {
+			ret = append(ret, pcrs)
+		}
+	}
+
+	return ret
 }
 
 // Will return a http.Client that is connected to a specified cage hostname with a fully attested client.
@@ -53,7 +81,10 @@ type PCRs struct {
 //
 //	resp, err := cageClient.Do(req)
 func (c *Client) CageClient(cageHostname string, expectedPCRs []PCRs) (*http.Client, error) {
-	c.expectedPCRs = expectedPCRs
+	c.expectedPCRs = filterEmptyPCRs(expectedPCRs)
+	if len(c.expectedPCRs) == 0 {
+		return nil, ErrNoPCRs
+	}
 
 	caCertResponse, err := c.makeRequest(c.Config.EvervaultCagesCaURL, http.MethodGet, nil, "")
 	if err != nil {
@@ -136,8 +167,9 @@ func attestCert(cert []byte, expectedPCRs []PCRs) (bool, error) {
 func verifyPCRs(expectedPCRs []PCRs, attestationDocument nitrite.Document) bool {
 	attestationPCRs := mapAttestationPCRs(attestationDocument)
 	for _, expectedPCR := range expectedPCRs {
-		isEqual := expectedPCR == attestationPCRs
-		return isEqual
+		if isEqual := expectedPCR.Equal(attestationPCRs); isEqual {
+			return isEqual
+		}
 	}
 
 	return false

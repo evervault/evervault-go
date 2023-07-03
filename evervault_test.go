@@ -81,6 +81,7 @@ func TestClientInitClientErrorWithoutApiKey(t *testing.T) {
 
 	if err.Error() != evervault.ErrAppCredentialsRequired.Error() {
 		t.Errorf("Unexpected error, got error message %s", err)
+		return
 	}
 
 	_, err = evervault.MakeCustomClient("test_api_key", "", evervault.MakeConfig())

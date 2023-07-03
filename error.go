@@ -5,6 +5,9 @@ import (
 	"strconv"
 )
 
+// ErrNoPCRs is returned when a PCRs is created without any PCR in it to attest with.
+var ErrNoPCRs = errors.New("Error: no PCRs where provided to attest with")
+
 // ErrAttestionFailure is retuned when a connection to a cage cannot be attested.
 var ErrAttestionFailure = errors.New("attestation failed")
 
