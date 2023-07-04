@@ -1,6 +1,7 @@
 package evervault
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"crypto/x509"
@@ -144,12 +145,7 @@ func (c *Client) cagesTransport(cageHostname string, caCert []byte) (*http.Trans
 }
 
 // Attest that a given cert matches the expected PCRS.
-func attestCert(cert []byte, expectedPCRs []PCRs) (bool, error) {
-	// 1) extract the X509Certificate certificate from the bytes
-	certificate, err := x509.ParseCertificate(cert)
-	if err != nil {
-		return false, fmt.Errorf("unable to parse certificate %w", err)
-	}
+func attestCert(certificate *x509.Certificate, expectedPCRs []PCRs) (bool, error) {
 	// Extract the largest DNS name from the certificate
 	largestIndex := 0
 	for i := 1; i < len(certificate.DNSNames); i++ {
@@ -172,9 +168,21 @@ func attestCert(cert []byte, expectedPCRs []PCRs) (bool, error) {
 		return false, fmt.Errorf("unable to verify certificate %w", err)
 	}
 
-	verified := verifyPCRs(expectedPCRs, *res.Document)
+	if !res.SignatureOK {
+		return false, ErrUnVerifiedSignature
+	}
 
-	return verified, nil
+	if verified := verifyPCRs(expectedPCRs, *res.Document); !verified {
+		return verified, nil
+	}
+
+	// Validate that the cert public key is embedded in the attestation doc
+	pubKeyBytes, err := x509.MarshalPKIXPublicKey(certificate.PublicKey)
+	if err != nil {
+		return false, fmt.Errorf("failed to marshal publicKey to bytes %w", err)
+	}
+
+	return bytes.Equal(pubKeyBytes, res.Document.UserData), nil
 }
 
 func verifyPCRs(expectedPCRs []PCRs, attestationDocument nitrite.Document) bool {
@@ -221,7 +229,7 @@ func (c *Client) createDial(tlsConfig *tls.Config) func(ctx context.Context, net
 
 		cert := tlsConn.ConnectionState().PeerCertificates[0]
 
-		attesationDoc, err := attestCert(cert.Raw, c.expectedPCRs)
+		attesationDoc, err := attestCert(cert, c.expectedPCRs)
 		if err != nil {
 			return nil, fmt.Errorf("Error attesting Connection %w", err)
 		}

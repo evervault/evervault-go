@@ -5,6 +5,9 @@ import (
 	"strconv"
 )
 
+// ErrUnVerifiedSignature is returned when a attestation docs signature cant be verified.
+var ErrUnVerifiedSignature = errors.New("unable to verify certificate signature")
+
 // ErrNoPCRs is returned when a PCRs is created without any PCR in it to attest with.
 var ErrNoPCRs = errors.New("Error: no PCRs where provided to attest with")
 
