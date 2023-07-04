@@ -16,8 +16,8 @@ import (
 
 var cageDialTimeout = 5 * time.Second
 
-func pcrEqual(p1 string, p2 string) bool {
-	return p1 != "" && p2 != "" && p1 == p2
+func pcrNotEqual(p1 string, p2 string) bool {
+	return p1 != "" && p2 != "" && p1 != p2
 }
 
 // PCRs struct for attesting a cage connection against.
@@ -30,10 +30,23 @@ type PCRs struct {
 
 // Check if two PCRs are equal to each other.
 func (p *PCRs) Equal(pcrs PCRs) bool {
-	return pcrEqual(p.PCR0, pcrs.PCR0) ||
-		pcrEqual(p.PCR1, pcrs.PCR1) ||
-		pcrEqual(p.PCR2, pcrs.PCR2) ||
-		pcrEqual(p.PCR8, pcrs.PCR8)
+	if pcrNotEqual(p.PCR0, pcrs.PCR0) {
+		return false
+	}
+
+	if pcrNotEqual(p.PCR1, pcrs.PCR1) {
+		return false
+	}
+
+	if pcrNotEqual(p.PCR2, pcrs.PCR2) {
+		return false
+	}
+
+	if pcrNotEqual(p.PCR8, pcrs.PCR8) {
+		return false
+	}
+
+	return true
 }
 
 func (p *PCRs) isNil() bool {

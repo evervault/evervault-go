@@ -67,7 +67,7 @@ func TestCageClient(t *testing.T) {
 
 	req := buildCageRequest()
 
-	t.Log("making request")
+	t.Log("making request", testCage)
 
 	resp, err := cageClient.Do(req)
 	if err != nil {
@@ -107,7 +107,7 @@ func TestCagePartialPCR(t *testing.T) {
 
 	req := buildCageRequest()
 
-	t.Log("making request")
+	t.Log("making request", testCage)
 
 	resp, err := cageClient.Do(req)
 	if err != nil {
@@ -122,6 +122,40 @@ func TestCagePartialPCR(t *testing.T) {
 
 	respBody, _ := io.ReadAll(resp.Body)
 	assert.Equal(`{"message":"Hello! I'm writing to you from within an enclave","body":{"test":true}}`, string(respBody))
+}
+
+func TestCageFailsOnPartialIncorrectPCR(t *testing.T) {
+	t.Parallel()
+
+	assert := assert.New(t)
+
+	testClient, err := makeTestClient(t)
+	if err != nil {
+		t.Errorf("Error creating evervault client: %s", err)
+		return
+	}
+
+	expectedPCRs := evervault.PCRs{
+		PCR0: "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+		PCR8: "1650274b27bf44fba6f1779602399763af9e4567927d771b1b37aeb1ac502c84fbd6a7ab7b05600656a257247529fbb8",
+	}
+
+	cageClient, err := testClient.CageClient(testCage, []evervault.PCRs{expectedPCRs})
+	if err != nil {
+		t.Errorf("Error creating cage client: %s", err)
+		return
+	}
+
+	req := buildCageRequest()
+
+	t.Log("making request", testCage)
+
+	resp, err := cageClient.Do(req)
+	if resp != nil {
+		resp.Body.Close()
+	}
+
+	assert.ErrorIs(err, evervault.ErrAttestionFailure)
 }
 
 func TestCageRequiresPCR(t *testing.T) {
@@ -167,6 +201,8 @@ func TestCageFailsOnIncorrectPCRs(t *testing.T) {
 
 	req := buildCageRequest()
 
+	t.Log("making request", testCage)
+
 	resp, err := cageClient.Do(req)
 	if resp != nil {
 		resp.Body.Close()
@@ -201,6 +237,8 @@ func ExampleClient_CageClient() {
 	req.Close = true
 	req.Header.Set("API-KEY", apiKey)
 	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
+
+	log.Printf("making request: %s", testCage)
 
 	resp, err := cageClient.Do(req)
 	if err != nil {
