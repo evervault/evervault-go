@@ -1,6 +1,7 @@
 package evervault_test
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -18,18 +19,35 @@ func TestOutboundClientRoutesToOutboundRelay(t *testing.T) {
 		}
 		writer.WriteHeader(http.StatusOK)
 		writer.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(writer).Encode("OK")
+
+		if err := json.NewEncoder(writer).Encode("OK"); err != nil {
+			t.Errorf("Failed to encode response %s", err)
+		}
 	}))
 
 	defer mockRelayServer.Close()
 
 	server := startMockHTTPServer(nil)
-
 	testClient := mockedClient(t, server)
 
-	relayClient, _ := testClient.OutboundRelayClient()
+	relayClient, err := testClient.OutboundRelayClient()
+	if err != nil {
+		t.Errorf("Fialed to build oubound client, got %s", err)
+		return
+	}
 
-	resp, _ := relayClient.Get(targetURL)
+	ctx := context.Background()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, targetURL, nil)
+	if err != nil {
+		t.Fatal("failed to build get request: %w", err)
+	}
+
+	resp, err := relayClient.Do(req)
+	if err != nil {
+		t.Errorf("Expected status code 200, got %s", err)
+	}
+
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("Expected status code 200, got %d", resp.StatusCode)
 	}

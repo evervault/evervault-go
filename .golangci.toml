@@ -22,10 +22,6 @@ disable = [
   "gochecknoglobals",
 ]
 
-[[issues.exclude-rules]]
-path = "_test\\.go"
-linters = ["gocyclo", "errcheck", "dupl", "gosec", "noctx", "forbidigo"]
-
 [issues]
 fix = true
 
@@ -62,7 +58,6 @@ module-path = "github.com/evervault/evervault-go"
 [linters-settings.depguard.rules.main]
 allow = ["$gostd", "github.com/evervault/evervault-go", "github.com/hf/nitrite","github.com/stretchr/testify/assert"]
 
-
 [linters-settings.nlreturn]
 block-size = 3
 
@@ -70,7 +65,7 @@ block-size = 3
 force-err-cuddling = true
 
 [linters-settings.varnamelen]
-ignore-names = ["err", "iv"]
+ignore-names = ["ok", "err", "iv"]
 
 [linters-settings.wrapcheck]
 ignorePackageGlobs = ["github.com/evervault/*"]

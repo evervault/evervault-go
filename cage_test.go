@@ -2,6 +2,7 @@ package evervault_test
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -31,9 +32,18 @@ func makeTestClient(t *testing.T) (*evervault.Client, error) {
 	return evervault.MakeClient(apiKey, appUUID)
 }
 
-func buildCageRequest() *http.Request {
-	body := []byte(`{"test": true}`)
-	req, _ := http.NewRequest(http.MethodPost, fmt.Sprintf("https://%s/echo", testCage), bytes.NewBuffer(body))
+func buildCageRequest(t *testing.T) *http.Request {
+	t.Helper()
+
+	ctx := context.Background()
+	body := bytes.NewBufferString(`{"test": true}`)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("https://%s/echo", testCage), body)
+	if err != nil {
+		t.Fatal("Couldnt build cage request: %w", err)
+		return nil
+	}
+
 	req.Close = true
 	req.Header.Set("API-KEY", os.Getenv("EV_API_KEY"))
 	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
@@ -65,7 +75,7 @@ func TestCageClient(t *testing.T) {
 		return
 	}
 
-	req := buildCageRequest()
+	req := buildCageRequest(t)
 
 	t.Log("making request", testCage)
 
@@ -80,7 +90,12 @@ func TestCageClient(t *testing.T) {
 	assert.Equal("200 OK", resp.Status)
 	assert.Contains(resp.Header, "X-Evervault-Cage-Ctx")
 
-	respBody, _ := io.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Errorf("failed to read response body: %s", err)
+		return
+	}
+
 	assert.Equal(`{"message":"Hello! I'm writing to you from within an enclave","body":{"test":true}}`, string(respBody))
 }
 
@@ -105,7 +120,7 @@ func TestCagePartialPCR(t *testing.T) {
 		return
 	}
 
-	req := buildCageRequest()
+	req := buildCageRequest(t)
 
 	t.Log("making request", testCage)
 
@@ -120,7 +135,12 @@ func TestCagePartialPCR(t *testing.T) {
 	assert.Equal("200 OK", resp.Status)
 	assert.Contains(resp.Header, "X-Evervault-Cage-Ctx")
 
-	respBody, _ := io.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Errorf("failed to read response body: %s", err)
+		return
+	}
+
 	assert.Equal(`{"message":"Hello! I'm writing to you from within an enclave","body":{"test":true}}`, string(respBody))
 }
 
@@ -146,7 +166,7 @@ func TestCageFailsOnPartialIncorrectPCR(t *testing.T) {
 		return
 	}
 
-	req := buildCageRequest()
+	req := buildCageRequest(t)
 
 	t.Log("making request", testCage)
 
@@ -199,7 +219,7 @@ func TestCageFailsOnIncorrectPCRs(t *testing.T) {
 		return
 	}
 
-	req := buildCageRequest()
+	req := buildCageRequest(t)
 
 	t.Log("making request", testCage)
 
@@ -217,7 +237,7 @@ func ExampleClient_CageClient() {
 
 	evClient, err := evervault.MakeClient(apiKey, appUUID)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Failed to build evervault client: %w", err)
 	}
 
 	expectedPCRs := evervault.PCRs{
@@ -232,8 +252,14 @@ func ExampleClient_CageClient() {
 		log.Fatal(err)
 	}
 
-	body := []byte(`{"test": true}`)
-	req, _ := http.NewRequest(http.MethodPost, fmt.Sprintf("https://%s/", testCage), bytes.NewBuffer(body))
+	ctx := context.Background()
+	body := bytes.NewBufferString(`{"test": true}`)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("https://%s/echo", testCage), body)
+	if err != nil {
+		log.Fatal("Couldnt build cage request: %w", err)
+	}
+
 	req.Close = true
 	req.Header.Set("API-KEY", apiKey)
 	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
@@ -247,7 +273,12 @@ func ExampleClient_CageClient() {
 
 	defer resp.Body.Close()
 
-	respBody, _ := io.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("failed to read response body: %s", err)
+		return
+	}
+
 	fmt.Println(string(respBody))
 	// Output: {"message":"Hello! I'm writing to you from within an enclave","body":{"test":true}}
 }

@@ -44,12 +44,7 @@ func MakeCustomClient(apiKey, appUUID string, config Config) (*Client, error) {
 		return nil, ErrAppCredentialsRequired
 	}
 
-	client := &Client{
-		apiKey:  apiKey,
-		appUUID: appUUID,
-		Config:  config,
-	}
-
+	client := &Client{apiKey: apiKey, appUUID: appUUID, Config: config}
 	if err := client.initClient(); err != nil {
 		return nil, err
 	}

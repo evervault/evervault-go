@@ -2,9 +2,11 @@ package evervault_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 
 	"github.com/evervault/evervault-go"
@@ -35,7 +37,17 @@ func Example() {
 		log.Fatal(err)
 	}
 
-	resp, err := outboundRelayClient.Post("https://example.com/", "application/json", bytes.NewBuffer(payload))
+	ctx := context.Background()
+	body := bytes.NewBuffer(payload)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://example.com/", body)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
+
+	resp, err := outboundRelayClient.Do(req)
 	if err != nil {
 		log.Fatal(err)
 	}

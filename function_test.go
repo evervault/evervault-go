@@ -9,7 +9,11 @@ func TestGetFunctionRunToken(t *testing.T) {
 	defer server.Close()
 	testClient := mockedClient(t, server)
 
-	res, _ := testClient.CreateFunctionRunToken("test_function", "test_payload")
+	res, err := testClient.CreateFunctionRunToken("test_function", "test_payload")
+	if err != nil {
+		t.Errorf("Failed to create run token, got %s", err)
+		return
+	}
 
 	if res.Token != "test_token" {
 		t.Errorf("Expected encrypted string, got %s", res)
@@ -27,18 +31,20 @@ func TestRunFunctionWithRunToken(t *testing.T) {
 		},
 		"runId": "func_run_65bc5168cb8b",
 	}
-	server := startMockHTTPServer(functionResponsePayload)
 
+	server := startMockHTTPServer(functionResponsePayload)
 	defer server.Close()
 
 	testClient := mockedClient(t, server)
-	payload := map[string]any{
-		"name": "john",
-		"age":  30,
-	}
+	payload := map[string]any{"name": "john", "age": 30}
 	runToken := "test_token"
 
-	res, _ := testClient.RunFunction("test_function", payload, runToken)
+	res, err := testClient.RunFunction("test_function", payload, runToken)
+	if err != nil {
+		t.Errorf("Failed to run Function, got %s", err)
+		return
+	}
+
 	if res.AppUUID != functionResponsePayload["appUuid"] {
 		t.Errorf("Expected encrypted string, got %s", res)
 	}
@@ -57,16 +63,17 @@ func TestRunFunctionWithApiKey(t *testing.T) {
 	}
 
 	server := startMockHTTPServer(functionResponsePayload)
-
 	defer server.Close()
 
 	testClient := mockedClient(t, server)
-	payload := map[string]any{
-		"name": "john",
-		"age":  30,
+	payload := map[string]any{"name": "john", "age": 30}
+
+	res, err := testClient.RunFunction("test_function", payload, "")
+	if err != nil {
+		t.Errorf("Failed to run Function, got %s", err)
+		return
 	}
 
-	res, _ := testClient.RunFunction("test_function", payload, "")
 	if res.AppUUID != functionResponsePayload["appUuid"] {
 		t.Errorf("Expected encrypted string, got %s", res)
 	}
