@@ -66,7 +66,7 @@ func filterEmptyPCRs(expectedPCRs []PCRs) []PCRs {
 }
 
 // Will return a http.Client that is connected to a specified cage hostname with a fully attested client.
-// The Client will attest the connection everytime it makes a HTTP request and will reqturn an error on request if
+// The Client will attest the connection every time it makes a HTTP request and will return an error on request if it
 // fails attestation
 //
 //	cageURL = "<CAGE_NAME>.<APP_UUID>.cages.evervault.com"
