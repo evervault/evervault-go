@@ -1,50 +1,33 @@
 package evervault
 
-import (
-	"os"
-)
+import "os"
 
-// Configuration for Evervault Client.
+// Config holds the configuration for the Evervault Client.
 type Config struct {
-	EvervaultCaURL      string
-	EvervaultCagesCaURL string
-	RelayURL            string
-	FunctionRunURL      string
-	EvAPIURL            string
+	EvervaultCaURL      string // URL for the Evervault CA.
+	EvervaultCagesCaURL string // URL for the Evervault Cages CA.
+	RelayURL            string // URL for the Evervault Relay.
+	FunctionRunURL      string // URL for running Evervault functions.
+	EvAPIURL            string // URL for the Evervault API.
 }
 
-// Load Evervault client config from environment variables.
+// MakeConfig loads the Evervault client configuration from environment variables.
+// It falls back to default values if the environment variables are not set.
 func MakeConfig() Config {
-	caURL := os.Getenv("EV_CA_URL")
-	if caURL == "" {
-		caURL = "https://ca.evervault.com"
-	}
-
-	cagesCageURL := os.Getenv("EV_CAGES_CA_URL")
-	if cagesCageURL == "" {
-		cagesCageURL = "https://cages-ca.evervault.com/cages-ca.crt"
-	}
-
-	evAPIURL := os.Getenv("EV_API_URL")
-	if evAPIURL == "" {
-		evAPIURL = "https://api.evervault.com"
-	}
-
-	evFunctionRun := os.Getenv("EV_FUNCTION_RUN_URL")
-	if evFunctionRun == "" {
-		evFunctionRun = "https://run.evervault.com"
-	}
-
-	evRelayURL := os.Getenv("EV_RELAY_URL")
-	if evRelayURL == "" {
-		evRelayURL = "https://relay.evervault.com"
-	}
-
 	return Config{
-		EvervaultCaURL:      caURL,
-		EvervaultCagesCaURL: cagesCageURL,
-		RelayURL:            evRelayURL,
-		FunctionRunURL:      evFunctionRun,
-		EvAPIURL:            evAPIURL,
+		EvervaultCaURL:      getEnvOrDefault("EV_CA_URL", "https://ca.evervault.com"),
+		EvervaultCagesCaURL: getEnvOrDefault("EV_CAGES_CA_URL", "https://cages-ca.evervault.com/cages-ca.crt"),
+		RelayURL:            getEnvOrDefault("EV_RELAY_URL", "https://relay.evervault.com"),
+		FunctionRunURL:      getEnvOrDefault("EV_FUNCTION_RUN_URL", "https://run.evervault.com"),
+		EvAPIURL:            getEnvOrDefault("EV_API_URL", "https://api.evervault.com"),
 	}
+}
+
+// getEnvOrDefault retrieves the value of an environment variable or returns a default value if not set.
+func getEnvOrDefault(key, defaultValue string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+
+	return defaultValue
 }

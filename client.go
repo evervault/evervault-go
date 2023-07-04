@@ -81,7 +81,7 @@ func (c *Client) getPublicKey() (KeysResponse, error) {
 	return res, nil
 }
 
-func (c *Client) makeRequest(url string, method string, body []byte, runToken string) ([]byte, error) {
+func (c *Client) makeRequest(url, method string, body []byte, runToken string) ([]byte, error) {
 	req, err := c.buildRequestContext(clientRequest{
 		url:      url,
 		method:   method,
@@ -139,7 +139,7 @@ func (c *Client) buildRequestContext(clientRequest clientRequest) (*http.Request
 	return req, nil
 }
 
-func setRequestHeaders(req *http.Request, apiKey string, runToken string) {
+func setRequestHeaders(req *http.Request, apiKey, runToken string) {
 	if runToken != "" {
 		req.Header = http.Header{
 			"Authorization": {fmt.Sprintf("Bearer %s", runToken)},

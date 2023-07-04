@@ -34,9 +34,7 @@ func (c *Client) relayClient(caCert []byte) (*http.Client, error) {
 		return nil, err
 	}
 
-	return &http.Client{
-		Transport: transport,
-	}, nil
+	return &http.Client{Transport: transport}, nil
 }
 
 func (c *Client) transport(caCert []byte) (*http.Transport, error) {
@@ -51,12 +49,10 @@ func (c *Client) transport(caCert []byte) (*http.Transport, error) {
 	}
 
 	return &http.Transport{
-		DisableKeepAlives: true,
-		TLSClientConfig:   tlsClientConfig,
-		Proxy:             http.ProxyURL(proxyURL),
-		ProxyConnectHeader: http.Header{
-			"Proxy-Authorization": []string{c.apiKey},
-		},
+		DisableKeepAlives:  true,
+		TLSClientConfig:    tlsClientConfig,
+		Proxy:              http.ProxyURL(proxyURL),
+		ProxyConnectHeader: http.Header{"Proxy-Authorization": []string{c.apiKey}},
 	}, nil
 }
 

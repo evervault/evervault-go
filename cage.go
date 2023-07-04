@@ -15,18 +15,17 @@ import (
 	"github.com/hf/nitrite"
 )
 
+// cageDialTimeout specifies the timeout duration for dialing a cage.
 var cageDialTimeout = 5 * time.Second
 
-func pcrNotEqual(p1 string, p2 string) bool {
+// prcEqual Checks if 2 PCR strings are not equal.
+func pcrNotEqual(p1, p2 string) bool {
 	return p1 != "" && p2 != "" && p1 != p2
 }
 
 // PCRs struct for attesting a cage connection against.
 type PCRs struct {
-	PCR0 string
-	PCR1 string
-	PCR2 string
-	PCR8 string
+	PCR0, PCR1, PCR2, PCR8 string
 }
 
 // Check if two PCRs are equal to each other.
@@ -50,15 +49,17 @@ func (p *PCRs) Equal(pcrs PCRs) bool {
 	return true
 }
 
-func (p *PCRs) isNil() bool {
+// IsEmpty checks if all PCRs in the struct are empty.
+func (p *PCRs) IsEmpty() bool {
 	return p.PCR0 == "" && p.PCR1 == "" && p.PCR2 == "" && p.PCR8 == ""
 }
 
+// filterEmptyPCRs removes empty PCR sets from the given slice.
 func filterEmptyPCRs(expectedPCRs []PCRs) []PCRs {
 	var ret []PCRs
 
 	for _, pcrs := range expectedPCRs {
-		if !pcrs.isNil() {
+		if !pcrs.IsEmpty() {
 			ret = append(ret, pcrs)
 		}
 	}
@@ -113,6 +114,7 @@ func (c *Client) CageClient(cageHostname string, expectedPCRs []PCRs) (*http.Cli
 	return cagesClient, nil
 }
 
+// cagesClient returns an HTTP client for connecting to the cage.
 func (c *Client) cagesClient(cageHostname string, caCert []byte) (*http.Client, error) {
 	transport, err := c.cagesTransport(cageHostname, caCert)
 	if err != nil {
@@ -122,6 +124,7 @@ func (c *Client) cagesClient(cageHostname string, caCert []byte) (*http.Client, 
 	return &http.Client{Transport: transport}, nil
 }
 
+// cagesTransport returns the HTTP transport for connecting to the cage.
 func (c *Client) cagesTransport(cageHostname string, caCert []byte) (*http.Transport, error) {
 	rootCAs, err := x509.SystemCertPool()
 	if err != nil {
@@ -144,7 +147,7 @@ func (c *Client) cagesTransport(cageHostname string, caCert []byte) (*http.Trans
 	}, nil
 }
 
-// Attest that a given cert matches the expected PCRS.
+// attestCert attests the certificate against the expected PCRs.
 func attestCert(certificate *x509.Certificate, expectedPCRs []PCRs) (bool, error) {
 	// Extract the largest DNS name from the certificate
 	largestIndex := 0
@@ -185,32 +188,30 @@ func attestCert(certificate *x509.Certificate, expectedPCRs []PCRs) (bool, error
 	return bytes.Equal(pubKeyBytes, res.Document.UserData), nil
 }
 
+// verifyPCRs verifies the expected PCRs against the attestation document.
 func verifyPCRs(expectedPCRs []PCRs, attestationDocument nitrite.Document) bool {
 	attestationPCRs := mapAttestationPCRs(attestationDocument)
 	for _, expectedPCR := range expectedPCRs {
-		if isEqual := expectedPCR.Equal(attestationPCRs); isEqual {
-			return isEqual
+		if expectedPCR.Equal(attestationPCRs) {
+			return true
 		}
 	}
 
 	return false
 }
 
+// mapAttestationPCRs maps the attestation document's PCRs to a PCRs struct.
 func mapAttestationPCRs(attestationPCRs nitrite.Document) PCRs {
 	// We verify a subset of non zero PCRs
-	PCR0 := attestationPCRs.PCRs[0]
-	PCR1 := attestationPCRs.PCRs[1]
-	PCR2 := attestationPCRs.PCRs[2]
-	PCR8 := attestationPCRs.PCRs[8]
+	PCR0 := hex.EncodeToString(attestationPCRs.PCRs[0])
+	PCR1 := hex.EncodeToString(attestationPCRs.PCRs[1])
+	PCR2 := hex.EncodeToString(attestationPCRs.PCRs[2])
+	PCR8 := hex.EncodeToString(attestationPCRs.PCRs[8])
 
-	return PCRs{
-		PCR0: hex.EncodeToString(PCR0),
-		PCR1: hex.EncodeToString(PCR1),
-		PCR2: hex.EncodeToString(PCR2),
-		PCR8: hex.EncodeToString(PCR8),
-	}
+	return PCRs{PCR0, PCR1, PCR2, PCR8}
 }
 
+// createDial returns a custom dial function that performs attestation on the connection.
 func (c *Client) createDial(tlsConfig *tls.Config) func(ctx context.Context, network, addr string) (net.Conn, error) {
 	return func(ctx context.Context, network, addr string) (net.Conn, error) {
 		// Create a TCP connection

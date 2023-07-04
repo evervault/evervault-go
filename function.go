@@ -15,7 +15,7 @@ type RunTokenResponse struct {
 // Passing the name of your Evervault Function along with the data to be sent to that function will
 // return a RunTokenResponse. This response contains a token that can be returned to your
 // client for Function invocation.
-func (c *Client) CreateFunctionRunToken(functionName string, payload interface{}) (RunTokenResponse, error) {
+func (c *Client) CreateFunctionRunToken(functionName string, payload any) (RunTokenResponse, error) {
 	tokenResponse, err := c.createRunToken(functionName, payload)
 	if err != nil {
 		return RunTokenResponse{}, err
@@ -37,7 +37,7 @@ type FunctionRunResponse struct {
 // Passing the name of your Evervault Function along with the data to be sent to that
 // function will invoke a function in your Evervault App. The response from the function
 // will be returned as a FunctionRunResponse.
-func (c *Client) RunFunction(functionName string, payload interface{}, runToken string) (FunctionRunResponse, error) {
+func (c *Client) RunFunction(functionName string, payload any, runToken string) (FunctionRunResponse, error) {
 	functionResponse, err := c.runFunction(functionName, payload, runToken)
 	if err != nil {
 		return FunctionRunResponse{}, err
@@ -46,7 +46,7 @@ func (c *Client) RunFunction(functionName string, payload interface{}, runToken 
 	return functionResponse, nil
 }
 
-func (c *Client) createRunToken(functionName string, payload interface{}) (RunTokenResponse, error) {
+func (c *Client) createRunToken(functionName string, payload any) (RunTokenResponse, error) {
 	pBytes, err := json.Marshal(payload)
 	if err != nil {
 		return RunTokenResponse{}, fmt.Errorf("Error parsing payload as json %w", err)
@@ -67,7 +67,7 @@ func (c *Client) createRunToken(functionName string, payload interface{}) (RunTo
 	return res, nil
 }
 
-func (c *Client) runFunction(functionName string, payload interface{}, runToken string) (FunctionRunResponse, error) {
+func (c *Client) runFunction(functionName string, payload any, runToken string) (FunctionRunResponse, error) {
 	pBytes, err := json.Marshal(payload)
 	if err != nil {
 		return FunctionRunResponse{}, fmt.Errorf("Error parsing payload as json %w", err)

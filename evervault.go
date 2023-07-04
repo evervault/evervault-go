@@ -29,7 +29,7 @@ const ClientVersion = "0.2.0"
 //
 // If an apiKey is not passed then ErrAppCredentialsRequired is returned. If the client cannot
 // be created then nil will be returned.
-func MakeClient(apiKey string, appUUID string) (*Client, error) {
+func MakeClient(apiKey, appUUID string) (*Client, error) {
 	config := MakeConfig()
 	return MakeCustomClient(apiKey, appUUID, config)
 }
@@ -39,7 +39,7 @@ func MakeClient(apiKey string, appUUID string) (*Client, error) {
 //
 // If an apiKey or appUUID is not passed then ErrAppCredentialsRequired is returned. If the client cannot
 // be created then nil will be returned.
-func MakeCustomClient(apiKey string, appUUID string, config Config) (*Client, error) {
+func MakeCustomClient(apiKey, appUUID string, config Config) (*Client, error) {
 	if apiKey == "" || appUUID == "" {
 		return nil, ErrAppCredentialsRequired
 	}
@@ -50,8 +50,7 @@ func MakeCustomClient(apiKey string, appUUID string, config Config) (*Client, er
 		Config:  config,
 	}
 
-	err := client.initClient()
-	if err != nil {
+	if err := client.initClient(); err != nil {
 		return nil, err
 	}
 
@@ -65,7 +64,7 @@ func MakeCustomClient(apiKey string, appUUID string, config Config) (*Client, er
 //
 // If an error occurs then nil is returned. If the error is due a problem with Key creation then
 // ErrCryptoKeyImportError is returned. For anyother error ErrCryptoUnableToPerformEncryption is returned.
-func (c *Client) Encrypt(value interface{}) (string, error) {
+func (c *Client) Encrypt(value any) (string, error) {
 	ephemeralECDHCurve := ecdh.P256()
 
 	ephemeralECDHKey, err := ephemeralECDHCurve.GenerateKey(rand.Reader)
@@ -96,7 +95,7 @@ func (c *Client) Encrypt(value interface{}) (string, error) {
 	return c.encryptValue(value, aesKey, compressedEphemeralPublicKey)
 }
 
-func (c *Client) encryptValue(value interface{}, aesKey []byte, ephemeralPublicKey []byte) (string, error) {
+func (c *Client) encryptValue(value any, aesKey, ephemeralPublicKey []byte) (string, error) {
 	switch valueType := value.(type) {
 	case string:
 		return crypto.EncryptValue(aesKey, ephemeralPublicKey, c.p256PublicKeyCompressed, valueType, datatypes.String)

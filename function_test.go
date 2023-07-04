@@ -19,9 +19,9 @@ func TestGetFunctionRunToken(t *testing.T) {
 func TestRunFunctionWithRunToken(t *testing.T) {
 	t.Parallel()
 
-	functionResponsePayload := map[string]interface{}{
+	functionResponsePayload := map[string]any{
 		"appUuid": "app_89a080d2228e",
-		"result": map[string]interface{}{
+		"result": map[string]any{
 			"message": "Hello from a Function! It seems you have 4 letters in your name",
 			"name":    "ev:z6CVgEMXL2eqh0io:A4K51eCnhkHkwJ5GiZs9pOGvsWQJv4MBdckQ5rPjm/O7:FgbRc2CYwxuuzFmyh86mTKQ/ah0=:$",
 		},
@@ -47,7 +47,7 @@ func TestRunFunctionWithRunToken(t *testing.T) {
 func TestRunFunctionWithApiKey(t *testing.T) {
 	t.Parallel()
 
-	functionResponsePayload := map[string]interface{}{
+	functionResponsePayload := map[string]any{
 		"appUuid": "app_89a080d2228e",
 		"result": map[string]any{
 			"message": "Hello from a Function! It seems you have 4 letters in your name",
@@ -61,7 +61,7 @@ func TestRunFunctionWithApiKey(t *testing.T) {
 	defer server.Close()
 
 	testClient := mockedClient(t, server)
-	payload := map[string]interface{}{
+	payload := map[string]any{
 		"name": "john",
 		"age":  30,
 	}

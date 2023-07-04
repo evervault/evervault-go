@@ -2,7 +2,7 @@ package evervault
 
 import (
 	"errors"
-	"strconv"
+	"fmt"
 )
 
 // ErrUnVerifiedSignature is returned when a attestation docs signature cant be verified.
@@ -29,13 +29,13 @@ var ErrCryptoUnableToPerformEncryption = errors.New("unable to perform encryptio
 // ErrInvalidDataType is returned when an unsupported data type was specified for encryption.
 var ErrInvalidDataType = errors.New("Error: Invalid datatype")
 
-// Evervault API Error. Returned from evervault servers when an error is encountered.
+// APIError represents an error returned from the Evervault API servers.
 type APIError struct {
 	StatusCode int
 	Message    string
-	Details    map[string]interface{}
+	Details    map[string]any
 }
 
 func (e APIError) Error() string {
-	return "Status code received " + strconv.Itoa(e.StatusCode) + ", " + e.Message
+	return fmt.Sprintf("Status code received %d, %s", e.StatusCode, e.Message)
 }

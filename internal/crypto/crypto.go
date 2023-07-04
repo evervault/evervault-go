@@ -24,7 +24,8 @@ const (
 		"0101034200"
 )
 
-func DeriveKDFAESKey(publicKey []byte, sharedECDHSecret []byte) ([]byte, error) {
+// DeriveKDFAESKey derives an AES key using the given public key and shared ECDH secret.
+func DeriveKDFAESKey(publicKey, sharedECDHSecret []byte) ([]byte, error) {
 	padding := []byte{0x00, 0x00, 0x00, 0x01}
 	hash := sha256.New()
 	hexEncodedEphemeralPublicKey := hex.EncodeToString(publicKey)
@@ -41,6 +42,7 @@ func DeriveKDFAESKey(publicKey []byte, sharedECDHSecret []byte) ([]byte, error) 
 	return hash.Sum(nil), nil
 }
 
+// CompressPublicKey compresses the given public key.
 func CompressPublicKey(keyToCompress []byte) []byte {
 	var prefix byte
 	if keyToCompress[64]%2 == 0 {
@@ -52,12 +54,9 @@ func CompressPublicKey(keyToCompress []byte) []byte {
 	return append([]byte{prefix}, keyToCompress[1:33]...)
 }
 
+// EncryptValue encrypts the given value using AES encryption.
 func EncryptValue(
-	aesKey []byte,
-	ephemeralPublicKey []byte,
-	appPublicKey []byte,
-	value string,
-	datatype datatypes.Datatype,
+	aesKey, ephemeralPublicKey, appPublicKey []byte, value string, datatype datatypes.Datatype,
 ) (string, error) {
 	block, err := aes.NewCipher(aesKey)
 	if err != nil {
@@ -79,8 +78,9 @@ func EncryptValue(
 	return evFormat(ciphertext, nonce, ephemeralPublicKey, datatype), nil
 }
 
-func evFormat(cipherText []byte, iv []byte, publicKey []byte, datatype datatypes.Datatype) string {
-	formattedString := "ev:" + base64EncodeStripped([]byte("NOC")) + ":"
+// evFormat formats the cipher text, IV, public key, and datatype into an "ev" formatted string.
+func evFormat(cipherText, iv, publicKey []byte, datatype datatypes.Datatype) string {
+	formattedString := fmt.Sprintf("ev:%s:", base64EncodeStripped([]byte("NOC")))
 
 	if datatype != datatypes.String {
 		if datatype == datatypes.Number {
@@ -90,15 +90,17 @@ func evFormat(cipherText []byte, iv []byte, publicKey []byte, datatype datatypes
 		}
 	}
 
-	formattedString += base64EncodeStripped(iv) +
-		":" + base64EncodeStripped(publicKey) +
-		":" + base64EncodeStripped(cipherText) + ":$"
+	formattedString += fmt.Sprintf("%s:%s:%s:$",
+		base64EncodeStripped(iv),
+		base64EncodeStripped(publicKey),
+		base64EncodeStripped(cipherText),
+	)
 
 	return formattedString
 }
 
+// base64EncodeStripped encodes the given byte slice to base64 and removes padding characters.
 func base64EncodeStripped(s []byte) string {
 	encoded := base64.StdEncoding.EncodeToString(s)
-
 	return strings.TrimRight(encoded, "=")
 }
