@@ -5,11 +5,10 @@ import "testing"
 func TestGetFunctionRunToken(t *testing.T) {
 	t.Parallel()
 
-	server := startMockHTTPServer(nil)
-	defer server.Close()
-	testClient := mockedClient(t, server)
+	mocks := makeMockedClient(t, nil)
+	defer mocks.Close()
 
-	res, err := testClient.CreateFunctionRunToken("test_function", "test_payload")
+	res, err := mocks.client.CreateFunctionRunToken("test_function", "test_payload")
 	if err != nil {
 		t.Errorf("Failed to create run token, got %s", err)
 		return
@@ -32,14 +31,13 @@ func TestRunFunctionWithRunToken(t *testing.T) {
 		"runId": "func_run_65bc5168cb8b",
 	}
 
-	server := startMockHTTPServer(functionResponsePayload)
-	defer server.Close()
+	mocks := makeMockedClient(t, functionResponsePayload)
+	defer mocks.Close()
 
-	testClient := mockedClient(t, server)
 	payload := map[string]any{"name": "john", "age": 30}
 	runToken := "test_token"
 
-	res, err := testClient.RunFunction("test_function", payload, runToken)
+	res, err := mocks.client.RunFunction("test_function", payload, runToken)
 	if err != nil {
 		t.Errorf("Failed to run Function, got %s", err)
 		return
@@ -62,13 +60,12 @@ func TestRunFunctionWithApiKey(t *testing.T) {
 		"runId": "func_run_65bc5168cb8b",
 	}
 
-	server := startMockHTTPServer(functionResponsePayload)
-	defer server.Close()
+	mocks := makeMockedClient(t, functionResponsePayload)
+	defer mocks.Close()
 
-	testClient := mockedClient(t, server)
 	payload := map[string]any{"name": "john", "age": 30}
 
-	res, err := testClient.RunFunction("test_function", payload, "")
+	res, err := mocks.client.RunFunction("test_function", payload, "")
 	if err != nil {
 		t.Errorf("Failed to run Function, got %s", err)
 		return

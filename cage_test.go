@@ -14,31 +14,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const testCage = "go-sdk-hello-cage.app_869a0605f7c3.cages.evervault.com"
-
-func makeTestClient(t *testing.T) (*evervault.Client, error) {
-	t.Helper()
-
-	apiKey := os.Getenv("EV_API_KEY")
-	if apiKey == "" {
-		t.Skip("Skipping testing when no API key provided")
-	}
-
-	appUUID := os.Getenv("EV_APP_UUID")
-	if appUUID == "" {
-		t.Skip("Skipping testing when no app uuid provided")
-	}
-
-	return evervault.MakeClient(apiKey, appUUID)
-}
-
-func buildCageRequest(t *testing.T) *http.Request {
+func buildCageRequest(t *testing.T, cageURL string) *http.Request {
 	t.Helper()
 
 	ctx := context.Background()
 	body := bytes.NewBufferString(`{"test": true}`)
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("https://%s/echo", testCage), body)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("https://%s/echo", cageURL), body)
 	if err != nil {
 		t.Fatal("Couldnt build cage request: %w", err)
 		return nil
@@ -56,11 +38,8 @@ func TestCageClient(t *testing.T) {
 
 	assert := assert.New(t)
 
-	testClient, err := makeTestClient(t)
-	if err != nil {
-		t.Errorf("Error creating evervault client: %s", err)
-		return
-	}
+	mocks := makeMockedClient(t, nil)
+	defer mocks.Close()
 
 	expectedPCRs := evervault.PCRs{
 		PCR0: "f039c31c536749ac6b2a9344fcb36881dd1cf066ca44afcaf9369a9877e2d3c85fa738c427d502e01e35994da7458e2d",
@@ -69,15 +48,15 @@ func TestCageClient(t *testing.T) {
 		PCR8: "1650274b27bf44fba6f1779602399763af9e4567927d771b1b37aeb1ac502c84fbd6a7ab7b05600656a257247529fbb8",
 	}
 
-	cageClient, err := testClient.CageClient(testCage, []evervault.PCRs{expectedPCRs})
+	cageClient, err := mocks.client.CageClient("localhost", []evervault.PCRs{expectedPCRs})
 	if err != nil {
 		t.Errorf("Error creating cage client: %s", err)
 		return
 	}
 
-	req := buildCageRequest(t)
+	req := buildCageRequest(t, mocks.cageURL)
 
-	t.Log("making request", testCage)
+	t.Log("making request", mocks.cageURL)
 
 	resp, err := cageClient.Do(req)
 	if err != nil {
@@ -104,25 +83,22 @@ func TestCagePartialPCR(t *testing.T) {
 
 	assert := assert.New(t)
 
-	testClient, err := makeTestClient(t)
-	if err != nil {
-		t.Errorf("Error creating evervault client: %s", err)
-		return
-	}
+	mocks := makeMockedClient(t, nil)
+	defer mocks.Close()
 
 	expectedPCRs := evervault.PCRs{
 		PCR8: "1650274b27bf44fba6f1779602399763af9e4567927d771b1b37aeb1ac502c84fbd6a7ab7b05600656a257247529fbb8",
 	}
 
-	cageClient, err := testClient.CageClient(testCage, []evervault.PCRs{expectedPCRs})
+	cageClient, err := mocks.client.CageClient("localhost", []evervault.PCRs{expectedPCRs})
 	if err != nil {
 		t.Errorf("Error creating cage client: %s", err)
 		return
 	}
 
-	req := buildCageRequest(t)
+	req := buildCageRequest(t, mocks.cageURL)
 
-	t.Log("making request", testCage)
+	t.Log("making request", mocks.cageURL)
 
 	resp, err := cageClient.Do(req)
 	if err != nil {
@@ -149,26 +125,23 @@ func TestCageFailsOnPartialIncorrectPCR(t *testing.T) {
 
 	assert := assert.New(t)
 
-	testClient, err := makeTestClient(t)
-	if err != nil {
-		t.Errorf("Error creating evervault client: %s", err)
-		return
-	}
+	mocks := makeMockedClient(t, nil)
+	defer mocks.Close()
 
 	expectedPCRs := evervault.PCRs{
 		PCR0: "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
 		PCR8: "1650274b27bf44fba6f1779602399763af9e4567927d771b1b37aeb1ac502c84fbd6a7ab7b05600656a257247529fbb8",
 	}
 
-	cageClient, err := testClient.CageClient(testCage, []evervault.PCRs{expectedPCRs})
+	cageClient, err := mocks.client.CageClient("localhost", []evervault.PCRs{expectedPCRs})
 	if err != nil {
 		t.Errorf("Error creating cage client: %s", err)
 		return
 	}
 
-	req := buildCageRequest(t)
+	req := buildCageRequest(t, mocks.cageURL)
 
-	t.Log("making request", testCage)
+	t.Log("making request", mocks.cageURL)
 
 	resp, err := cageClient.Do(req)
 	if resp != nil {
@@ -183,15 +156,12 @@ func TestCageRequiresPCR(t *testing.T) {
 
 	assert := assert.New(t)
 
-	testClient, err := makeTestClient(t)
-	if err != nil {
-		t.Errorf("Error creating evervault client: %s", err)
-		return
-	}
+	mocks := makeMockedClient(t, nil)
+	defer mocks.Close()
 
 	emptyPCRs := evervault.PCRs{}
 
-	_, err = testClient.CageClient(testCage, []evervault.PCRs{emptyPCRs})
+	_, err := mocks.client.CageClient("localhost", []evervault.PCRs{emptyPCRs})
 	assert.ErrorIs(err, evervault.ErrNoPCRs)
 }
 
@@ -200,11 +170,8 @@ func TestCageFailsOnIncorrectPCRs(t *testing.T) {
 
 	assert := assert.New(t)
 
-	testClient, err := makeTestClient(t)
-	if err != nil {
-		t.Errorf("Error creating evervault client: %s", err)
-		return
-	}
+	mocks := makeMockedClient(t, nil)
+	defer mocks.Close()
 
 	expectedPCRs := evervault.PCRs{
 		PCR0: "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
@@ -213,15 +180,15 @@ func TestCageFailsOnIncorrectPCRs(t *testing.T) {
 		PCR8: "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
 	}
 
-	cageClient, err := testClient.CageClient(testCage, []evervault.PCRs{expectedPCRs})
+	cageClient, err := mocks.client.CageClient("localhost", []evervault.PCRs{expectedPCRs})
 	if err != nil {
 		t.Errorf("Error creating cage client: %s", err)
 		return
 	}
 
-	req := buildCageRequest(t)
+	req := buildCageRequest(t, mocks.cageURL)
 
-	t.Log("making request", testCage)
+	t.Log("making request", mocks.cageURL)
 
 	resp, err := cageClient.Do(req)
 	if resp != nil {
@@ -234,6 +201,7 @@ func TestCageFailsOnIncorrectPCRs(t *testing.T) {
 func ExampleClient_CageClient() {
 	apiKey := os.Getenv("EV_API_KEY")
 	appUUID := os.Getenv("EV_APP_UUID")
+	cageURL := "go-sdk-hello-cage.app_869a0605f7c3.cages.evervault.com"
 
 	evClient, err := evervault.MakeClient(apiKey, appUUID)
 	if err != nil {
@@ -247,7 +215,7 @@ func ExampleClient_CageClient() {
 		PCR8: "1650274b27bf44fba6f1779602399763af9e4567927d771b1b37aeb1ac502c84fbd6a7ab7b05600656a257247529fbb8",
 	}
 
-	cageClient, err := evClient.CageClient(testCage, []evervault.PCRs{expectedPCRs})
+	cageClient, err := evClient.CageClient(cageURL, []evervault.PCRs{expectedPCRs})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -255,7 +223,7 @@ func ExampleClient_CageClient() {
 	ctx := context.Background()
 	body := bytes.NewBufferString(`{"test": true}`)
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("https://%s/echo", testCage), body)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("https://%s/echo", cageURL), body)
 	if err != nil {
 		log.Fatal("Couldnt build cage request: %w", err)
 	}
@@ -264,7 +232,7 @@ func ExampleClient_CageClient() {
 	req.Header.Set("API-KEY", apiKey)
 	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
 
-	log.Printf("making request: %s", testCage)
+	log.Printf("making request: %s", cageURL)
 
 	resp, err := cageClient.Do(req)
 	if err != nil {
