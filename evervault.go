@@ -1,35 +1,35 @@
+// Evervault Go SDK.
+// Supported functions are:
+//   - Encrypt data server-side including files
+//   - Invoke Functions
+//   - Invoke Cages
+//   - Proxy requests through Outbound Relay
+//
+// For up to date usage docs please refer to [Evervault docs](https://docs.evervault.com/sdks/go)
 package evervault
 
 import (
 	"crypto/ecdh"
 	"crypto/rand"
-	"errors"
 	"fmt"
-	"net/http"
 	"strconv"
 
 	"github.com/evervault/evervault-go/internal/crypto"
 	"github.com/evervault/evervault-go/internal/datatypes"
 )
 
-const clientVersion = "0.1.3"
-
-var ClientVersion = clientVersion
-
-var (
-	ErrClientNotInitilization          = errors.New("evervault client unable to initialize")
-	ErrAppCredentialsRequired          = errors.New("evervault client requires an api key and app uuid")
-	ErrCryptoKeyImportError            = errors.New("unable to import crypto key")
-	ErrCryptoUnableToPerformEncryption = errors.New("unable to perform encryption")
-	ErrInvalidDataType                 = errors.New("Error: Invalid datatype")
-)
+// Current version of the evervault SDK.
+const ClientVersion = "0.2.0"
 
 // MakeClient creates a new Client instance if an API key and Evervault App UUID is provided. The client
 // will connect to Evervaults API to retrieve the public keys from your Evervault App.
 //
+//	import "github.com/evervault/evervault-go"
+//	evClient, err := evervault.MakeClient("<API_KEY>", "<APP_UUID>")
+//
 // If an apiKey is not passed then ErrAppCredentialsRequired is returned. If the client cannot
 // be created then nil will be returned.
-func MakeClient(apiKey string, appUUID string) (*Client, error) {
+func MakeClient(apiKey, appUUID string) (*Client, error) {
 	config := MakeConfig()
 	return MakeCustomClient(apiKey, appUUID, config)
 }
@@ -39,19 +39,13 @@ func MakeClient(apiKey string, appUUID string) (*Client, error) {
 //
 // If an apiKey or appUUID is not passed then ErrAppCredentialsRequired is returned. If the client cannot
 // be created then nil will be returned.
-func MakeCustomClient(apiKey string, appUUID string, config Config) (*Client, error) {
+func MakeCustomClient(apiKey, appUUID string, config Config) (*Client, error) {
 	if apiKey == "" || appUUID == "" {
 		return nil, ErrAppCredentialsRequired
 	}
 
-	client := &Client{
-		apiKey:  apiKey,
-		appUUID: appUUID,
-		Config:  config,
-	}
-
-	err := client.initClient()
-	if err != nil {
+	client := &Client{apiKey: apiKey, appUUID: appUUID, Config: config}
+	if err := client.initClient(); err != nil {
 		return nil, err
 	}
 
@@ -61,9 +55,11 @@ func MakeCustomClient(apiKey string, appUUID string, config Config) (*Client, er
 // Encrypt encrypts the value passed to it using the Evervault Encryption Scheme.
 // The encrypted value is returned as an Evervault formated encrypted string.
 //
+//	encrypted := evClient.Encrypt("Hello, world!");
+//
 // If an error occurs then nil is returned. If the error is due a problem with Key creation then
 // ErrCryptoKeyImportError is returned. For anyother error ErrCryptoUnableToPerformEncryption is returned.
-func (c *Client) Encrypt(value interface{}) (string, error) {
+func (c *Client) Encrypt(value any) (string, error) {
 	ephemeralECDHCurve := ecdh.P256()
 
 	ephemeralECDHKey, err := ephemeralECDHCurve.GenerateKey(rand.Reader)
@@ -94,7 +90,7 @@ func (c *Client) Encrypt(value interface{}) (string, error) {
 	return c.encryptValue(value, aesKey, compressedEphemeralPublicKey)
 }
 
-func (c *Client) encryptValue(value interface{}, aesKey []byte, ephemeralPublicKey []byte) (string, error) {
+func (c *Client) encryptValue(value any, aesKey, ephemeralPublicKey []byte) (string, error) {
 	switch valueType := value.(type) {
 	case string:
 		return crypto.EncryptValue(aesKey, ephemeralPublicKey, c.p256PublicKeyCompressed, valueType, datatypes.String)
@@ -113,38 +109,4 @@ func (c *Client) encryptValue(value interface{}, aesKey []byte, ephemeralPublicK
 	default:
 		return "", ErrInvalidDataType
 	}
-}
-
-// Will return a http.Client that is configured to use the Evervault Relay as a proxy.
-func (c *Client) OutboundRelayClient() (*http.Client, error) {
-	caCertResponse, err := c.makeRequest(c.Config.EvervaultCaURL, "GET", nil, "")
-	if err != nil {
-		return nil, err
-	}
-
-	return c.relayClient(caCertResponse)
-}
-
-// Passing the name of your Evervault Function along with the data to be sent to that function will
-// return a RunTokenResponse. This response contains a token that can be returned to your
-// client for Function invocation.
-func (c *Client) CreateFunctionRunToken(functionName string, payload interface{}) (RunTokenResponse, error) {
-	tokenResponse, err := c.createRunToken(functionName, payload)
-	if err != nil {
-		return RunTokenResponse{}, err
-	}
-
-	return tokenResponse, nil
-}
-
-// Passing the name of your Evervault Function along with the data to be sent to that
-// function will invoke a function in your Evervault App. The response from the function
-// will be returned as a FunctionRunResponse.
-func (c *Client) RunFunction(functionName string, payload interface{}, runToken string) (FunctionRunResponse, error) {
-	functionResponse, err := c.runFunction(functionName, payload, runToken)
-	if err != nil {
-		return FunctionRunResponse{}, err
-	}
-
-	return functionResponse, nil
 }

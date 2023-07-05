@@ -10,12 +10,20 @@ import (
 	"net/http"
 )
 
+// Evervault Client.
+// Client will connect to Evervault API and retrieve public key.
+// The Client can be used to:
+// - perform encryptions
+// - Create Outbound relay client
+// - Create Cage clients
+// - run evervault Functions.
 type Client struct {
+	Config                    Config
 	apiKey                    string
 	appUUID                   string
-	Config                    Config
 	p256PublicKeyUncompressed []byte
 	p256PublicKeyCompressed   []byte
+	expectedPCRs              []PCRs
 }
 
 type KeysResponse struct {
@@ -24,16 +32,6 @@ type KeysResponse struct {
 	EcdhKey                 string `json:"ecdhKey"`
 	EcdhP256Key             string `json:"ecdhP256Key"`
 	EcdhP256KeyUncompressed string `json:"ecdhP256KeyUncompressed"`
-}
-
-type RunTokenResponse struct {
-	Token string `json:"token"`
-}
-
-type FunctionRunResponse struct {
-	AppUUID string         `json:"appUuid"`
-	RunID   string         `json:"runId"`
-	Result  map[string]any `json:"result"`
 }
 
 type clientRequest struct {
@@ -62,6 +60,7 @@ func (c *Client) initClient() error {
 
 	c.p256PublicKeyUncompressed = decodedPublicKeyUncompressed
 	c.p256PublicKeyCompressed = decodedPublicKeyCompressed
+	c.expectedPCRs = []PCRs{}
 
 	return nil
 }
@@ -69,7 +68,7 @@ func (c *Client) initClient() error {
 func (c *Client) getPublicKey() (KeysResponse, error) {
 	publicKeyURL := fmt.Sprintf("%s/cages/key", c.Config.EvAPIURL)
 
-	keys, err := c.makeRequest(publicKeyURL, "GET", nil, "")
+	keys, err := c.makeRequest(publicKeyURL, http.MethodGet, nil, "")
 	if err != nil {
 		return KeysResponse{}, err
 	}
@@ -82,49 +81,7 @@ func (c *Client) getPublicKey() (KeysResponse, error) {
 	return res, nil
 }
 
-func (c *Client) createRunToken(functionName string, payload interface{}) (RunTokenResponse, error) {
-	pBytes, err := json.Marshal(payload)
-	if err != nil {
-		return RunTokenResponse{}, fmt.Errorf("Error parsing payload as json %w", err)
-	}
-
-	runTokenURL := fmt.Sprintf("%s/v2/functions/%s/run-token", c.Config.EvAPIURL, functionName)
-
-	runToken, err := c.makeRequest(runTokenURL, "POST", pBytes, "")
-	if err != nil {
-		return RunTokenResponse{}, err
-	}
-
-	res := RunTokenResponse{}
-	if err := json.Unmarshal(runToken, &res); err != nil {
-		return RunTokenResponse{}, fmt.Errorf("Error parsing JSON response %w", err)
-	}
-
-	return res, nil
-}
-
-func (c *Client) runFunction(functionName string, payload interface{}, runToken string) (FunctionRunResponse, error) {
-	pBytes, err := json.Marshal(payload)
-	if err != nil {
-		return FunctionRunResponse{}, fmt.Errorf("Error parsing payload as json %w", err)
-	}
-
-	runFunctionURL := fmt.Sprintf("%s/%s", c.Config.FunctionRunURL, functionName)
-
-	resp, err := c.makeRequest(runFunctionURL, "POST", pBytes, runToken)
-	if err != nil {
-		return FunctionRunResponse{}, err
-	}
-
-	functionRunResponse := FunctionRunResponse{}
-	if err := json.Unmarshal(resp, &functionRunResponse); err != nil {
-		return FunctionRunResponse{}, fmt.Errorf("Error parsing JSON response %w", err)
-	}
-
-	return functionRunResponse, nil
-}
-
-func (c *Client) makeRequest(url string, method string, body []byte, runToken string) ([]byte, error) {
+func (c *Client) makeRequest(url, method string, body []byte, runToken string) ([]byte, error) {
 	req, err := c.buildRequestContext(clientRequest{
 		url:      url,
 		method:   method,
@@ -159,7 +116,7 @@ func (c *Client) makeRequest(url string, method string, body []byte, runToken st
 
 func (c *Client) buildRequestContext(clientRequest clientRequest) (*http.Request, error) {
 	ctx := context.Background()
-	if clientRequest.method == "GET" {
+	if clientRequest.method == http.MethodGet {
 		req, err := http.NewRequestWithContext(ctx, clientRequest.method, clientRequest.url, nil)
 		if err != nil {
 			return nil, fmt.Errorf("Error creating request %w", err)
@@ -182,7 +139,7 @@ func (c *Client) buildRequestContext(clientRequest clientRequest) (*http.Request
 	return req, nil
 }
 
-func setRequestHeaders(req *http.Request, apiKey string, runToken string) {
+func setRequestHeaders(req *http.Request, apiKey, runToken string) {
 	if runToken != "" {
 		req.Header = http.Header{
 			"Authorization": {fmt.Sprintf("Bearer %s", runToken)},

@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -23,7 +24,12 @@ func TestEncryptString(t *testing.T) {
 
 	testClient := mockedClient(t, server)
 
-	res, _ := testClient.Encrypt("plaintext")
+	res, err := testClient.Encrypt("plaintext")
+	if err != nil {
+		t.Errorf("error encrypting data %s", err)
+		return
+	}
+
 	if !isValidEncryptedString(res, datatypes.String) {
 		t.Errorf("Expected encrypted string, got %s", res)
 	}
@@ -37,7 +43,12 @@ func TestEncryptInt(t *testing.T) {
 
 	testClient := mockedClient(t, server)
 
-	res, _ := testClient.Encrypt(123)
+	res, err := testClient.Encrypt(123)
+	if err != nil {
+		t.Errorf("error encrypting data %s", err)
+		return
+	}
+
 	if !isValidEncryptedString(res, datatypes.Number) {
 		t.Errorf("Expected encrypted string, got %s", res)
 	}
@@ -51,7 +62,12 @@ func TestEncryptBoolean(t *testing.T) {
 
 	testClient := mockedClient(t, server)
 
-	res, _ := testClient.Encrypt(true)
+	res, err := testClient.Encrypt(true)
+	if err != nil {
+		t.Errorf("error encrypting data %s", err)
+		return
+	}
+
 	if !isValidEncryptedString(res, datatypes.Boolean) {
 		t.Errorf("Expected encrypted string, got %s", res)
 	}
@@ -65,7 +81,12 @@ func TestEncryptByte(t *testing.T) {
 
 	testClient := mockedClient(t, server)
 
-	res, _ := testClient.Encrypt([]byte("plaintext"))
+	res, err := testClient.Encrypt([]byte("plaintext"))
+	if err != nil {
+		t.Errorf("error encrypting data %s", err)
+		return
+	}
+
 	if !isValidEncryptedString(res, datatypes.String) {
 		t.Errorf("Expected encrypted string, got %s", res)
 	}
@@ -81,6 +102,7 @@ func TestClientInitClientErrorWithoutApiKey(t *testing.T) {
 
 	if err.Error() != evervault.ErrAppCredentialsRequired.Error() {
 		t.Errorf("Unexpected error, got error message %s", err)
+		return
 	}
 
 	_, err = evervault.MakeCustomClient("test_api_key", "", evervault.MakeConfig())
@@ -89,148 +111,67 @@ func TestClientInitClientErrorWithoutApiKey(t *testing.T) {
 	}
 }
 
-func TestOutboundClientRoutesToOutboundRelay(t *testing.T) {
-	t.Parallel()
+func testFuncHandler(writer http.ResponseWriter, reader *http.Request, mockResponse map[string]any) {
+	apiKey := reader.Header.Get("API-KEY")
+	authHeader := reader.Header.Get("Authorization")
 
-	targetURL := "http://testtarget.com/"
-	mockRelayServer := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, r *http.Request) {
-		if !strings.Contains(r.URL.String(), targetURL) {
-			t.Errorf("Expected request to %s, got %s", targetURL, r.URL.String())
-		}
-		writer.WriteHeader(http.StatusOK)
-		writer.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(writer).Encode("OK")
-	}))
-
-	defer mockRelayServer.Close()
-
-	server := startMockHTTPServer(nil)
-
-	testClient := mockedClient(t, server)
-
-	relayClient, _ := testClient.OutboundRelayClient()
-
-	resp, _ := relayClient.Get(targetURL)
-	if resp.StatusCode != http.StatusOK {
-		t.Errorf("Expected status code 200, got %d", resp.StatusCode)
+	if apiKey == "" && authHeader == "" {
+		writer.WriteHeader(http.StatusUnauthorized)
+		return
 	}
 
-	resp.Body.Close()
-}
+	writer.WriteHeader(http.StatusOK)
+	writer.Header().Set("Content-Type", "application/json")
 
-func TestGetFunctionRunToken(t *testing.T) {
-	t.Parallel()
-
-	server := startMockHTTPServer(nil)
-	defer server.Close()
-	testClient := mockedClient(t, server)
-
-	res, _ := testClient.CreateFunctionRunToken("test_function", "test_payload")
-
-	if res.Token != "test_token" {
-		t.Errorf("Expected encrypted string, got %s", res)
-	}
-}
-
-func TestRunFunctionWithRunToken(t *testing.T) {
-	t.Parallel()
-
-	functionResponsePayload := map[string]interface{}{
-		"appUuid": "app_89a080d2228e",
-		"result": map[string]interface{}{
-			"message": "Hello from a Function! It seems you have 4 letters in your name",
-			"name":    "ev:z6CVgEMXL2eqh0io:A4K51eCnhkHkwJ5GiZs9pOGvsWQJv4MBdckQ5rPjm/O7:FgbRc2CYwxuuzFmyh86mTKQ/ah0=:$",
-		},
-		"runId": "func_run_65bc5168cb8b",
-	}
-	server := startMockHTTPServer(functionResponsePayload)
-
-	defer server.Close()
-
-	testClient := mockedClient(t, server)
-	payload := map[string]any{
-		"name": "john",
-		"age":  30,
-	}
-	runToken := "test_token"
-
-	res, _ := testClient.RunFunction("test_function", payload, runToken)
-	if res.AppUUID != functionResponsePayload["appUuid"] {
-		t.Errorf("Expected encrypted string, got %s", res)
-	}
-}
-
-func TestRunFunctionWithApiKey(t *testing.T) {
-	t.Parallel()
-
-	functionResponsePayload := map[string]interface{}{
-		"appUuid": "app_89a080d2228e",
-		"result": map[string]any{
-			"message": "Hello from a Function! It seems you have 4 letters in your name",
-			"name":    "ev:z6CVgEMXL2eqh0io:A4K51eCnhkHkwJ5GiZs9pOGvsWQJv4MBdckQ5rPjm/O7:FgbRc2CYwxuuzFmyh86mTKQ/ah0=:$",
-		},
-		"runId": "func_run_65bc5168cb8b",
+	appUUIDResponse, appUUIDOk := mockResponse["appUuid"].(string)
+	if !appUUIDOk {
+		appUUIDResponse = ""
 	}
 
-	server := startMockHTTPServer(functionResponsePayload)
-
-	defer server.Close()
-
-	testClient := mockedClient(t, server)
-	payload := map[string]interface{}{
-		"name": "john",
-		"age":  30,
+	runIDResposne, ok := mockResponse["runId"].(string)
+	if !ok {
+		runIDResposne = ""
 	}
 
-	res, _ := testClient.RunFunction("test_function", payload, "")
-	if res.AppUUID != functionResponsePayload["appUuid"] {
-		t.Errorf("Expected encrypted string, got %s", res)
+	resultResponse, ok := mockResponse["result"].(map[string]any)
+	if !ok {
+		resultResponse = map[string]any{}
+	}
+
+	responseBody := evervault.FunctionRunResponse{
+		AppUUID: appUUIDResponse,
+		RunID:   runIDResposne,
+		Result:  resultResponse,
+	}
+	if err := json.NewEncoder(writer).Encode(responseBody); err != nil {
+		log.Printf("error encoding json: %s", err)
 	}
 }
 
 func startMockHTTPServer(mockResponse map[string]any) *httptest.Server {
 	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, reader *http.Request) {
 		if reader.URL.Path == "/test_function" {
-			apiKey := reader.Header.Get("API-KEY")
-			authHeader := reader.Header.Get("Authorization")
-			if apiKey == "" && authHeader == "" {
-				writer.WriteHeader(http.StatusUnauthorized)
-				return
-			}
-			writer.WriteHeader(http.StatusOK)
-			writer.Header().Set("Content-Type", "application/json")
-			appUUIDResponse, appUUIDOk := mockResponse["appUuid"].(string)
-			if !appUUIDOk {
-				appUUIDResponse = ""
-			}
-			runIDResposne, ok := mockResponse["runId"].(string)
-			if !ok {
-				runIDResposne = ""
-			}
-			resultResponse, ok := mockResponse["result"].(map[string]any)
-			if !ok {
-				resultResponse = map[string]any{}
-			}
-			responseBody := evervault.FunctionRunResponse{
-				AppUUID: appUUIDResponse,
-				RunID:   runIDResposne,
-				Result:  resultResponse,
-			}
-			json.NewEncoder(writer).Encode(responseBody)
-
+			testFuncHandler(writer, reader, mockResponse)
 			return
 		}
 
 		if reader.URL.Path == "/v2/functions/test_function/run-token" {
 			writer.WriteHeader(http.StatusOK)
 			writer.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(writer).Encode(evervault.RunTokenResponse{Token: "test_token"})
+			if err := json.NewEncoder(writer).Encode(evervault.RunTokenResponse{Token: "test_token"}); err != nil {
+				log.Printf("error encoding json: %s", err)
+			}
 
 			return
 		}
 
 		ephemeralECDHCurve := ecdh.P256()
-		ephemeralECDHKey, _ := ephemeralECDHCurve.GenerateKey(rand.Reader)
+
+		ephemeralECDHKey, err := ephemeralECDHCurve.GenerateKey(rand.Reader)
+		if err != nil {
+			log.Printf("error generating key: %s", err)
+		}
+
 		ephemeralPublicKey := ephemeralECDHKey.PublicKey().Bytes()
 		compressedEphemeralPublicKey := crypto.CompressPublicKey(ephemeralPublicKey)
 		keys := evervault.KeysResponse{
@@ -242,7 +183,9 @@ func startMockHTTPServer(mockResponse map[string]any) *httptest.Server {
 		}
 		writer.WriteHeader(http.StatusOK)
 		writer.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(writer).Encode(keys)
+		if err := json.NewEncoder(writer).Encode(keys); err != nil {
+			log.Printf("error encoding json: %s", err)
+		}
 	}))
 
 	return server
