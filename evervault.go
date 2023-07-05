@@ -5,7 +5,9 @@
 //   - Invoke Cages
 //   - Proxy requests through Outbound Relay
 //
-// For up to date usage docs please refer to [Evervault docs](https://docs.evervault.com/sdks/go)
+// For up to date usage docs please refer to [Evervault docs]
+//
+// [Evervault docs]: https://docs.evervault.com/sdks/go
 package evervault
 
 import (

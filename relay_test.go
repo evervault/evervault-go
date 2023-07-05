@@ -27,10 +27,10 @@ func TestOutboundClientRoutesToOutboundRelay(t *testing.T) {
 
 	defer mockRelayServer.Close()
 
-	server := startMockHTTPServer(nil)
-	testClient := mockedClient(t, server)
+	mocks := makeMockedClient(t, nil)
+	defer mocks.Close()
 
-	relayClient, err := testClient.OutboundRelayClient()
+	relayClient, err := mocks.client.OutboundRelayClient()
 	if err != nil {
 		t.Errorf("Fialed to build oubound client, got %s", err)
 		return

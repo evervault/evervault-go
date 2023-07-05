@@ -1,30 +1,20 @@
 package evervault_test
 
 import (
-	"crypto/ecdh"
-	"crypto/rand"
-	"encoding/base64"
-	"encoding/json"
-	"log"
-	"net/http"
-	"net/http/httptest"
 	"strings"
 	"testing"
 
 	"github.com/evervault/evervault-go"
-	"github.com/evervault/evervault-go/internal/crypto"
 	"github.com/evervault/evervault-go/internal/datatypes"
 )
 
 func TestEncryptString(t *testing.T) {
 	t.Parallel()
 
-	server := startMockHTTPServer(nil)
-	defer server.Close()
+	mocks := makeMockedClient(t, nil)
+	defer mocks.Close()
 
-	testClient := mockedClient(t, server)
-
-	res, err := testClient.Encrypt("plaintext")
+	res, err := mocks.client.Encrypt("plaintext")
 	if err != nil {
 		t.Errorf("error encrypting data %s", err)
 		return
@@ -38,12 +28,10 @@ func TestEncryptString(t *testing.T) {
 func TestEncryptInt(t *testing.T) {
 	t.Parallel()
 
-	server := startMockHTTPServer(nil)
-	defer server.Close()
+	mocks := makeMockedClient(t, nil)
+	defer mocks.Close()
 
-	testClient := mockedClient(t, server)
-
-	res, err := testClient.Encrypt(123)
+	res, err := mocks.client.Encrypt(123)
 	if err != nil {
 		t.Errorf("error encrypting data %s", err)
 		return
@@ -57,12 +45,10 @@ func TestEncryptInt(t *testing.T) {
 func TestEncryptBoolean(t *testing.T) {
 	t.Parallel()
 
-	server := startMockHTTPServer(nil)
-	defer server.Close()
+	mocks := makeMockedClient(t, nil)
+	defer mocks.Close()
 
-	testClient := mockedClient(t, server)
-
-	res, err := testClient.Encrypt(true)
+	res, err := mocks.client.Encrypt(true)
 	if err != nil {
 		t.Errorf("error encrypting data %s", err)
 		return
@@ -76,12 +62,10 @@ func TestEncryptBoolean(t *testing.T) {
 func TestEncryptByte(t *testing.T) {
 	t.Parallel()
 
-	server := startMockHTTPServer(nil)
-	defer server.Close()
+	mocks := makeMockedClient(t, nil)
+	defer mocks.Close()
 
-	testClient := mockedClient(t, server)
-
-	res, err := testClient.Encrypt([]byte("plaintext"))
+	res, err := mocks.client.Encrypt([]byte("plaintext"))
 	if err != nil {
 		t.Errorf("error encrypting data %s", err)
 		return
@@ -95,9 +79,6 @@ func TestEncryptByte(t *testing.T) {
 func TestClientInitClientErrorWithoutApiKey(t *testing.T) {
 	t.Parallel()
 
-	server := startMockHTTPServer(nil)
-	defer server.Close()
-
 	_, err := evervault.MakeClient("", "")
 
 	if err.Error() != evervault.ErrAppCredentialsRequired.Error() {
@@ -109,104 +90,6 @@ func TestClientInitClientErrorWithoutApiKey(t *testing.T) {
 	if err.Error() != evervault.ErrAppCredentialsRequired.Error() {
 		t.Errorf("Unexpected error, got error message %s", err)
 	}
-}
-
-func testFuncHandler(writer http.ResponseWriter, reader *http.Request, mockResponse map[string]any) {
-	apiKey := reader.Header.Get("API-KEY")
-	authHeader := reader.Header.Get("Authorization")
-
-	if apiKey == "" && authHeader == "" {
-		writer.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-
-	writer.WriteHeader(http.StatusOK)
-	writer.Header().Set("Content-Type", "application/json")
-
-	appUUIDResponse, appUUIDOk := mockResponse["appUuid"].(string)
-	if !appUUIDOk {
-		appUUIDResponse = ""
-	}
-
-	runIDResposne, ok := mockResponse["runId"].(string)
-	if !ok {
-		runIDResposne = ""
-	}
-
-	resultResponse, ok := mockResponse["result"].(map[string]any)
-	if !ok {
-		resultResponse = map[string]any{}
-	}
-
-	responseBody := evervault.FunctionRunResponse{
-		AppUUID: appUUIDResponse,
-		RunID:   runIDResposne,
-		Result:  resultResponse,
-	}
-	if err := json.NewEncoder(writer).Encode(responseBody); err != nil {
-		log.Printf("error encoding json: %s", err)
-	}
-}
-
-func startMockHTTPServer(mockResponse map[string]any) *httptest.Server {
-	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, reader *http.Request) {
-		if reader.URL.Path == "/test_function" {
-			testFuncHandler(writer, reader, mockResponse)
-			return
-		}
-
-		if reader.URL.Path == "/v2/functions/test_function/run-token" {
-			writer.WriteHeader(http.StatusOK)
-			writer.Header().Set("Content-Type", "application/json")
-			if err := json.NewEncoder(writer).Encode(evervault.RunTokenResponse{Token: "test_token"}); err != nil {
-				log.Printf("error encoding json: %s", err)
-			}
-
-			return
-		}
-
-		ephemeralECDHCurve := ecdh.P256()
-
-		ephemeralECDHKey, err := ephemeralECDHCurve.GenerateKey(rand.Reader)
-		if err != nil {
-			log.Printf("error generating key: %s", err)
-		}
-
-		ephemeralPublicKey := ephemeralECDHKey.PublicKey().Bytes()
-		compressedEphemeralPublicKey := crypto.CompressPublicKey(ephemeralPublicKey)
-		keys := evervault.KeysResponse{
-			TeamUUID:                "test_team_uuid",
-			Key:                     "test_key",
-			EcdhKey:                 "ras_key",
-			EcdhP256Key:             base64.StdEncoding.EncodeToString(compressedEphemeralPublicKey),
-			EcdhP256KeyUncompressed: base64.StdEncoding.EncodeToString(ephemeralPublicKey),
-		}
-		writer.WriteHeader(http.StatusOK)
-		writer.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(writer).Encode(keys); err != nil {
-			log.Printf("error encoding json: %s", err)
-		}
-	}))
-
-	return server
-}
-
-func mockedClient(t *testing.T, server *httptest.Server) *evervault.Client {
-	t.Helper()
-
-	config := evervault.Config{
-		EvervaultCaURL: server.URL,
-		EvAPIURL:       server.URL,
-		FunctionRunURL: server.URL,
-		RelayURL:       server.URL,
-	}
-
-	client, err := evervault.MakeCustomClient("test_api_key", "test_app_uuid", config)
-	if err != nil {
-		t.Fail()
-	}
-
-	return client
 }
 
 func isValidEncryptedString(encryptedString string, datatype datatypes.Datatype) bool {

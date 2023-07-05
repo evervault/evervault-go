@@ -17,10 +17,7 @@ presets = [
   "test",
   "unused",
 ]
-disable = [
-  "exhaustruct",
-  "gochecknoglobals",
-]
+disable = ["exhaustruct", "gochecknoglobals"]
 
 [issues]
 fix = true
