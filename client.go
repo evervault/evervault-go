@@ -13,10 +13,10 @@ import (
 // Evervault Client.
 // Client will connect to Evervault API and retrieve public key.
 // The Client can be used to:
-// - perform encryptions
-// - Create Outbound relay client
-// - Create Cage clients
-// - run evervault Functions.
+//   - perform encryptions
+//   - Create Outbound relay client
+//   - Create Cage clients
+//   - run evervault Functions.
 type Client struct {
 	Config                    Config
 	apiKey                    string

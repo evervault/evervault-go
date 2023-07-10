@@ -7,7 +7,7 @@ import (
 )
 
 // Struct containing a token for Function invocation.
-// `RunTokenResponse.Token` can be used to invoke a function run by the user.
+// RunTokenResponse.Token can be used to invoke a function run by the user.
 type RunTokenResponse struct {
 	Token string `json:"token"`
 }
@@ -24,10 +24,10 @@ func (c *Client) CreateFunctionRunToken(functionName string, payload any) (RunTo
 	return tokenResponse, nil
 }
 
-// Response containing the results of a Function Run.
-// `FunctionRunResponse.AppUUID` of app that was run
-// `FunctionRunResponse.RunID` for Function exacution can be used to see logs for function
-// `FunctionRunResponse.Result`  if the returned from the Function itself.
+// Response containing the results of a Function run.
+//   - FunctionRunResponse.AppUUID of app that was run
+//   - FunctionRunResponse.RunID for Function exacution can be used to see logs for function
+//   - FunctionRunResponse.Result  if the returned from the Function itself.
 type FunctionRunResponse struct {
 	AppUUID string         `json:"appUuid"`
 	RunID   string         `json:"runId"`
