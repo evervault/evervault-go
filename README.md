@@ -1,3 +1,5 @@
+[![Evervault](https://evervault.com/evervault.svg)](https://evervault.com/)
+
 # Evervault Go SDK
 
 [![Go Report Card][go-reportcard-badge]][go-reportcard]
