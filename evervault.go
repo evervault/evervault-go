@@ -32,9 +32,9 @@ const ClientVersion = "0.3.0"
 //
 // If an apiKey is not passed then ErrAppCredentialsRequired is returned. If the client cannot
 // be created then nil will be returned.
-func MakeClient(apiKey, appUUID string) (*Client, error) {
+func MakeClient(appUUID, apiKey string) (*Client, error) {
 	config := MakeConfig()
-	return MakeCustomClient(apiKey, appUUID, config)
+	return MakeCustomClient(appUUID, apiKey, config)
 }
 
 // MakeCustomClient creates a new Client instance but can be specified with a Config. The client
@@ -42,12 +42,12 @@ func MakeClient(apiKey, appUUID string) (*Client, error) {
 //
 // If an apiKey or appUUID is not passed then ErrAppCredentialsRequired is returned. If the client cannot
 // be created then nil will be returned.
-func MakeCustomClient(apiKey, appUUID string, config Config) (*Client, error) {
+func MakeCustomClient(appUUID, apiKey string, config Config) (*Client, error) {
 	if apiKey == "" || appUUID == "" {
 		return nil, ErrAppCredentialsRequired
 	}
 
-	client := &Client{apiKey: apiKey, appUUID: appUUID, Config: config}
+	client := &Client{appUUID: appUUID, apiKey: apiKey, Config: config}
 	if err := client.initClient(); err != nil {
 		return nil, err
 	}

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 )
 
 // Evervault Client.
@@ -19,8 +20,8 @@ import (
 //   - run evervault Functions.
 type Client struct {
 	Config                    Config
-	apiKey                    string
 	appUUID                   string
+	apiKey                    string
 	p256PublicKeyUncompressed []byte
 	p256PublicKeyCompressed   []byte
 	expectedPCRs              []PCRs
@@ -38,8 +39,8 @@ type clientRequest struct {
 	url      string
 	method   string
 	body     []byte
-	apiKey   string
 	appUUID  string
+	apiKey   string
 	runToken string
 }
 
@@ -108,8 +109,8 @@ func (c *Client) makeRequest(url, method string, body []byte, runToken string) (
 		url:      url,
 		method:   method,
 		body:     body,
-		apiKey:   c.apiKey,
 		appUUID:  c.appUUID,
+		apiKey:   c.apiKey,
 		runToken: runToken,
 	})
 	if err != nil {
@@ -145,7 +146,7 @@ func (c *Client) buildRequestContext(clientRequest clientRequest) (*http.Request
 			return nil, fmt.Errorf("Error creating request %w", err)
 		}
 
-		setRequestHeaders(req, clientRequest.apiKey, clientRequest.appUUID, clientRequest.runToken)
+		setRequestHeaders(req, clientRequest.appUUID, clientRequest.apiKey, clientRequest.url, clientRequest.runToken)
 
 		return req, nil
 	}
@@ -157,12 +158,12 @@ func (c *Client) buildRequestContext(clientRequest clientRequest) (*http.Request
 		return nil, fmt.Errorf("Error creating request %w", err)
 	}
 
-	setRequestHeaders(req, clientRequest.apiKey, clientRequest.appUUID, clientRequest.runToken)
+	setRequestHeaders(req, clientRequest.appUUID, clientRequest.apiKey, clientRequest.url, clientRequest.runToken)
 
 	return req, nil
 }
 
-func setRequestHeaders(req *http.Request, apiKey, appUUID, runToken string) {
+func setRequestHeaders(req *http.Request, appUUID, apiKey, url, runToken string) {
 	if runToken != "" {
 		req.Header = http.Header{
 			"Authorization": {fmt.Sprintf("Bearer %s", runToken)},
@@ -170,13 +171,21 @@ func setRequestHeaders(req *http.Request, apiKey, appUUID, runToken string) {
 			"user-agent":    {fmt.Sprintf("evervault-go/%s", ClientVersion)},
 		}
 	} else {
-		stringBytes := []byte(fmt.Sprintf("%s:%s", apiKey, appUUID))
-		base64EncodedHeaderValue := base64.StdEncoding.EncodeToString(stringBytes)
-		req.Header = http.Header{
-			"Authorization": {fmt.Sprintf("Bearer %s", base64EncodedHeaderValue)},
-			"API-KEY":      {apiKey},
-			"Content-Type": {"application/json"},
-			"user-agent":   {fmt.Sprintf("evervault-go/%s", ClientVersion)},
+		if strings.Contains(url, "/decrypt") {
+			stringBytes := []byte(fmt.Sprintf("%s:%s", appUUID, apiKey))
+			base64EncodedHeaderValue := base64.StdEncoding.EncodeToString(stringBytes)
+			req.Header = http.Header{
+				"Authorization": {fmt.Sprintf("Bearer %s", base64EncodedHeaderValue)},
+				"Content-Type": {"application/json"},
+				"user-agent":   {fmt.Sprintf("evervault-go/%s", ClientVersion)},
+			}
+		} else {
+			req.Header = http.Header{
+				"API-KEY":      {apiKey},
+				"Content-Type": {"application/json"},
+				"user-agent":   {fmt.Sprintf("evervault-go/%s", ClientVersion)},
+			}
 		}
+		
 	}
 }
