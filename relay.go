@@ -8,15 +8,33 @@ import (
 	"net/url"
 )
 
+// Will return a http.Client that is configured to use the Evervault Relay as a proxy,
+// enabling decryption of data before it reaches the requests destination.
+//
+//	outboundRelayClient, err := evClient.OutboundRelayClient()
+//
+//	payload, err := json.Marshal(fmt.Sprintf(`{"encrypted": "%s"}`, encrypted))
+//	if err != nil {
+//	  log.Fatal(err)
+//	}
+//
+//	resp, err := outboundRelayClient.Post("https://example.com/", "application/json", bytes.NewBuffer(payload))
+func (c *Client) OutboundRelayClient() (*http.Client, error) {
+	caCertResponse, err := c.makeRequest(c.Config.EvervaultCaURL, http.MethodGet, nil, "")
+	if err != nil {
+		return nil, err
+	}
+
+	return c.relayClient(caCertResponse)
+}
+
 func (c *Client) relayClient(caCert []byte) (*http.Client, error) {
 	transport, err := c.transport(caCert)
 	if err != nil {
 		return nil, err
 	}
 
-	return &http.Client{
-		Transport: transport,
-	}, nil
+	return &http.Client{Transport: transport}, nil
 }
 
 func (c *Client) transport(caCert []byte) (*http.Transport, error) {
@@ -31,9 +49,10 @@ func (c *Client) transport(caCert []byte) (*http.Transport, error) {
 	}
 
 	return &http.Transport{
-		DisableKeepAlives: true,
-		TLSClientConfig:   tlsClientConfig,
-		Proxy:             http.ProxyURL(proxyURL),
+		DisableKeepAlives:  true,
+		TLSClientConfig:    tlsClientConfig,
+		Proxy:              http.ProxyURL(proxyURL),
+		ProxyConnectHeader: http.Header{"Proxy-Authorization": []string{c.apiKey}},
 	}, nil
 }
 

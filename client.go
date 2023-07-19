@@ -10,12 +10,22 @@ import (
 	"net/http"
 )
 
+// Evervault Client.
+// Client will connect to Evervault API and retrieve public key.
+// The Client can be used to:
+//   - perform encryptions
+//   - Create Outbound relay client
+//   - Create Cage clients
+//   - run evervault Functions.
 type Client struct {
 	apiKey                    string
 	appUuid                   string
 	Config                    Config
+	apiKey                    string
+	appUUID                   string
 	p256PublicKeyUncompressed []byte
 	p256PublicKeyCompressed   []byte
+	expectedPCRs              []PCRs
 }
 
 type KeysResponse struct {
@@ -24,16 +34,6 @@ type KeysResponse struct {
 	EcdhKey                 string `json:"ecdhKey"`
 	EcdhP256Key             string `json:"ecdhP256Key"`
 	EcdhP256KeyUncompressed string `json:"ecdhP256KeyUncompressed"`
-}
-
-type RunTokenResponse struct {
-	Token string `json:"token"`
-}
-
-type FunctionRunResponse struct {
-	AppUUID string `json:"appUuid"`
-	RunID   string `json:"runId"`
-	Result  []byte `json:"result"`
 }
 
 type clientRequest struct {
@@ -63,6 +63,7 @@ func (c *Client) initClient() error {
 
 	c.p256PublicKeyUncompressed = decodedPublicKeyUncompressed
 	c.p256PublicKeyCompressed = decodedPublicKeyCompressed
+	c.expectedPCRs = []PCRs{}
 
 	return nil
 }
@@ -70,7 +71,7 @@ func (c *Client) initClient() error {
 func (c *Client) getPublicKey() (KeysResponse, error) {
 	publicKeyURL := fmt.Sprintf("%s/cages/key", c.Config.EvAPIURL)
 
-	keys, err := c.makeRequest(publicKeyURL, "GET", nil, "")
+	keys, err := c.makeRequest(publicKeyURL, http.MethodGet, nil, "")
 	if err != nil {
 		return KeysResponse{}, err
 	}
@@ -182,7 +183,7 @@ func (c *Client) makeRequest(url string, method string, body []byte, runToken st
 
 func (c *Client) buildRequestContext(clientRequest clientRequest) (*http.Request, error) {
 	ctx := context.Background()
-	if clientRequest.method == "GET" {
+	if clientRequest.method == http.MethodGet {
 		req, err := http.NewRequestWithContext(ctx, clientRequest.method, clientRequest.url, nil)
 		if err != nil {
 			return nil, fmt.Errorf("Error creating request %w", err)
@@ -199,6 +200,8 @@ func (c *Client) buildRequestContext(clientRequest clientRequest) (*http.Request
 	if err != nil {
 		return nil, fmt.Errorf("Error creating request %w", err)
 	}
+
+	setRequestHeaders(req, clientRequest.apiKey, clientRequest.runToken)
 
 	return req, nil
 }

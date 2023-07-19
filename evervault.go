@@ -1,9 +1,18 @@
+// Evervault Go SDK.
+// Supported functions are:
+//   - Encrypt data server-side including files
+//   - Invoke Functions
+//   - Invoke Cages
+//   - Proxy requests through Outbound Relay
+//
+// For up to date usage docs please refer to [Evervault docs]
+//
+// [Evervault docs]: https://docs.evervault.com/sdks/go
 package evervault
 
 import (
 	"crypto/ecdh"
 	"crypto/rand"
-	"errors"
 	"fmt"
 	"net/http"
 	"reflect"
@@ -13,7 +22,8 @@ import (
 	"github.com/evervault/evervault-go/internal/datatypes"
 )
 
-const clientVersion = "0.0.1"
+// Current version of the evervault SDK.
+const ClientVersion = "0.2.0"
 
 var ClientVersion = clientVersion
 
@@ -29,7 +39,10 @@ var (
 // MakeClient creates a new Client instance if an API key is provided. The client
 // will connect to Evervaults API to retrieve the public keys from your Evervault App.
 //
-// If an apiKey is not passed then ErrAPIKeyRequired is returned. If the client cannot
+//	import "github.com/evervault/evervault-go"
+//	evClient, err := evervault.MakeClient("<API_KEY>", "<APP_UUID>")
+//
+// If an apiKey is not passed then ErrAppCredentialsRequired is returned. If the client cannot
 // be created then nil will be returned.
 func MakeClient(apiKey string, appUuid string) (*Client, error) {
 	config := MakeConfig()
@@ -39,7 +52,7 @@ func MakeClient(apiKey string, appUuid string) (*Client, error) {
 // MakeCustomClient creates a new Client instance but can be specified with a Config. The client
 // will connect to Evervaults API to retrieve the public keys from your Evervault App.
 //
-// If an apiKey is not passed then ErrAPIKeyRequired is returned. If the client cannot
+// If an apiKey or appUUID is not passed then ErrAppCredentialsRequired is returned. If the client cannot
 // be created then nil will be returned.
 func MakeCustomClient(apiKey string, appUuid string, config Config) (*Client, error) {
 	if apiKey == "" {
@@ -67,9 +80,11 @@ func MakeCustomClient(apiKey string, appUuid string, config Config) (*Client, er
 // Encrypt encrypts the value passed to it using the Evervault Encryption Scheme.
 // The encrypted value is returned as an Evervault formated encrypted string.
 //
+//	encrypted := evClient.Encrypt("Hello, world!");
+//
 // If an error occurs then nil is returned. If the error is due a problem with Key creation then
 // ErrCryptoKeyImportError is returned. For anyother error ErrCryptoUnableToPerformEncryption is returned.
-func (c *Client) Encrypt(value interface{}) (string, error) {
+func (c *Client) Encrypt(value any) (string, error) {
 	ephemeralECDHCurve := ecdh.P256()
 
 	ephemeralECDHKey, err := ephemeralECDHCurve.GenerateKey(rand.Reader)
@@ -100,7 +115,7 @@ func (c *Client) Encrypt(value interface{}) (string, error) {
 	return c.encryptValue(value, aesKey, compressedEphemeralPublicKey)
 }
 
-func (c *Client) encryptValue(value interface{}, aesKey []byte, ephemeralPublicKey []byte) (string, error) {
+func (c *Client) encryptValue(value any, aesKey, ephemeralPublicKey []byte) (string, error) {
 	switch valueType := value.(type) {
 	case string:
 		return crypto.EncryptValue(aesKey, ephemeralPublicKey, c.p256PublicKeyCompressed, valueType, datatypes.String)
