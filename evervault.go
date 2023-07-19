@@ -135,7 +135,8 @@ func (c *Client) encryptValue(value any, aesKey, ephemeralPublicKey []byte) (str
 	}
 }
 
-func (c *Client) Decrypt(encryptedData interface{}) (map[string]interface{}, error) {
+func (c *Client) Decrypt(encryptedData any) (map[string]any, error) {
+	// Used to check whether encryptedData is the zero value for its type
 	if reflect.ValueOf(encryptedData).IsZero() {
 		return nil, ErrInvalidDataType
 	}
