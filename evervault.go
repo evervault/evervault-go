@@ -24,9 +24,6 @@ import (
 // Current version of the evervault SDK.
 const ClientVersion = "0.3.0"
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-
 var (
 	ErrClientNotInitilization          = errors.New("evervault client unable to initialize")
 	ErrAPIKeyRequired                  = errors.New("evervault client requires an api key")
@@ -42,6 +39,10 @@ var (
 =======
 // MakeClient creates a new Client instance if an API key and Evervault App ID is provided. The client
 >>>>>>> e3872b0 (changes)
+=======
+
+// MakeClient creates a new Client instance if an API key and Evervault App ID is provided. The client
+>>>>>>> aaef0e8ed87df313d048464ca80873716d60d939
 // will connect to Evervaults API to retrieve the public keys from your Evervault App.
 //
 //	import "github.com/evervault/evervault-go"
