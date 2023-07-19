@@ -24,15 +24,6 @@ import (
 // Current version of the evervault SDK.
 const ClientVersion = "0.3.0"
 
-var (
-	ErrClientNotInitilization          = errors.New("evervault client unable to initialize")
-	ErrAPIKeyRequired                  = errors.New("evervault client requires an api key")
-	ErrCryptoKeyImportError            = errors.New("unable to import crypto key")
-	ErrCryptoUnableToPerformEncryption = errors.New("unable to perform encryption")
-	ErrInvalidDataType                 = errors.New("Error: Invalid datatype")
-	ErrAppUuidRequired                 = errors.New("Evervautl client requires an app ID")
-)
-
 // MakeClient creates a new Client instance if an API key and Evervault App ID is provided. The client
 // will connect to Evervaults API to retrieve the public keys from your Evervault App.
 //
