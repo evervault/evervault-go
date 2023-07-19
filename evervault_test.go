@@ -221,23 +221,6 @@ func startMockHTTPServer(mockResponse map[string]any) *httptest.Server {
 			return
 		}
 
-		if reader.URL.Path == "/decrypt" {
-			writer.WriteHeader(http.StatusOK)
-			writer.Header().Set("Content-Type", "application/json")
-
-			returnData := map[string]interface{}{
-				"number": "4242424242424242",
-				"cvv": 123,
-				"expiry": "01/24",
-			}
-
-			if err := json.NewEncoder(writer).Encode(returnData); err != nil {
-				log.Printf("error encoding json: %s", err)
-			}
-
-			return
-		}
-
 		ephemeralECDHCurve := ecdh.P256()
 
 		ephemeralECDHKey, err := ephemeralECDHCurve.GenerateKey(rand.Reader)
