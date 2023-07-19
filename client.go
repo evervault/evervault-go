@@ -20,7 +20,7 @@ import (
 type Client struct {
 	Config                    Config
 	apiKey                    string
-	appUUID                  string
+	appUUID                   string
 	p256PublicKeyUncompressed []byte
 	p256PublicKeyCompressed   []byte
 	expectedPCRs              []PCRs
@@ -103,7 +103,7 @@ func (c *Client) decrypt(encryptedData any) (map[string]any, error) {
 	return res, nil
 }
 
-func (c *Client) makeRequest(url string, method string, body []byte, runToken string) ([]byte, error) {
+func (c *Client) makeRequest(url, method string, body []byte, runToken string) ([]byte, error) {
 	req, err := c.buildRequestContext(clientRequest{
 		url:      url,
 		method:   method,
@@ -162,7 +162,7 @@ func (c *Client) buildRequestContext(clientRequest clientRequest) (*http.Request
 	return req, nil
 }
 
-func setRequestHeaders(req *http.Request, apiKey string, appUUID string, runToken string) {
+func setRequestHeaders(req *http.Request, apiKey, appUUID, runToken string) {
 	if runToken != "" {
 		req.Header = http.Header{
 			"Authorization": {fmt.Sprintf("Bearer %s", runToken)},
