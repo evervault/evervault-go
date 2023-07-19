@@ -230,7 +230,11 @@ func startMockHTTPServer(mockResponse map[string]any) *httptest.Server {
 				"cvv": 123,
 				"expiry": "01/24",
 			}
-			json.NewEncoder(writer).Encode(returnData)
+
+			if err := json.NewEncoder(writer).Encode(returnData); err != nil {
+				log.Printf("error encoding json: %s", err)
+			}
+
 			return
 		}
 
