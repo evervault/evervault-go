@@ -23,7 +23,7 @@ import (
 )
 
 // Current version of the evervault SDK.
-const ClientVersion = "0.2.0"
+const ClientVersion = "1.0.0"
 
 var ClientVersion = clientVersion
 
