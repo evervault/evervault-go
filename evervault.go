@@ -22,8 +22,9 @@ import (
 )
 
 // Current version of the evervault SDK.
-const ClientVersion = "1.0.0"
+const ClientVersion = "0.3.0"
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 
 var (
@@ -38,6 +39,9 @@ var (
 =======
 >>>>>>> 4ddab28 (rebase issues)
 // MakeClient creates a new Client instance if an API key is provided. The client
+=======
+// MakeClient creates a new Client instance if an API key and Evervault App ID is provided. The client
+>>>>>>> e3872b0 (changes)
 // will connect to Evervaults API to retrieve the public keys from your Evervault App.
 //
 //	import "github.com/evervault/evervault-go"
@@ -45,7 +49,7 @@ var (
 //
 // If an apiKey is not passed then ErrAppCredentialsRequired is returned. If the client cannot
 // be created then nil will be returned.
-func MakeClient(apiKey string, appUUID string) (*Client, error) {
+func MakeClient(apiKey, appUUID) (*Client, error) {
 	config := MakeConfig()
 	return MakeCustomClient(apiKey, appUUID, config)
 }
@@ -55,19 +59,13 @@ func MakeClient(apiKey string, appUUID string) (*Client, error) {
 //
 // If an apiKey or appUUID is not passed then ErrAppCredentialsRequired is returned. If the client cannot
 // be created then nil will be returned.
-func MakeCustomClient(apiKey string, appUUID string, config Config) (*Client, error) {
+func MakeCustomClient(apiKey, appUUID, config Config) (*Client, error) {
 	if apiKey == "" || appUUID == "" {
 		return nil, ErrAppCredentialsRequired
 	}
 
-	client := &Client{
-		apiKey: apiKey,
-		appUUID: appUUID,
-		Config: config,
-	}
-
-	err := client.initClient()
-	if err != nil {
+	client := &Client{apiKey: apiKey, appUUID: appUUID, Config: config}
+	if err := client.initClient(); err != nil {
 		return nil, err
 	}
 
