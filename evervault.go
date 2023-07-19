@@ -33,16 +33,7 @@ var (
 	ErrAppUuidRequired                 = errors.New("Evervautl client requires an app ID")
 )
 
-=======
->>>>>>> 4ddab28 (rebase issues)
-// MakeClient creates a new Client instance if an API key is provided. The client
-=======
 // MakeClient creates a new Client instance if an API key and Evervault App ID is provided. The client
->>>>>>> e3872b0 (changes)
-=======
-
-// MakeClient creates a new Client instance if an API key and Evervault App ID is provided. The client
->>>>>>> aaef0e8ed87df313d048464ca80873716d60d939
 // will connect to Evervaults API to retrieve the public keys from your Evervault App.
 //
 //	import "github.com/evervault/evervault-go"
