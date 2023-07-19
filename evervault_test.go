@@ -32,15 +32,24 @@ func TestDecrypt(t *testing.T) {
 	}
 
 	var stringType = reflect.TypeOf("")
+
 	var floatType = reflect.TypeOf(1.0)
 
-	res, _ := testClient.Decrypt(EncryptedCardData{"ev:abc123", "ev:def456", "ev:ghi789"})
+	res, err := testClient.Decrypt(EncryptedCardData{"ev:abc123", "ev:def456", "ev:ghi789"})
+
+	if err != nil {
+		t.Errorf("error encrypting data %s", err)
+		return
+	}
+
 	if reflect.TypeOf(res["number"]) != stringType {
 		t.Errorf("Expected encrypted string, got %s", res["number"])
 	}
+
 	if reflect.TypeOf(res["cvv"]) != floatType {
 		t.Errorf("Expected encrypted string, got %s", res["cvv"])
 	}
+
 	if reflect.TypeOf(res["expiry"]) != stringType {
 		t.Errorf("Expected encrypted string, got %s", res["expiry"])
 	}
@@ -204,7 +213,11 @@ func startMockHTTPServer(mockResponse map[string]any) *httptest.Server {
 				"cvv": 123,
 				"expiry": "01/24",
 			}
-			json.NewEncoder(writer).Encode(returnData)
+
+			if err := json.NewEncoder(writer).Encode(returnData); err != nil {
+				log.Printf("error encoding json: %s", err)
+			}
+
 			return
 		}
 
