@@ -25,7 +25,6 @@ import (
 // Current version of the evervault SDK.
 const ClientVersion = "1.0.0"
 
-
 var (
 	ErrClientNotInitilization          = errors.New("evervault client unable to initialize")
 	ErrAPIKeyRequired                  = errors.New("evervault client requires an api key")
