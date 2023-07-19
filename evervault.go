@@ -14,7 +14,6 @@ import (
 	"crypto/ecdh"
 	"crypto/rand"
 	"fmt"
-	"net/http"
 	"reflect"
 	"strconv"
 
@@ -57,12 +56,8 @@ func MakeClient(apiKey string, appUuid string) (*Client, error) {
 // If an apiKey or appUUID is not passed then ErrAppCredentialsRequired is returned. If the client cannot
 // be created then nil will be returned.
 func MakeCustomClient(apiKey string, appUuid string, config Config) (*Client, error) {
-	if apiKey == "" {
-		return nil, ErrAPIKeyRequired
-	}
-
-	if appUuid == "" {
-		return nil, ErrAppUuidRequired
+	if apiKey == "" || appUuid == "" {
+		return nil, ErrAppCredentialsRequired
 	}
 
 	client := &Client{

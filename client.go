@@ -20,7 +20,7 @@ import (
 type Client struct {
 	Config                    Config
 	apiKey                    string
-	appUUID                   string
+	appUuid                   string
 	p256PublicKeyUncompressed []byte
 	p256PublicKeyCompressed   []byte
 	expectedPCRs              []PCRs
@@ -157,7 +157,7 @@ func (c *Client) buildRequestContext(clientRequest clientRequest) (*http.Request
 		return nil, fmt.Errorf("Error creating request %w", err)
 	}
 
-	setRequestHeaders(req, clientRequest.apiKey, clientRequest.runToken)
+	setRequestHeaders(req, clientRequest.apiKey, clientRequset.appUuid, clientRequest.runToken)
 
 	return req, nil
 }
