@@ -83,7 +83,7 @@ func (c *Client) getPublicKey() (KeysResponse, error) {
 	return res, nil
 }
 
-func (c *Client) decrypt(encryptedData interface{}) (map[string]interface{}, error) {
+func (c *Client) decrypt(encryptedData any) (map[string]any, error) {
 	pBytes, err := json.Marshal(encryptedData)
 	if err != nil {
 		return nil, fmt.Errorf("Error marshalling payload to json %w", err)
@@ -96,7 +96,7 @@ func (c *Client) decrypt(encryptedData interface{}) (map[string]interface{}, err
 		return nil, err
 	}
 
-	var res map[string]interface{}
+	var res map[string]any
 	if err := json.Unmarshal(decryptedData, &res); err != nil {
 		return nil, fmt.Errorf("Error parsing JSON response %w", err)
 	}
