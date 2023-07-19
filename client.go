@@ -171,7 +171,14 @@ func setRequestHeaders(req *http.Request, apiKey string, appUUID string, runToke
 		}
 	} else {
 		req.Header = http.Header{
-			"Authorization": {fmt.Sprintf("Bearer %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", apiKey, appUUID))))},
+			"Authorization": {fmt.Sprintf(
+				"Bearer %s",
+				base64.StdEncoding.EncodeToString(
+					[]byte(
+						fmt.Sprintf("%s:%s", apiKey, appUUID)
+					)
+				)
+			)},
 			"API-KEY":      {apiKey},
 			"Content-Type": {"application/json"},
 			"user-agent":   {fmt.Sprintf("evervault-go/%s", ClientVersion)},
