@@ -19,17 +19,17 @@ const testCage = "go-sdk-hello-cage.app_869a0605f7c3.cages.evervault.com"
 func makeTestClient(t *testing.T) (*evervault.Client, error) {
 	t.Helper()
 
-	apiKey := os.Getenv("EV_API_KEY")
-	if apiKey == "" {
-		t.Skip("Skipping testing when no API key provided")
-	}
-
 	appUUID := os.Getenv("EV_APP_UUID")
 	if appUUID == "" {
 		t.Skip("Skipping testing when no app uuid provided")
 	}
 
-	return evervault.MakeClient(apiKey, appUUID)
+	apiKey := os.Getenv("EV_API_KEY")
+	if apiKey == "" {
+		t.Skip("Skipping testing when no API key provided")
+	}
+
+	return evervault.MakeClient(appUUID, apiKey)
 }
 
 func buildCageRequest(t *testing.T) *http.Request {
@@ -232,10 +232,10 @@ func TestCageFailsOnIncorrectPCRs(t *testing.T) {
 }
 
 func ExampleClient_CageClient() {
-	apiKey := os.Getenv("EV_API_KEY")
 	appUUID := os.Getenv("EV_APP_UUID")
+	apiKey := os.Getenv("EV_API_KEY")
 
-	evClient, err := evervault.MakeClient(apiKey, appUUID)
+	evClient, err := evervault.MakeClient(appUUID, apiKey)
 	if err != nil {
 		log.Fatal("Failed to build evervault client: %w", err)
 	}

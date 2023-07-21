@@ -14,6 +14,7 @@ import (
 	"crypto/ecdh"
 	"crypto/rand"
 	"fmt"
+	"reflect"
 	"strconv"
 
 	"github.com/evervault/evervault-go/internal/crypto"
@@ -21,9 +22,9 @@ import (
 )
 
 // Current version of the evervault SDK.
-const ClientVersion = "0.2.0"
+const ClientVersion = "0.3.0"
 
-// MakeClient creates a new Client instance if an API key and Evervault App UUID is provided. The client
+// MakeClient creates a new Client instance if an API key and Evervault App ID is provided. The client
 // will connect to Evervaults API to retrieve the public keys from your Evervault App.
 //
 //	import "github.com/evervault/evervault-go"
@@ -31,9 +32,9 @@ const ClientVersion = "0.2.0"
 //
 // If an apiKey is not passed then ErrAppCredentialsRequired is returned. If the client cannot
 // be created then nil will be returned.
-func MakeClient(apiKey, appUUID string) (*Client, error) {
+func MakeClient(appUUID, apiKey string) (*Client, error) {
 	config := MakeConfig()
-	return MakeCustomClient(apiKey, appUUID, config)
+	return MakeCustomClient(appUUID, apiKey, config)
 }
 
 // MakeCustomClient creates a new Client instance but can be specified with a Config. The client
@@ -41,12 +42,12 @@ func MakeClient(apiKey, appUUID string) (*Client, error) {
 //
 // If an apiKey or appUUID is not passed then ErrAppCredentialsRequired is returned. If the client cannot
 // be created then nil will be returned.
-func MakeCustomClient(apiKey, appUUID string, config Config) (*Client, error) {
+func MakeCustomClient(appUUID, apiKey string, config Config) (*Client, error) {
 	if apiKey == "" || appUUID == "" {
 		return nil, ErrAppCredentialsRequired
 	}
 
-	client := &Client{apiKey: apiKey, appUUID: appUUID, Config: config}
+	client := &Client{appUUID: appUUID, apiKey: apiKey, Config: config}
 	if err := client.initClient(); err != nil {
 		return nil, err
 	}
@@ -112,3 +113,21 @@ func (c *Client) encryptValue(value any, aesKey, ephemeralPublicKey []byte) (str
 		return "", ErrInvalidDataType
 	}
 }
+
+// Decrypt decrypts data previously encrypted with Encrypt or through Relay
+//
+//	decrypted := evClient.Decrypt(encrypted);
+//
+func (c *Client) Decrypt(encryptedData any) (map[string]any, error) {
+	// Used to check whether encryptedData is the zero value for its type
+	if reflect.ValueOf(encryptedData).IsZero() {
+		return nil, ErrInvalidDataType
+	}
+
+	decryptResponse, err := c.decrypt(encryptedData)
+	if err != nil {
+		return nil, err
+	}
+
+	return decryptResponse, nil
+} 

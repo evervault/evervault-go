@@ -14,7 +14,7 @@ import (
 
 // Full Example encrypting data and using outbound relay to talk to a third party.
 func Example() {
-	evClient, err := evervault.MakeClient(os.Getenv("EV_API_KEY"), os.Getenv("EV_APP_UUID"))
+	evClient, err := evervault.MakeClient(os.Getenv("EV_APP_UUID"), os.Getenv("EV_API_KEY"))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -60,7 +60,7 @@ func Example() {
 
 // Example encrypting data locally.
 func ExampleClient_Encrypt() {
-	evClient, err := evervault.MakeClient(os.Getenv("EV_API_KEY"), os.Getenv("EV_APP_UUID"))
+	evClient, err := evervault.MakeClient(os.Getenv("EV_APP_UUID"), os.Getenv("EV_API_KEY"))
 	if err != nil {
 		log.Fatal(err)
 	}
