@@ -176,8 +176,8 @@ func setRequestHeaders(req *http.Request, appUUID, apiKey, url, runToken string)
 			base64EncodedHeaderValue := base64.StdEncoding.EncodeToString(stringBytes)
 			req.Header = http.Header{
 				"Authorization": {fmt.Sprintf("Bearer %s", base64EncodedHeaderValue)},
-				"Content-Type": {"application/json"},
-				"user-agent":   {fmt.Sprintf("evervault-go/%s", ClientVersion)},
+				"Content-Type":  {"application/json"},
+				"user-agent":    {fmt.Sprintf("evervault-go/%s", ClientVersion)},
 			}
 		} else {
 			req.Header = http.Header{
@@ -186,6 +186,5 @@ func setRequestHeaders(req *http.Request, appUUID, apiKey, url, runToken string)
 				"user-agent":   {fmt.Sprintf("evervault-go/%s", ClientVersion)},
 			}
 		}
-		
 	}
 }

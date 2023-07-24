@@ -27,16 +27,15 @@ func TestDecrypt(t *testing.T) {
 
 	type EncryptedCardData struct {
 		number string
-		cvv string
+		cvv    string
 		expiry string
 	}
 
-	var stringType = reflect.TypeOf("")
+	stringType := reflect.TypeOf("")
 
-	var floatType = reflect.TypeOf(1.0)
+	floatType := reflect.TypeOf(1.0)
 
 	res, err := testClient.Decrypt(EncryptedCardData{"ev:abc123", "ev:def456", "ev:ghi789"})
-
 	if err != nil {
 		t.Errorf("error encrypting data %s", err)
 		return
@@ -210,7 +209,7 @@ func startMockHTTPServer(mockResponse map[string]any) *httptest.Server {
 
 			returnData := map[string]interface{}{
 				"number": "4242424242424242",
-				"cvv": 123,
+				"cvv":    123,
 				"expiry": "01/24",
 			}
 
