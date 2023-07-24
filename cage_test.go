@@ -3,6 +3,7 @@ package evervault_test
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -14,7 +15,21 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const testCage = "go-sdk-hello-cage.app_869a0605f7c3.cages.evervault.com"
+const testCage = "synthetic-cage.app_f5f084041a7e.cages.evervault.com"
+
+type CageEcho struct {
+	ReqID string `json:"reqId"`
+	Body  Body   `json:"body"`
+}
+
+type Body struct {
+	Test    bool   `json:"test"`
+	Message string `json:"message,omitempty"`
+}
+
+func (b Body) String() string {
+	return fmt.Sprintf(`{"message":"%s","test":%t}`, b.Message, b.Test)
+}
 
 func makeTestClient(t *testing.T) (*evervault.Client, error) {
 	t.Helper()
@@ -63,10 +78,10 @@ func TestCageClient(t *testing.T) {
 	}
 
 	expectedPCRs := evervault.PCRs{
-		PCR0: "3a10079d879b01b011dca8d206c0b5b70c11a153ad9a44a4c178be6ae1a8b088a37e9c233284ecd46eeb36d37a3696ef",
-		PCR1: "bcdf05fefccaa8e55bf2c8d6dee9e79bbff31e34bf28a99aa19e6b29c37ee80b214a414b7607236edf26fcb78654e63f",
-		PCR2: "0aacf0c29d6832c050df0b8435bd939fc2d767dfdc3c139eabd2e281d77effd04ba88f51c1932911731934aeabff868f",
-		PCR8: "1650274b27bf44fba6f1779602399763af9e4567927d771b1b37aeb1ac502c84fbd6a7ab7b05600656a257247529fbb8",
+		PCR0: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+		PCR1: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+		PCR2: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+		PCR8: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
 	}
 
 	cageClient, err := testClient.CageClient(testCage, []evervault.PCRs{expectedPCRs})
@@ -96,7 +111,13 @@ func TestCageClient(t *testing.T) {
 		return
 	}
 
-	assert.Equal(`{"message":"Hello! I'm writing to you from within an enclave","body":{"test":true}}`, string(respBody))
+	var jsonResp CageEcho
+	if err = json.Unmarshal(respBody, &jsonResp); err != nil {
+		t.Errorf("failed to unmarshal response body: %s", err)
+		return
+	}
+
+	assert.Equal(jsonResp.Body.Test, true)
 }
 
 func TestCagePartialPCR(t *testing.T) {
@@ -111,7 +132,7 @@ func TestCagePartialPCR(t *testing.T) {
 	}
 
 	expectedPCRs := evervault.PCRs{
-		PCR8: "1650274b27bf44fba6f1779602399763af9e4567927d771b1b37aeb1ac502c84fbd6a7ab7b05600656a257247529fbb8",
+		PCR8: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
 	}
 
 	cageClient, err := testClient.CageClient(testCage, []evervault.PCRs{expectedPCRs})
@@ -141,7 +162,13 @@ func TestCagePartialPCR(t *testing.T) {
 		return
 	}
 
-	assert.Equal(`{"message":"Hello! I'm writing to you from within an enclave","body":{"test":true}}`, string(respBody))
+	var jsonResp CageEcho
+	if err = json.Unmarshal(respBody, &jsonResp); err != nil {
+		t.Errorf("failed to unmarshal response body: %s", err)
+		return
+	}
+
+	assert.Equal(jsonResp.Body.Test, true)
 }
 
 func TestCageFailsOnPartialIncorrectPCR(t *testing.T) {
@@ -157,7 +184,7 @@ func TestCageFailsOnPartialIncorrectPCR(t *testing.T) {
 
 	expectedPCRs := evervault.PCRs{
 		PCR0: "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
-		PCR8: "1650274b27bf44fba6f1779602399763af9e4567927d771b1b37aeb1ac502c84fbd6a7ab7b05600656a257247529fbb8",
+		PCR8: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
 	}
 
 	cageClient, err := testClient.CageClient(testCage, []evervault.PCRs{expectedPCRs})
@@ -241,10 +268,10 @@ func ExampleClient_CageClient() {
 	}
 
 	expectedPCRs := evervault.PCRs{
-		PCR0: "3a10079d879b01b011dca8d206c0b5b70c11a153ad9a44a4c178be6ae1a8b088a37e9c233284ecd46eeb36d37a3696ef",
-		PCR1: "bcdf05fefccaa8e55bf2c8d6dee9e79bbff31e34bf28a99aa19e6b29c37ee80b214a414b7607236edf26fcb78654e63f",
-		PCR2: "0aacf0c29d6832c050df0b8435bd939fc2d767dfdc3c139eabd2e281d77effd04ba88f51c1932911731934aeabff868f",
-		PCR8: "1650274b27bf44fba6f1779602399763af9e4567927d771b1b37aeb1ac502c84fbd6a7ab7b05600656a257247529fbb8",
+		PCR0: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+		PCR1: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+		PCR2: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+		PCR8: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
 	}
 
 	cageClient, err := evClient.CageClient(testCage, []evervault.PCRs{expectedPCRs})
@@ -253,7 +280,7 @@ func ExampleClient_CageClient() {
 	}
 
 	ctx := context.Background()
-	body := bytes.NewBufferString(`{"test": true}`)
+	body := bytes.NewBufferString(`{"test": true, "message":"Hello! I'm writing to you from within an enclave"}`)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("https://%s/echo", testCage), body)
 	if err != nil {
@@ -279,6 +306,12 @@ func ExampleClient_CageClient() {
 		return
 	}
 
-	fmt.Println(string(respBody))
-	// Output: {"message":"Hello! I'm writing to you from within an enclave","body":{"test":true}}
+	var jsonResp CageEcho
+	if err = json.Unmarshal(respBody, &jsonResp); err != nil {
+		log.Printf("failed to unmarshal response body: %s", err)
+		return
+	}
+
+	fmt.Println(jsonResp.Body)
+	// Output: {"message":"Hello! I'm writing to you from within an enclave","test":true}
 }

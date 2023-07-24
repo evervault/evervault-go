@@ -1,4 +1,0 @@
-*.pem
-enclave.eif
-ev-user.Dockerfile
-nitro-cli-image.Dockerfile
