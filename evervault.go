@@ -133,6 +133,13 @@ func (c *Client) Decrypt(encryptedData any) (map[string]any, error) {
 }
 
 // CreateClientSideDecryptToken creates a time bound token that can be used to perform decrypts. 
+// The payload is optional and is the encrypted data you want to decrypt.
+// If passed, only this payload will be able to be decrypted with the token.
+// Othwerise, any encrypted data can be decrypted with the token.
+// 
+// The expiry is the time the token should expire.
+// The max time is 10 minutes in the future and defaults to 5 minutes if not provided
+// 
 // It returns a TokenResponse or an error
 //
 // token, err := CreateClientSideDecryptToken(payload, timeInFiveMinutes)
