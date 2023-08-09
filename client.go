@@ -9,6 +9,8 @@ import (
 	"io"
 	"net/http"
 	"strings"
+
+	"github.com/evervault/evervault-go/internal/datatypes"
 )
 
 // Evervault Client.
@@ -104,7 +106,7 @@ func (c *Client) decrypt(encryptedData any) (map[string]any, error) {
 	return res, nil
 }
 
-func (c *Client) createToken(action string, payload, expiry any) (map[string]any, error) {
+func (c *Client) createToken(action string, payload, expiry any) (datatypes.TokenResponse, error) {
 	body := map[string]any{
 		"action": action,
 		"payload": payload,
@@ -113,19 +115,19 @@ func (c *Client) createToken(action string, payload, expiry any) (map[string]any
 
 	bodyBytes, err := json.Marshal(body)
 	if err != nil {
-		return nil, fmt.Errorf("Error marshalling payload to json %w", err)
+		return datatypes.TokenResponse{}, fmt.Errorf("Error marshalling payload to json %w", err)
 	}
 
 	tokenURL := fmt.Sprintf("%s/execution-token", c.Config.EvAPIURL)
 
 	tokenResult, err := c.makeRequest(tokenURL, "POST", bodyBytes, "")
 	if err != nil {
-		return nil, err
+		return datatypes.TokenResponse{}, err
 	}
 
-	var res map[string]any
+	res := datatypes.TokenResponse{}
 	if err := json.Unmarshal(tokenResult, &res); err != nil {
-		return nil, fmt.Errorf("Error parsing JSON response %w", err)
+		return datatypes.TokenResponse{}, fmt.Errorf("Error parsing JSON response %w", err)
 	}
 
 	return res, nil

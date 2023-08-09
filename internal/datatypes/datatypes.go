@@ -8,3 +8,8 @@ const (
 	Boolean
 	Bytes
 )
+
+type TokenResponse struct {
+	Token  string `json:"token"`
+	Expiry string `json:"expiry"`
+}

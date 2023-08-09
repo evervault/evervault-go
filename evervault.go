@@ -131,10 +131,10 @@ func (c *Client) Decrypt(encryptedData any) (map[string]any, error) {
 	return decryptResponse, nil
 }
 
-func (c *Client) CreateClientSideDecryptToken(payload, expiry any) (map[string]any, error) {
+func (c *Client) CreateClientSideDecryptToken(payload, expiry any) (datatypes.TokenResponse, error) {
 	token, err := c.createToken("decrypt:api", payload, expiry)
 	if err != nil {
-		return nil, err
+		return datatypes.TokenResponse{}, err
 	}
 
 	return token, nil

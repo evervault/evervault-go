@@ -77,12 +77,12 @@ func TestCreateClientSideDecryptToken(t *testing.T) {
 		return
 	}
 	
-	if res["token"] != "abcdefghij1234567890" {
-		t.Errorf("Expected token, got %s", res["token"])
+	if res.Token != "abcdefghij1234567890" {
+		t.Errorf("Expected token, got %s", res.Token)
 	}
 
-	if res["expiry"] != expiry {
-		t.Errorf("Expected expiry, got %s", res["expiry"])
+	if res.Expiry != expiry {
+		t.Errorf("Expected expiry, got %s", res.Expiry)
 	}
 }
 
