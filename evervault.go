@@ -22,7 +22,7 @@ import (
 )
 
 // Current version of the evervault SDK.
-const ClientVersion = "0.3.0"
+const ClientVersion = "0.4.0"
 
 // MakeClient creates a new Client instance if an API key and Evervault App ID is provided. The client
 // will connect to Evervaults API to retrieve the public keys from your Evervault App.
@@ -129,4 +129,13 @@ func (c *Client) Decrypt(encryptedData any) (map[string]any, error) {
 	}
 
 	return decryptResponse, nil
+}
+
+func (c *Client) CreateClientSideDecryptToken(payload, expiry any) (map[string]any, error) {
+	token, err := c.createToken("decrypt:api", payload, expiry)
+	if err != nil {
+		return nil, err
+	}
+
+	return token, nil
 }

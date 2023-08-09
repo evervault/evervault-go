@@ -104,6 +104,33 @@ func (c *Client) decrypt(encryptedData any) (map[string]any, error) {
 	return res, nil
 }
 
+func (c *Client) createToken(action string, payload, expiry any) (map[string]any, error) {
+	body := map[string]any{
+		"action": action,
+		"payload": payload,
+		"expiry": expiry,
+	}
+
+	bodyBytes, err := json.Marshal(body)
+	if err != nil {
+		return nil, fmt.Errorf("Error marshalling payload to json %w", err)
+	}
+
+	tokenURL := fmt.Sprintf("%s/execution-token", c.Config.EvAPIURL)
+
+	tokenResult, err := c.makeRequest(tokenURL, "POST", bodyBytes, "")
+	if err != nil {
+		return nil, err
+	}
+
+	var res map[string]any
+	if err := json.Unmarshal(tokenResult, &res); err != nil {
+		return nil, fmt.Errorf("Error parsing JSON response %w", err)
+	}
+
+	return res, nil
+}
+
 func (c *Client) makeRequest(url, method string, body []byte, runToken string) ([]byte, error) {
 	req, err := c.buildRequestContext(clientRequest{
 		url:      url,
