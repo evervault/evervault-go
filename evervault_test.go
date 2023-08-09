@@ -218,60 +218,73 @@ func testFuncHandler(writer http.ResponseWriter, reader *http.Request, mockRespo
 	}
 }
 
-func startMockHTTPServer(mockResponse map[string]any) *httptest.Server { //nolint:all
+func handleRoute(writer http.ResponseWriter, reader *http.Request, mockResponse map[string]any) {
+	if reader.URL.Path == "/test_function" {
+		testFuncHandler(writer, reader, mockResponse)
+	}
+
+	if reader.URL.Path == "/v2/functions/test_function/run-token" {
+		writer.WriteHeader(http.StatusOK)
+		writer.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(writer).Encode(evervault.RunTokenResponse{Token: "test_token"}); err != nil {
+			log.Printf("error encoding json: %s", err)
+		}
+	}
+
+	if reader.URL.Path == "/decrypt" {
+		writer.WriteHeader(http.StatusOK)
+		writer.Header().Set("Content-Type", "application/json")
+
+		returnData := map[string]interface{}{
+			"number": "4242424242424242",
+			"cvv":    123,
+			"expiry": "01/24",
+		}
+
+		if err := json.NewEncoder(writer).Encode(returnData); err != nil {
+			log.Printf("error encoding json: %s", err)
+		}
+	}
+
+	if reader.URL.Path == "/execution-token" {
+		writer.WriteHeader(http.StatusOK)
+		writer.Header().Set("Content-Type", "application/json")
+
+		var body map[string]any
+		err := json.NewDecoder(reader.Body).Decode(&body)
+
+		if err != nil {
+			log.Printf("error decoding body: %s", err)
+		}
+
+		returnData := map[string]interface{}{
+			"token": "abcdefghij1234567890",
+			"expiry": body["expiry"],
+		}
+
+		if err := json.NewEncoder(writer).Encode(returnData); err != nil {
+			log.Printf("error encoding json: %s", err)
+		}
+	}
+}
+
+func hasSpecialPath(path string) bool {
+	specialPaths := map[string]bool {
+		"/test_function": true,
+		"/v2/functions/test_function/run-token": true,
+		"/decrypt": true,
+		"/execution-token": true,
+	}
+	if specialPaths[path] {
+		return true
+	}
+	return false
+}
+
+func startMockHTTPServer(mockResponse map[string]any) *httptest.Server {
 	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, reader *http.Request) {
-		if reader.URL.Path == "/test_function" {
-			testFuncHandler(writer, reader, mockResponse)
-			return
-		}
-
-		if reader.URL.Path == "/v2/functions/test_function/run-token" {
-			writer.WriteHeader(http.StatusOK)
-			writer.Header().Set("Content-Type", "application/json")
-			if err := json.NewEncoder(writer).Encode(evervault.RunTokenResponse{Token: "test_token"}); err != nil {
-				log.Printf("error encoding json: %s", err)
-			}
-
-			return
-		}
-
-		if reader.URL.Path == "/decrypt" {
-			writer.WriteHeader(http.StatusOK)
-			writer.Header().Set("Content-Type", "application/json")
-
-			returnData := map[string]interface{}{
-				"number": "4242424242424242",
-				"cvv":    123,
-				"expiry": "01/24",
-			}
-
-			if err := json.NewEncoder(writer).Encode(returnData); err != nil {
-				log.Printf("error encoding json: %s", err)
-			}
-
-			return
-		}
-
-		if reader.URL.Path == "/execution-token" {
-			writer.WriteHeader(http.StatusOK)
-			writer.Header().Set("Content-Type", "application/json")
-
-			var body map[string]any
-			err := json.NewDecoder(reader.Body).Decode(&body)
-
-			if err != nil {
-				log.Printf("error decoding body: %s", err)
-			}
-
-			returnData := map[string]interface{}{
-				"token": "abcdefghij1234567890",
-				"expiry": body["expiry"],
-			}
-
-			if err := json.NewEncoder(writer).Encode(returnData); err != nil {
-				log.Printf("error encoding json: %s", err)
-			}
-
+		if hasSpecialPath(reader.URL.Path) {
+			handleRoute(writer, reader, mockResponse)
 			return
 		}
 
