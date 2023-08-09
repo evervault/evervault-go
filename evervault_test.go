@@ -218,7 +218,7 @@ func testFuncHandler(writer http.ResponseWriter, reader *http.Request, mockRespo
 	}
 }
 
-func startMockHTTPServer(mockResponse map[string]any) *httptest.Server {
+func startMockHTTPServer(mockResponse map[string]any) *httptest.Server { //nolint:all
 	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, reader *http.Request) {
 		if reader.URL.Path == "/test_function" {
 			testFuncHandler(writer, reader, mockResponse)
