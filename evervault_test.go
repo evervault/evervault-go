@@ -69,7 +69,7 @@ func TestCreateClientSideDecryptToken(t *testing.T) {
 		expiry string
 	}
 
-	expiry := time.Now().Format(time.RFC3339)
+	expiry := time.Now()
 	res, err := testClient.CreateClientSideDecryptToken(EncryptedCardData{"4242", "111", "01/23"}, expiry)
 
 	if err != nil {
@@ -81,8 +81,8 @@ func TestCreateClientSideDecryptToken(t *testing.T) {
 		t.Errorf("Expected token, got %s", res.Token)
 	}
 
-	if res.Expiry != expiry {
-		t.Errorf("Expected expiry, got %s", res.Expiry)
+	if res.Expiry != expiry.UnixMilli() {
+		t.Errorf("Expected expiry, got %d", res.Expiry)
 	}
 }
 

@@ -106,7 +106,7 @@ func (c *Client) decrypt(encryptedData any) (map[string]any, error) {
 	return res, nil
 }
 
-func (c *Client) createToken(action string, payload, expiry any) (datatypes.TokenResponse, error) {
+func (c *Client) createToken(action string, payload any, expiry int64) (datatypes.TokenResponse, error) {
 	body := map[string]any{
 		"action": action,
 		"payload": payload,

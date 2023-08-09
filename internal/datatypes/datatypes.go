@@ -11,5 +11,5 @@ const (
 
 type TokenResponse struct {
 	Token  string `json:"token"`
-	Expiry string `json:"expiry"`
+	Expiry int64 `json:"expiry"`
 }

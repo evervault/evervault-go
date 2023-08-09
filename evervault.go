@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"time"
 
 	"github.com/evervault/evervault-go/internal/crypto"
 	"github.com/evervault/evervault-go/internal/datatypes"
@@ -131,8 +132,9 @@ func (c *Client) Decrypt(encryptedData any) (map[string]any, error) {
 	return decryptResponse, nil
 }
 
-func (c *Client) CreateClientSideDecryptToken(payload, expiry any) (datatypes.TokenResponse, error) {
-	token, err := c.createToken("decrypt:api", payload, expiry)
+func (c *Client) CreateClientSideDecryptToken(payload any, expiry time.Time) (datatypes.TokenResponse, error) {
+	epochTime := expiry.UnixMilli()
+	token, err := c.createToken("decrypt:api", payload, epochTime)
 	if err != nil {
 		return datatypes.TokenResponse{}, err
 	}
