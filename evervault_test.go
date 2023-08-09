@@ -226,6 +226,7 @@ func handleRoute(writer http.ResponseWriter, reader *http.Request, mockResponse 
 	if reader.URL.Path == "/v2/functions/test_function/run-token" {
 		writer.WriteHeader(http.StatusOK)
 		writer.Header().Set("Content-Type", "application/json")
+
 		if err := json.NewEncoder(writer).Encode(evervault.RunTokenResponse{Token: "test_token"}); err != nil {
 			log.Printf("error encoding json: %s", err)
 		}
@@ -275,6 +276,7 @@ func hasSpecialPath(path string) bool {
 		"/decrypt": true,
 		"/client-side-tokens": true,
 	}
+
 	return specialPaths[path]
 }
 
@@ -282,6 +284,7 @@ func startMockHTTPServer(mockResponse map[string]any) *httptest.Server {
 	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, reader *http.Request) {
 		if hasSpecialPath(reader.URL.Path) {
 			handleRoute(writer, reader, mockResponse)
+
 			return
 		}
 
