@@ -146,6 +146,7 @@ func (c *Client) Decrypt(encryptedData any) (map[string]any, error) {
 func (c *Client) CreateClientSideDecryptToken(payload any, expiry time.Time) (TokenResponse, error) {
 	epochTime := expiry.UnixMilli()
 	token, err := c.createToken("decrypt:api", payload, epochTime)
+
 	if err != nil {
 		return TokenResponse{}, err
 	}

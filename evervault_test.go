@@ -275,10 +275,7 @@ func hasSpecialPath(path string) bool {
 		"/decrypt": true,
 		"/client-side-tokens": true,
 	}
-	if specialPaths[path] {
-		return true
-	}
-	return false
+	return specialPaths[path]
 }
 
 func startMockHTTPServer(mockResponse map[string]any) *httptest.Server {
