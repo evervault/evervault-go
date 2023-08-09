@@ -144,6 +144,11 @@ func (c *Client) Decrypt(encryptedData any) (map[string]any, error) {
 //
 // token, err := CreateClientSideDecryptToken(payload, timeInFiveMinutes)
 func (c *Client) CreateClientSideDecryptToken(payload any, expiry ...time.Time) (TokenResponse, error) {
+	// Used to check whether payload is the zero value for its type
+	if payload == nil {
+		return TokenResponse{}, ErrInvalidDataType
+	}
+
 	var epochTime int64
 	if expiry != nil {
 		epochTime = expiry[0].UnixMilli()
