@@ -121,7 +121,7 @@ func (c *Client) createToken(action string, payload any, expiry int64) (TokenRes
 		return TokenResponse{}, fmt.Errorf("Error marshalling payload to json %w", err)
 	}
 
-	tokenURL := fmt.Sprintf("%s/execution-token", c.Config.EvAPIURL)
+	tokenURL := fmt.Sprintf("%s/client-side-tokens", c.Config.EvAPIURL)
 
 	tokenResult, err := c.makeRequest(tokenURL, "POST", bodyBytes, "")
 	if err != nil {

@@ -246,7 +246,7 @@ func handleRoute(writer http.ResponseWriter, reader *http.Request, mockResponse 
 		}
 	}
 
-	if reader.URL.Path == "/execution-token" {
+	if reader.URL.Path == "/client-side-tokens" {
 		writer.WriteHeader(http.StatusOK)
 		writer.Header().Set("Content-Type", "application/json")
 
@@ -273,7 +273,7 @@ func hasSpecialPath(path string) bool {
 		"/test_function": true,
 		"/v2/functions/test_function/run-token": true,
 		"/decrypt": true,
-		"/execution-token": true,
+		"/client-side-tokens": true,
 	}
 	if specialPaths[path] {
 		return true
