@@ -152,7 +152,7 @@ func (c *Client) CreateClientSideDecryptToken(payload any, expiry ...time.Time) 
 		epochTime = expiry[0].UnixMilli()
 	}
 
-	token, err := c.createToken("decrypt:api", payload, epochTime)
+	token, err := c.createToken("api:decrypt", payload, epochTime)
 
 	if err != nil {
 		return TokenResponse{}, err
