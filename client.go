@@ -44,6 +44,11 @@ type clientRequest struct {
 	runToken string
 }
 
+type TokenResponse struct {
+	Token  string `json:"token"`
+	Expiry int64 `json:"expiry"`
+}
+
 func (c *Client) initClient() error {
 	keysResponse, err := c.getPublicKey()
 	if err != nil {
@@ -99,6 +104,33 @@ func (c *Client) decrypt(encryptedData any) (map[string]any, error) {
 	var res map[string]any
 	if err := json.Unmarshal(decryptedData, &res); err != nil {
 		return nil, fmt.Errorf("Error parsing JSON response %w", err)
+	}
+
+	return res, nil
+}
+
+func (c *Client) createToken(action string, payload any, expiry int64) (TokenResponse, error) {
+	body := map[string]any{
+		"action": action,
+		"payload": payload,
+		"expiry": expiry,
+	}
+
+	bodyBytes, err := json.Marshal(body)
+	if err != nil {
+		return TokenResponse{}, fmt.Errorf("Error marshalling payload to json %w", err)
+	}
+
+	tokenURL := fmt.Sprintf("%s/client-side-tokens", c.Config.EvAPIURL)
+
+	tokenResult, err := c.makeRequest(tokenURL, "POST", bodyBytes, "")
+	if err != nil {
+		return TokenResponse{}, err
+	}
+
+	res := TokenResponse{}
+	if err := json.Unmarshal(tokenResult, &res); err != nil {
+		return TokenResponse{}, fmt.Errorf("Error parsing JSON response %w", err)
 	}
 
 	return res, nil
