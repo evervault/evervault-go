@@ -42,16 +42,18 @@ func TestDecrypt(t *testing.T) {
 		return
 	}
 
-	if reflect.TypeOf(res["number"]) != stringType {
-		t.Errorf("Expected encrypted string, got %s", res["number"])
+	castResponse := res.(map[string]any)
+
+	if reflect.TypeOf(castResponse["number"]) != stringType {
+		t.Errorf("Expected encrypted string, got %s", castResponse["number"])
 	}
 
-	if reflect.TypeOf(res["cvv"]) != floatType {
-		t.Errorf("Expected encrypted string, got %s", res["cvv"])
+	if reflect.TypeOf(castResponse["cvv"]) != floatType {
+		t.Errorf("Expected encrypted string, got %s", castResponse["cvv"])
 	}
 
-	if reflect.TypeOf(res["expiry"]) != stringType {
-		t.Errorf("Expected encrypted string, got %s", res["expiry"])
+	if reflect.TypeOf(castResponse["expiry"]) != stringType {
+		t.Errorf("Expected encrypted string, got %s", castResponse["expiry"])
 	}
 }
 

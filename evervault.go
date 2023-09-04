@@ -118,7 +118,7 @@ func (c *Client) encryptValue(value any, aesKey, ephemeralPublicKey []byte) (str
 // Decrypt decrypts data previously encrypted with Encrypt or through Relay
 //
 //	decrypted := evClient.Decrypt(encrypted);
-func (c *Client) Decrypt(encryptedData any) (map[string]any, error) {
+func (c *Client) Decrypt(encryptedData any) (any, error) {
 	// Used to check whether encryptedData is the zero value for its type
 	if reflect.ValueOf(encryptedData).IsZero() {
 		return nil, ErrInvalidDataType

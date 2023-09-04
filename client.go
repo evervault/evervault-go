@@ -88,7 +88,7 @@ func (c *Client) getPublicKey() (KeysResponse, error) {
 	return res, nil
 }
 
-func (c *Client) decrypt(encryptedData any) (map[string]any, error) {
+func (c *Client) decrypt(encryptedData any) (any, error) {
 	pBytes, err := json.Marshal(encryptedData)
 	if err != nil {
 		return nil, fmt.Errorf("Error marshalling payload to json %w", err)
@@ -101,7 +101,7 @@ func (c *Client) decrypt(encryptedData any) (map[string]any, error) {
 		return nil, err
 	}
 
-	var res map[string]any
+	var res any
 	if err := json.Unmarshal(decryptedData, &res); err != nil {
 		return nil, fmt.Errorf("Error parsing JSON response %w", err)
 	}
@@ -207,7 +207,7 @@ func setRequestHeaders(req *http.Request, appUUID, apiKey, url, runToken string)
 			stringBytes := []byte(fmt.Sprintf("%s:%s", appUUID, apiKey))
 			base64EncodedHeaderValue := base64.StdEncoding.EncodeToString(stringBytes)
 			req.Header = http.Header{
-				"Authorization": {fmt.Sprintf("Bearer %s", base64EncodedHeaderValue)},
+				"Authorization": {fmt.Sprintf("Basic %s", base64EncodedHeaderValue)},
 				"Content-Type":  {"application/json"},
 				"user-agent":    {fmt.Sprintf("evervault-go/%s", ClientVersion)},
 			}
