@@ -1,6 +1,6 @@
 //+build e2e
 
-package encrypt_e2e_test
+package e2e_test
 
 import (
 	"bytes"
