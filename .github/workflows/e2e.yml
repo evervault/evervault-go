@@ -26,4 +26,5 @@ jobs:
         env:
           EV_APP_UUID: ${{ secrets.EV_APP_UUID }}
           EV_API_KEY: ${{ secrets.EV_API_KEY }}
+          EV_FUNCTION_NAME: ${{ secrets.EV_FUNCTION_NAME }}
         run: go test -v -count=1 -race --tags=e2e ./...
