@@ -1,4 +1,6 @@
-package e2e_test
+//+build e2e
+
+package encrypt_e2e_test
 
 import (
 	"bytes"
@@ -9,7 +11,7 @@ import (
 	"github.com/evervault/evervault-go"
 )
 
-func TestEncryptString(t *testing.T) {
+func TestE2EEncryptString(t *testing.T) {
 	t.Parallel()
 
 	client := GetClient(t)
@@ -40,7 +42,7 @@ func TestEncryptString(t *testing.T) {
 	}
 }
 
-func TestEncryptBoolTrue(t *testing.T) {
+func TestE2EEncryptBoolTrue(t *testing.T) {
 	t.Parallel()
 
 	client := GetClient(t)
@@ -65,7 +67,7 @@ func TestEncryptBoolTrue(t *testing.T) {
 	}
 }
 
-func TestEncryptBoolFalse(t *testing.T) {
+func TestE2EEncryptBoolFalse(t *testing.T) {
 	t.Parallel()
 
 	client := GetClient(t)
@@ -90,7 +92,7 @@ func TestEncryptBoolFalse(t *testing.T) {
 	}
 }
 
-func TestEncryptInt(t *testing.T) {
+func TestE2EEncryptInt(t *testing.T) {
 	t.Parallel()
 
 	client := GetClient(t)
@@ -116,7 +118,7 @@ func TestEncryptInt(t *testing.T) {
 	}
 }
 
-func TestEncryptFloat(t *testing.T) {
+func TestE2EEncryptFloat(t *testing.T) {
 	t.Parallel()
 
 	client := GetClient(t)
@@ -141,7 +143,7 @@ func TestEncryptFloat(t *testing.T) {
 	}
 }
 
-func TestEncryptBytes(t *testing.T) {
+func TestE2EEncryptBytes(t *testing.T) {
 	t.Parallel()
 
 	client := GetClient(t)
@@ -180,7 +182,7 @@ type MyStruct struct {
 	False  bool    `json:"false"`
 }
 
-func TestEncryptStruct(t *testing.T) {
+func TestE2EEncryptStruct(t *testing.T) {
 	t.Parallel()
 
 	client := GetClient(t)
