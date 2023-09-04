@@ -132,15 +132,15 @@ func (c *Client) Decrypt(encryptedData any) (any, error) {
 	return decryptResponse, nil
 }
 
-// CreateClientSideDecryptToken creates a time bound token that can be used to perform decrypts. 
+// CreateClientSideDecryptToken creates a time bound token that can be used to perform decrypts.
 // The payload is required and ensures the token can only be used to decrypt that specific payload.
-// 
+//
 // The expiry is the time the token should expire.
 // The max time is 10 minutes in the future and defaults to 5 minutes if not provided.
-// 
-// It returns a TokenResponse or an error
 //
-// token, err := CreateClientSideDecryptToken(payload, timeInFiveMinutes)
+// # It returns a TokenResponse or an error
+//
+// token, err := CreateClientSideDecryptToken(payload, timeInFiveMinutes).
 func (c *Client) CreateClientSideDecryptToken(payload any, expiry ...time.Time) (TokenResponse, error) {
 	// Used to check whether payload is the zero value for its type
 	if payload == nil {
@@ -153,7 +153,6 @@ func (c *Client) CreateClientSideDecryptToken(payload any, expiry ...time.Time) 
 	}
 
 	token, err := c.createToken("api:decrypt", payload, epochTime)
-
 	if err != nil {
 		return TokenResponse{}, err
 	}

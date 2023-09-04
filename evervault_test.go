@@ -42,7 +42,10 @@ func TestDecrypt(t *testing.T) {
 		return
 	}
 
-	castResponse := res.(map[string]any)
+	castResponse, ok := res.(map[string]any)
+	if !ok {
+		t.Errorf("Expected to cast response to map correctly")
+	}
 
 	if reflect.TypeOf(castResponse["number"]) != stringType {
 		t.Errorf("Expected encrypted string, got %s", castResponse["number"])
@@ -67,18 +70,18 @@ func TestCreateClientSideDecryptToken(t *testing.T) {
 
 	type EncryptedCardData struct {
 		number string
-		cvv string
+		cvv    string
 		expiry string
 	}
 
 	expiry := time.Now()
-	res, err := testClient.CreateClientSideDecryptToken(EncryptedCardData{"4242", "111", "01/23"}, expiry)
 
+	res, err := testClient.CreateClientSideDecryptToken(EncryptedCardData{"4242", "111", "01/23"}, expiry)
 	if err != nil {
 		t.Errorf("error creating decrypt token %s", err)
 		return
 	}
-	
+
 	if res.Token != "abcdefghij1234567890" {
 		t.Errorf("Expected token, got %s", res.Token)
 	}
@@ -254,14 +257,14 @@ func handleRoute(writer http.ResponseWriter, reader *http.Request, mockResponse 
 		writer.Header().Set("Content-Type", "application/json")
 
 		var body map[string]any
-		err := json.NewDecoder(reader.Body).Decode(&body)
 
+		err := json.NewDecoder(reader.Body).Decode(&body)
 		if err != nil {
 			log.Printf("error decoding body: %s", err)
 		}
 
 		returnData := map[string]interface{}{
-			"token": "abcdefghij1234567890",
+			"token":  "abcdefghij1234567890",
 			"expiry": body["expiry"],
 		}
 
@@ -272,11 +275,11 @@ func handleRoute(writer http.ResponseWriter, reader *http.Request, mockResponse 
 }
 
 func hasSpecialPath(path string) bool {
-	specialPaths := map[string]bool {
-		"/test_function": true,
+	specialPaths := map[string]bool{
+		"/test_function":                        true,
 		"/v2/functions/test_function/run-token": true,
-		"/decrypt": true,
-		"/client-side-tokens": true,
+		"/decrypt":                              true,
+		"/client-side-tokens":                   true,
 	}
 
 	return specialPaths[path]

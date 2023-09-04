@@ -1,4 +1,4 @@
-package e2e
+package e2e_test
 
 import (
 	"bytes"
@@ -15,6 +15,7 @@ func TestEncryptString(t *testing.T) {
 	client := GetClient(t)
 
 	payload := "hello world"
+
 	encrypted, err := client.Encrypt(payload)
 	if err != nil {
 		t.Errorf("error encrypting data %s", err)
@@ -27,7 +28,13 @@ func TestEncryptString(t *testing.T) {
 		return
 	}
 
-	if payload != decrypted.(string) {
+	castResponse, ok := decrypted.(string)
+	if !ok {
+		t.Errorf("Failed type assertion")
+		return
+	}
+
+	if payload != castResponse {
 		t.Errorf("decrypted data does not match the original")
 		return
 	}
@@ -39,6 +46,7 @@ func TestEncryptBoolTrue(t *testing.T) {
 	client := GetClient(t)
 
 	payload := true
+
 	encrypted, err := client.Encrypt(payload)
 	if err != nil {
 		t.Errorf("error encrypting data %s", err)
@@ -63,6 +71,7 @@ func TestEncryptBoolFalse(t *testing.T) {
 	client := GetClient(t)
 
 	payload := false
+
 	encrypted, err := client.Encrypt(payload)
 	if err != nil {
 		t.Errorf("error encrypting data %s", err)
@@ -87,6 +96,7 @@ func TestEncryptInt(t *testing.T) {
 	client := GetClient(t)
 
 	payload := 1
+
 	encrypted, err := client.Encrypt(payload)
 	if err != nil {
 		t.Errorf("error encrypting data %s", err)
@@ -112,6 +122,7 @@ func TestEncryptFloat(t *testing.T) {
 	client := GetClient(t)
 
 	payload := 1.5
+
 	encrypted, err := client.Encrypt(payload)
 	if err != nil {
 		t.Errorf("error encrypting data %s", err)
@@ -136,6 +147,7 @@ func TestEncryptBytes(t *testing.T) {
 	client := GetClient(t)
 
 	payload := []byte{97, 98, 99, 100, 101, 102}
+
 	encrypted, err := client.Encrypt(payload)
 	if err != nil {
 		t.Errorf("error encrypting data %s", err)
@@ -148,7 +160,13 @@ func TestEncryptBytes(t *testing.T) {
 		return
 	}
 
-	if string(payload) != decrypted.(string) {
+	castResponse, ok := decrypted.(string)
+	if !ok {
+		t.Errorf("Failed type assertion")
+		return
+	}
+
+	if string(payload) != castResponse {
 		t.Errorf("decrypted data does not match the original")
 		return
 	}
@@ -169,9 +187,12 @@ func TestEncryptStruct(t *testing.T) {
 
 	payload := MyStruct{"hello world", 1, 1.5, true, false}
 
-	// Encrypt doesn't handle structs - convert to bytes first
 	reqBodyBytes := new(bytes.Buffer)
-	json.NewEncoder(reqBodyBytes).Encode(payload)
+
+	err := json.NewEncoder(reqBodyBytes).Encode(payload)
+	if err != nil {
+		t.Fail()
+	}
 
 	encrypted, err := client.Encrypt(reqBodyBytes.Bytes())
 	if err != nil {
@@ -185,9 +206,24 @@ func TestEncryptStruct(t *testing.T) {
 		return
 	}
 
-	// Convert bytes back to struct
 	data := MyStruct{}
-    json.Unmarshal([]byte(decrypted.(string)), &data)
+
+	castResponse, ok := decrypted.(string)
+	if !ok {
+		t.Errorf("Failed type assertion")
+		return
+	}
+
+	err = json.Unmarshal([]byte(castResponse), &data)
+	if err != nil {
+		t.Fail()
+	}
+
+	CheckStructResponses(t, payload, data)
+}
+
+func CheckStructResponses(t *testing.T, payload MyStruct, data MyStruct) {
+	t.Helper()
 
 	if payload.String != data.String {
 		t.Errorf("decrypted struct data `String` does not match the original")
@@ -216,10 +252,13 @@ func TestEncryptStruct(t *testing.T) {
 }
 
 func GetClient(t *testing.T) *evervault.Client {
-	appUuid := os.Getenv("EV_APP_UUID")
+	t.Helper()
+
+	appUUID := os.Getenv("EV_APP_UUID")
+
 	apiKey := os.Getenv("EV_API_KEY")
 
-	client, err := evervault.MakeClient(appUuid, apiKey)
+	client, err := evervault.MakeClient(appUUID, apiKey)
 	if err != nil {
 		t.Fail()
 	}

@@ -46,7 +46,7 @@ type clientRequest struct {
 
 type TokenResponse struct {
 	Token  string `json:"token"`
-	Expiry int64 `json:"expiry"`
+	Expiry int64  `json:"expiry"`
 }
 
 func (c *Client) initClient() error {
@@ -111,9 +111,9 @@ func (c *Client) decrypt(encryptedData any) (any, error) {
 
 func (c *Client) createToken(action string, payload any, expiry int64) (TokenResponse, error) {
 	body := map[string]any{
-		"action": action,
+		"action":  action,
 		"payload": payload,
-		"expiry": expiry,
+		"expiry":  expiry,
 	}
 
 	bodyBytes, err := json.Marshal(body)
