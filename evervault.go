@@ -23,7 +23,7 @@ import (
 )
 
 // Current version of the evervault SDK.
-const ClientVersion = "0.4.0"
+const ClientVersion = "0.4.1"
 
 // MakeClient creates a new Client instance if an API key and Evervault App ID is provided. The client
 // will connect to Evervaults API to retrieve the public keys from your Evervault App.
@@ -118,7 +118,7 @@ func (c *Client) encryptValue(value any, aesKey, ephemeralPublicKey []byte) (str
 // Decrypt decrypts data previously encrypted with Encrypt or through Relay
 //
 //	decrypted := evClient.Decrypt(encrypted);
-func (c *Client) Decrypt(encryptedData any) (map[string]any, error) {
+func (c *Client) Decrypt(encryptedData any) (any, error) {
 	// Used to check whether encryptedData is the zero value for its type
 	if reflect.ValueOf(encryptedData).IsZero() {
 		return nil, ErrInvalidDataType
@@ -132,15 +132,15 @@ func (c *Client) Decrypt(encryptedData any) (map[string]any, error) {
 	return decryptResponse, nil
 }
 
-// CreateClientSideDecryptToken creates a time bound token that can be used to perform decrypts. 
+// CreateClientSideDecryptToken creates a time bound token that can be used to perform decrypts.
 // The payload is required and ensures the token can only be used to decrypt that specific payload.
-// 
+//
 // The expiry is the time the token should expire.
 // The max time is 10 minutes in the future and defaults to 5 minutes if not provided.
-// 
-// It returns a TokenResponse or an error
 //
-// token, err := CreateClientSideDecryptToken(payload, timeInFiveMinutes)
+// # It returns a TokenResponse or an error
+//
+// token, err := CreateClientSideDecryptToken(payload, timeInFiveMinutes).
 func (c *Client) CreateClientSideDecryptToken(payload any, expiry ...time.Time) (TokenResponse, error) {
 	// Used to check whether payload is the zero value for its type
 	if payload == nil {
@@ -153,7 +153,6 @@ func (c *Client) CreateClientSideDecryptToken(payload any, expiry ...time.Time) 
 	}
 
 	token, err := c.createToken("api:decrypt", payload, epochTime)
-
 	if err != nil {
 		return TokenResponse{}, err
 	}
