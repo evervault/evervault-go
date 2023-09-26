@@ -29,11 +29,15 @@ func MakeConfig() Config {
 }
 
 func getPollingInterval() int64 {
+	const defaultPollingInterval = 2700
+
 	intervalStr := getEnvOrDefault("EV_CAGES_POLLING_INTERVAL", "2700")
 	result, err := strconv.ParseInt(intervalStr, 10, 64)
+
 	if err == nil {
-		return 2700
+		return defaultPollingInterval
 	}
+
 	return result
 }
 

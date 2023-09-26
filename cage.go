@@ -115,7 +115,6 @@ func (c *Client) CageClient(cageHostname string, expectedPCRs []PCRs) (*http.Cli
 //	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
 //
 //	resp, err := cageClient.Do(req)
-//
 func (c *Client) CagesClient(cageHostname string, expectedPCRs []PCRs) (*http.Client, error) {
 	c.expectedPCRs = filterEmptyPCRs(expectedPCRs)
 	if len(c.expectedPCRs) == 0 {
@@ -123,12 +122,12 @@ func (c *Client) CagesClient(cageHostname string, expectedPCRs []PCRs) (*http.Cl
 	}
 
 	interval := time.Duration(c.Config.CagesPollingInterval)
-	cache := NewAttestationCache(cageHostname, interval)
-
-	cagesClient, err := c.cagesClient(cageHostname, cache)
+	cache, err := newAttestationCache(cageHostname, interval)
 	if err != nil {
 		return nil, err
 	}
+
+	cagesClient := c.cagesClient(cageHostname, cache)
 
 	return cagesClient, nil
 }
@@ -144,7 +143,7 @@ func (c *Client) cagesClientBeta(cageHostname string, caCert []byte) (*http.Clie
 }
 
 // cagesClient returns an HTTP client for connecting to the cage.
-func (c *Client) cagesClient(cageHostname string, cache *AttestationCache) (*http.Client, error) {
+func (c *Client) cagesClient(cageHostname string, cache *attestationCache) *http.Client {
 	tlsConfig := &tls.Config{
 		InsecureSkipVerify: false,
 		MinVersion:         tls.VersionTLS12,
@@ -156,7 +155,7 @@ func (c *Client) cagesClient(cageHostname string, cache *AttestationCache) (*htt
 		DialTLSContext:    c.createDial(tlsConfig, cache),
 	}
 
-	return &http.Client{Transport: transport}, nil
+	return &http.Client{Transport: transport}
 }
 
 // Deprecated: cagesTransport returns the HTTP transport for connecting to the cage.
@@ -247,7 +246,8 @@ func mapAttestationPCRs(attestationPCRs nitrite.Document) PCRs {
 }
 
 // Deprecated: createDialBeta returns a custom dial function that performs attestation on the connection.
-func (c *Client) createDialBeta(tlsConfig *tls.Config) func(ctx context.Context, network, addr string) (net.Conn, error) {
+func (c *Client) createDialBeta(tlsConfig *tls.Config) func(ctx context.Context,
+	network, addr string) (net.Conn, error) {
 	return func(ctx context.Context, network, addr string) (net.Conn, error) {
 		// Create a TCP connection
 		conn, err := net.DialTimeout(network, addr, cageDialTimeout)
@@ -279,7 +279,8 @@ func (c *Client) createDialBeta(tlsConfig *tls.Config) func(ctx context.Context,
 }
 
 // createDial returns a custom dial function that performs attestation on the connection.
-func (c *Client) createDial(tlsConfig *tls.Config, cache *AttestationCache) func(ctx context.Context, network, addr string) (net.Conn, error) {
+func (c *Client) createDial(tlsConfig *tls.Config, cache *attestationCache) func(ctx context.Context,
+	network, addr string) (net.Conn, error) {
 	return func(ctx context.Context, network, addr string) (net.Conn, error) {
 		// Create a TCP connection
 		conn, err := net.DialTimeout(network, addr, cageDialTimeout)
@@ -298,14 +299,11 @@ func (c *Client) createDial(tlsConfig *tls.Config, cache *AttestationCache) func
 		cert := tlsConn.ConnectionState().PeerCertificates[0]
 		doc := cache.Get()
 
-		if err != nil {
-			return nil, fmt.Errorf("Error attestation doc %w", err)
-		}
-
 		attestationDoc, err := c.attestCert(cert, c.expectedPCRs, doc)
 		if err != nil {
 			// Get new attestation doc in case of Cage deployment
-			cache.refreshDoc()
+			cache.loadDoc()
+
 			_, err := c.attestCert(cert, c.expectedPCRs, doc)
 			if err != nil {
 				return nil, fmt.Errorf("Error attesting Connection %w", err)
