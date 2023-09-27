@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-type attestationCache struct {
+type AttestationCache struct {
 	cageURL         *url.URL
 	pollingInterval time.Duration
 	doc             []byte
@@ -20,13 +20,15 @@ type attestationCache struct {
 	client          http.Client
 }
 
-func newAttestationCache(cageDomain string, pollingInterval time.Duration) (*attestationCache, error) {
+const pollTimeout = 5 * time.Second
+
+func NewAttestationCache(cageDomain string, pollingInterval time.Duration) (*AttestationCache, error) {
 	cageURL, err := url.Parse(fmt.Sprintf("https://%s/.well-known/attestation", cageDomain))
 	if err != nil {
 		return nil, fmt.Errorf("cage url could not be parsed %w", err)
 	}
 
-	cache := &attestationCache{
+	cache := &AttestationCache{
 		cageURL:         cageURL,
 		pollingInterval: pollingInterval,
 		doc:             make([]byte, 0),
@@ -34,20 +36,23 @@ func newAttestationCache(cageDomain string, pollingInterval time.Duration) (*att
 		client:          http.Client{},
 	}
 
-	cache.loadDoc()
+	ctx, cancel := context.WithTimeout(context.Background(), pollTimeout)
+	defer cancel()
+
+	cache.loadDoc(ctx)
 
 	go cache.pollAPI(pollingInterval)
 
 	return cache, nil
 }
 
-func (c *attestationCache) Set(doc []byte) {
+func (c *AttestationCache) Set(doc []byte) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	c.doc = doc
 }
 
-func (c *attestationCache) Get() []byte {
+func (c *AttestationCache) Get() []byte {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
 
@@ -56,10 +61,10 @@ func (c *attestationCache) Get() []byte {
 
 //nolint:tagliatelle
 type CageDocResponse struct {
-	AttesationDoc string `json:"attestation_doc"`
+	AttestationDoc string `json:"attestation_doc"`
 }
 
-func (c *attestationCache) getDoc(ctx context.Context) ([]byte, error) {
+func (c *AttestationCache) getDoc(ctx context.Context) ([]byte, error) {
 	req, err := http.NewRequest(http.MethodGet, c.cageURL.String(), nil)
 	if err != nil {
 		return nil, fmt.Errorf("could not generate attestation doc request %w", err)
@@ -84,7 +89,7 @@ func (c *attestationCache) getDoc(ctx context.Context) ([]byte, error) {
 		return nil, fmt.Errorf("error decoding attestation doc json %w", err)
 	}
 
-	docBytes, err := base64.StdEncoding.DecodeString(response.AttesationDoc)
+	docBytes, err := base64.StdEncoding.DecodeString(response.AttestationDoc)
 	if err != nil {
 		return nil, fmt.Errorf("Error decoding attestation doc %w", err)
 	}
@@ -92,9 +97,7 @@ func (c *attestationCache) getDoc(ctx context.Context) ([]byte, error) {
 	return docBytes, nil
 }
 
-func (c *attestationCache) loadDoc() {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+func (c *AttestationCache) loadDoc(ctx context.Context) {
 	docBytes, err := c.getDoc(ctx)
 	if err != nil {
 		log.Printf("could not get attestation doc: %v", err)
@@ -103,20 +106,20 @@ func (c *attestationCache) loadDoc() {
 	c.Set(docBytes)
 }
 
-func (c *attestationCache) pollAPI(interval time.Duration) {
+func (c *AttestationCache) pollAPI(interval time.Duration) {
 	ticker := time.NewTicker(interval)
 
-	for {
-		select {
-		case <-ticker.C:
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	for range ticker.C {
+		func() {
+			ctx, cancel := context.WithTimeout(context.Background(), pollTimeout)
 			defer cancel()
+
 			docBytes, err := c.getDoc(ctx)
 			if err != nil {
 				log.Printf("couldn't get attestation doc: %v", err)
 			}
 
 			c.Set(docBytes)
-		}
+		}()
 	}
 }
