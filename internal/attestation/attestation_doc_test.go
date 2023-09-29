@@ -1,7 +1,7 @@
 //go:build unit_test
 // +build unit_test
 
-package evervault_test
+package attestation_test
 
 import (
 	"encoding/base64"

@@ -1,4 +1,4 @@
-package evervault
+package attestation
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-type AttestationCache struct {
+type Cache struct {
 	cageURL  *url.URL
 	doc      []byte
 	mutex    sync.RWMutex
@@ -23,13 +23,13 @@ type AttestationCache struct {
 
 const pollTimeout = 5 * time.Second
 
-func NewAttestationCache(cageDomain string, pollingInterval time.Duration) (*AttestationCache, error) {
+func NewAttestationCache(cageDomain string, pollingInterval time.Duration) (*Cache, error) {
 	cageURL, err := url.Parse(fmt.Sprintf("https://%s/.well-known/attestation", cageDomain))
 	if err != nil {
 		return nil, fmt.Errorf("cage url could not be parsed %w", err)
 	}
 
-	cache := &AttestationCache{
+	cache := &Cache{
 		cageURL:  cageURL,
 		doc:      make([]byte, 0),
 		mutex:    sync.RWMutex{},
@@ -41,27 +41,27 @@ func NewAttestationCache(cageDomain string, pollingInterval time.Duration) (*Att
 	ctx, cancel := context.WithTimeout(context.Background(), pollTimeout)
 	defer cancel()
 
-	cache.loadDoc(ctx)
+	cache.LoadDoc(ctx)
 
 	go cache.pollAPI()
 
 	return cache, nil
 }
 
-func (c *AttestationCache) Set(doc []byte) {
+func (c *Cache) Set(doc []byte) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	c.doc = doc
 }
 
-func (c *AttestationCache) Get() []byte {
+func (c *Cache) Get() []byte {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
 
 	return c.doc
 }
 
-func (c *AttestationCache) StopPolling() {
+func (c *Cache) StopPolling() {
 	c.stopPoll <- true
 }
 
@@ -70,7 +70,7 @@ type CageDocResponse struct {
 	AttestationDoc string `json:"attestation_doc"`
 }
 
-func (c *AttestationCache) getDoc(ctx context.Context) ([]byte, error) {
+func (c *Cache) getDoc(ctx context.Context) ([]byte, error) {
 	req, err := http.NewRequest(http.MethodGet, c.cageURL.String(), nil)
 	if err != nil {
 		return nil, fmt.Errorf("could not generate attestation doc request %w", err)
@@ -94,13 +94,13 @@ func (c *AttestationCache) getDoc(ctx context.Context) ([]byte, error) {
 
 	docBytes, err := base64.StdEncoding.DecodeString(response.AttestationDoc)
 	if err != nil {
-		return nil, fmt.Errorf("Error decoding attestation doc %w", err)
+		return nil, fmt.Errorf("error decoding attestation doc %w", err)
 	}
 
 	return docBytes, nil
 }
 
-func (c *AttestationCache) loadDoc(ctx context.Context) {
+func (c *Cache) LoadDoc(ctx context.Context) {
 	docBytes, err := c.getDoc(ctx)
 	if err != nil {
 		log.Printf("could not get attestation doc: %v", err)
@@ -109,7 +109,7 @@ func (c *AttestationCache) loadDoc(ctx context.Context) {
 	c.Set(docBytes)
 }
 
-func (c *AttestationCache) pollAPI() {
+func (c *Cache) pollAPI() {
 	ctx, cancel := context.WithTimeout(context.Background(), pollTimeout)
 	defer cancel()
 

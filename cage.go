@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/evervault/evervault-go/internal/attestation"
 	"github.com/hf/nitrite"
 )
 
@@ -121,7 +122,7 @@ func (c *Client) CagesClient(cageHostname string, expectedPCRs []PCRs) (*http.Cl
 		return nil, ErrNoPCRs
 	}
 
-	cache, err := NewAttestationCache(cageHostname, c.Config.CagesPollingInterval)
+	cache, err := attestation.NewAttestationCache(cageHostname, c.Config.CagesPollingInterval)
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +143,7 @@ func (c *Client) cagesClientBeta(cageHostname string, caCert []byte) (*http.Clie
 }
 
 // cagesClient returns an HTTP client for connecting to the cage.
-func (c *Client) cagesClient(cageHostname string, cache *AttestationCache) *http.Client {
+func (c *Client) cagesClient(cageHostname string, cache *attestation.Cache) *http.Client {
 	tlsConfig := &tls.Config{
 		InsecureSkipVerify: false,
 		MinVersion:         tls.VersionTLS12,
@@ -259,7 +260,7 @@ func (c *Client) createDialBeta(tlsConfig *tls.Config) func(ctx context.Context,
 }
 
 // createDial returns a custom dial function that performs attestation on the connection.
-func (c *Client) createDial(tlsConfig *tls.Config, cache *AttestationCache) func(ctx context.Context,
+func (c *Client) createDial(tlsConfig *tls.Config, cache *attestation.Cache) func(ctx context.Context,
 	network, addr string) (net.Conn, error) {
 	return func(ctx context.Context, network, addr string) (net.Conn, error) {
 		// Create a TCP connection
@@ -282,7 +283,7 @@ func (c *Client) createDial(tlsConfig *tls.Config, cache *AttestationCache) func
 		attestationDoc, err := attestCert(cert, c.expectedPCRs, doc)
 		if err != nil {
 			// Get new attestation doc in case of Cage deployment
-			cache.loadDoc(ctx)
+			cache.LoadDoc(ctx)
 
 			_, err := attestCert(cert, c.expectedPCRs, doc)
 			if err != nil {
