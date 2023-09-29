@@ -13,11 +13,12 @@ import (
 )
 
 type AttestationCache struct {
-	cageURL         *url.URL
-	pollingInterval time.Duration
-	doc             []byte
-	mutex           sync.RWMutex
-	client          http.Client
+	cageURL  *url.URL
+	doc      []byte
+	mutex    sync.RWMutex
+	client   http.Client
+	ticker   *time.Ticker
+	stopPoll chan bool
 }
 
 const pollTimeout = 5 * time.Second
@@ -29,11 +30,12 @@ func NewAttestationCache(cageDomain string, pollingInterval time.Duration) (*Att
 	}
 
 	cache := &AttestationCache{
-		cageURL:         cageURL,
-		pollingInterval: pollingInterval,
-		doc:             make([]byte, 0),
-		mutex:           sync.RWMutex{},
-		client:          http.Client{},
+		cageURL:  cageURL,
+		doc:      make([]byte, 0),
+		mutex:    sync.RWMutex{},
+		client:   http.Client{},
+		ticker:   time.NewTicker(pollingInterval),
+		stopPoll: make(chan bool),
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), pollTimeout)
@@ -41,7 +43,7 @@ func NewAttestationCache(cageDomain string, pollingInterval time.Duration) (*Att
 
 	cache.loadDoc(ctx)
 
-	go cache.pollAPI(pollingInterval)
+	go cache.pollAPI()
 
 	return cache, nil
 }
@@ -57,6 +59,10 @@ func (c *AttestationCache) Get() []byte {
 	defer c.mutex.RUnlock()
 
 	return c.doc
+}
+
+func (c *AttestationCache) StopPolling() {
+	c.stopPoll <- true
 }
 
 //nolint:tagliatelle
@@ -106,20 +112,22 @@ func (c *AttestationCache) loadDoc(ctx context.Context) {
 	c.Set(docBytes)
 }
 
-func (c *AttestationCache) pollAPI(interval time.Duration) {
-	ticker := time.NewTicker(interval)
+func (c *AttestationCache) pollAPI() {
+	ctx, cancel := context.WithTimeout(context.Background(), pollTimeout)
+	defer cancel()
 
-	for range ticker.C {
-		func() {
-			ctx, cancel := context.WithTimeout(context.Background(), pollTimeout)
-			defer cancel()
-
+	for {
+		select {
+		case <-c.ticker.C:
 			docBytes, err := c.getDoc(ctx)
 			if err != nil {
 				log.Printf("couldn't get attestation doc: %v", err)
 			}
 
 			c.Set(docBytes)
-		}()
+		case <-c.stopPoll:
+			c.ticker.Stop()
+			return
+		}
 	}
 }

@@ -27,6 +27,7 @@ func TestAttestationDocCacheInit(t *testing.T) {
 
 	decodedDoc, _ := base64.StdEncoding.DecodeString("1aGVsbG8gd29ybGQ")
 	assert.Contains(string(doc), string(decodedDoc))
+	cache.StopPolling()
 }
 
 func TestAttestationDocCachePoll(t *testing.T) {
@@ -53,4 +54,5 @@ func TestAttestationDocCachePoll(t *testing.T) {
 	newDecodedDoc, _ := base64.StdEncoding.DecodeString("aGVsbG8gd29ybGQgMg==")
 
 	assert.Contains(string(newDoc), string(newDecodedDoc))
+	cache.StopPolling()
 }
