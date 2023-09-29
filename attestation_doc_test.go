@@ -5,6 +5,7 @@ package evervault_test
 
 import (
 	"encoding/base64"
+	"net/http"
 	"testing"
 	"time"
 
@@ -36,22 +37,29 @@ func TestAttestationDocCachePoll(t *testing.T) {
 
 	assert := assert.New(t)
 
-	httpmock.RegisterResponder("GET", "https://test.app-133.cage.evervault.com/.well-known/attestation",
-		httpmock.NewStringResponder(200, `{"attestation_doc": "1aGVsbG8gd29ybGQ="}`))
+	callCount := 0
 
-	httpmock.RegisterResponder("GET", "https://test.app-133.cage.evervault.com/.well-known/attestation",
-		httpmock.NewStringResponder(200, `{"attestation_doc": "aGVsbG8gd29ybGQgMg=="}`))
+	responder := httpmock.Responder(func(req *http.Request) (*http.Response, error) {
+		callCount++
+		if callCount == 1 {
+			return httpmock.NewStringResponse(200, `{"attestation_doc": "ZnJpZGF5"}`), nil
+		}
+		return httpmock.NewStringResponse(200, `{"attestation_doc": "bW9uZGF5"}`), nil
+	})
 
-	cache, _ := evervault.NewAttestationCache("test.app-133.cage.evervault.com", 1)
+	httpmock.RegisterResponder("GET", "https://test.app-133.cage.evervault.com/.well-known/attestation", responder)
+
+	duration := 500 * time.Millisecond
+	cache, _ := evervault.NewAttestationCache("test.app-133.cage.evervault.com", duration)
 
 	doc := cache.Get()
-	decodedDoc, _ := base64.StdEncoding.DecodeString("aGVsbG8gd29ybGQgMg==")
+	decodedDoc, _ := base64.StdEncoding.DecodeString("ZnJpZGF5") 
 	assert.Contains(string(doc), string(decodedDoc))
 
 	time.Sleep(1 * time.Second)
 
 	newDoc := cache.Get()
-	newDecodedDoc, _ := base64.StdEncoding.DecodeString("aGVsbG8gd29ybGQgMg==")
+	newDecodedDoc, _ := base64.StdEncoding.DecodeString("bW9uZGF5")
 
 	assert.Contains(string(newDoc), string(newDecodedDoc))
 	cache.StopPolling()
