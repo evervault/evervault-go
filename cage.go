@@ -121,9 +121,7 @@ func (c *Client) CagesClient(cageHostname string, expectedPCRs []PCRs) (*http.Cl
 		return nil, ErrNoPCRs
 	}
 
-	interval := time.Duration(c.Config.CagesPollingInterval)
-
-	cache, err := NewAttestationCache(cageHostname, interval)
+	cache, err := NewAttestationCache(cageHostname, c.Config.CagesPollingInterval)
 	if err != nil {
 		return nil, err
 	}

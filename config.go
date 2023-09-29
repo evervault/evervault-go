@@ -3,16 +3,17 @@ package evervault
 import (
 	"os"
 	"strconv"
+	"time"
 )
 
 // Config holds the configuration for the Evervault Client.
 type Config struct {
-	EvervaultCaURL       string // URL for the Evervault CA.
-	EvervaultCagesCaURL  string // URL for the Evervault Cages CA.
-	RelayURL             string // URL for the Evervault Relay.
-	FunctionRunURL       string // URL for running Evervault functions.
-	EvAPIURL             string // URL for the Evervault API.
-	CagesPollingInterval int64  // Polling interval for obtaining fresh attestation doc
+	EvervaultCaURL       string        // URL for the Evervault CA.
+	EvervaultCagesCaURL  string        // URL for the Evervault Cages CA.
+	RelayURL             string        // URL for the Evervault Relay.
+	FunctionRunURL       string        // URL for running Evervault functions.
+	EvAPIURL             string        // URL for the Evervault API.
+	CagesPollingInterval time.Duration // Polling interval for obtaining fresh attestation doc in seconds
 }
 
 // MakeConfig loads the Evervault client configuration from environment variables.
@@ -28,17 +29,17 @@ func MakeConfig() Config {
 	}
 }
 
-func getPollingInterval() int64 {
+func getPollingInterval() time.Duration {
 	const defaultPollingInterval = 2700
 
-	intervalStr := getEnvOrDefault("EV_CAGES_POLLING_INTERVAL", "2700")
-	result, err := strconv.ParseInt(intervalStr, 10, 64)
+	intervalStr := getEnvOrDefault("EV_CAGES_POLLING_INTERVAL", "7200")
+	interval, err := strconv.ParseInt(intervalStr, 10, 64)
 
 	if err == nil {
 		return defaultPollingInterval
 	}
 
-	return result
+	return time.Duration(interval) * time.Second
 }
 
 // getEnvOrDefault retrieves the value of an environment variable or returns a default value if not set.
