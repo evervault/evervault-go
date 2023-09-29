@@ -80,12 +80,9 @@ func (c *AttestationCache) getDoc(ctx context.Context) ([]byte, error) {
 
 	resp, err := c.client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("could not generate attestation doc request %w", err)
+		return nil, fmt.Errorf("could not get attestation doc %w", err)
 	}
 
-	if err != nil {
-		return nil, fmt.Errorf("error getting attestation doc %w", err)
-	}
 	defer resp.Body.Close()
 
 	var response CageDocResponse

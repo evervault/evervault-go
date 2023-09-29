@@ -201,26 +201,7 @@ func attestCertBeta(certificate *x509.Certificate, expectedPCRs []PCRs) (bool, e
 		return false, fmt.Errorf("unable to decode certificate %w", err)
 	}
 
-	res, err := nitrite.Verify(hexDecodedDNS, nitrite.VerifyOptions{CurrentTime: time.Now()})
-	if err != nil {
-		return false, fmt.Errorf("unable to verify certificate %w", err)
-	}
-
-	if !res.SignatureOK {
-		return false, ErrUnVerifiedSignature
-	}
-
-	if verified := verifyPCRs(expectedPCRs, *res.Document); !verified {
-		return verified, nil
-	}
-
-	// Validate that the cert public key is embedded in the attestation doc
-	pubKeyBytes, err := x509.MarshalPKIXPublicKey(certificate.PublicKey)
-	if err != nil {
-		return false, fmt.Errorf("failed to marshal publicKey to bytes %w", err)
-	}
-
-	return bytes.Equal(pubKeyBytes, res.Document.UserData), nil
+	return attestCert(certificate, expectedPCRs, hexDecodedDNS)
 }
 
 // verifyPCRs verifies the expected PCRs against the attestation document.
@@ -300,12 +281,12 @@ func (c *Client) createDial(tlsConfig *tls.Config, cache *AttestationCache) func
 		cert := tlsConn.ConnectionState().PeerCertificates[0]
 		doc := cache.Get()
 
-		attestationDoc, err := c.attestCert(cert, c.expectedPCRs, doc)
+		attestationDoc, err := attestCert(cert, c.expectedPCRs, doc)
 		if err != nil {
 			// Get new attestation doc in case of Cage deployment
 			cache.loadDoc(ctx)
 
-			_, err := c.attestCert(cert, c.expectedPCRs, doc)
+			_, err := attestCert(cert, c.expectedPCRs, doc)
 			if err != nil {
 				return nil, fmt.Errorf("Error attesting Connection %w", err)
 			}
@@ -320,7 +301,7 @@ func (c *Client) createDial(tlsConfig *tls.Config, cache *AttestationCache) func
 }
 
 // attestCert attests the certificate against the expected PCRs.
-func (c *Client) attestCert(certificate *x509.Certificate, expectedPCRs []PCRs, attestationDoc []byte) (bool, error) {
+func attestCert(certificate *x509.Certificate, expectedPCRs []PCRs, attestationDoc []byte) (bool, error) {
 	res, err := nitrite.Verify(attestationDoc, nitrite.VerifyOptions{CurrentTime: time.Now()})
 	if err != nil {
 		return false, fmt.Errorf("unable to verify certificate %w", err)
