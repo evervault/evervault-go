@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/evervault/evervault-go/internal/attestation"
 	"github.com/hf/nitrite"
 )
 
@@ -67,6 +68,26 @@ func filterEmptyPCRs(expectedPCRs []PCRs) []PCRs {
 	return ret
 }
 
+// Deprecated: use CagesClient instead.
+func (c *Client) CageClient(cageHostname string, expectedPCRs []PCRs) (*http.Client, error) {
+	c.expectedPCRs = filterEmptyPCRs(expectedPCRs)
+	if len(c.expectedPCRs) == 0 {
+		return nil, ErrNoPCRs
+	}
+
+	caCertResponse, err := c.makeRequest(c.Config.EvervaultCagesCaURL, http.MethodGet, nil, "")
+	if err != nil {
+		return nil, err
+	}
+
+	cagesClient, err := c.cagesClientBeta(cageHostname, caCertResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	return cagesClient, nil
+}
+
 // Will return a http.Client that is connected to a specified cage hostname with a fully attested client.
 // The Client will attest the connection every time it makes a HTTP request and will return an error on request if it
 // fails attestation
@@ -79,7 +100,7 @@ func filterEmptyPCRs(expectedPCRs []PCRs) []PCRs {
 //		PCR8: "1650274b27bf44fba6f1779602399763af9e4567927d771b1b37aeb1ac502c84fbd6a7ab7b05600656a257247529fbb8",
 //	}
 //
-//	cageClient, err := evClient.CageClient(cageURL, []evervault.PCRs{expectedPCRs})
+//	cageClient, err := evClient.CagesClient(cageURL, []evervault.PCRs{expectedPCRs})
 //	if err != nil {
 //		log.Fatal(err)
 //	}
@@ -95,28 +116,25 @@ func filterEmptyPCRs(expectedPCRs []PCRs) []PCRs {
 //	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
 //
 //	resp, err := cageClient.Do(req)
-func (c *Client) CageClient(cageHostname string, expectedPCRs []PCRs) (*http.Client, error) {
+func (c *Client) CagesClient(cageHostname string, expectedPCRs []PCRs) (*http.Client, error) {
 	c.expectedPCRs = filterEmptyPCRs(expectedPCRs)
 	if len(c.expectedPCRs) == 0 {
 		return nil, ErrNoPCRs
 	}
 
-	caCertResponse, err := c.makeRequest(c.Config.EvervaultCagesCaURL, http.MethodGet, nil, "")
+	cache, err := attestation.NewAttestationCache(cageHostname, c.Config.CagesPollingInterval)
 	if err != nil {
 		return nil, err
 	}
 
-	cagesClient, err := c.cagesClient(cageHostname, caCertResponse)
-	if err != nil {
-		return nil, err
-	}
+	cagesClient := c.cagesClient(cageHostname, cache)
 
 	return cagesClient, nil
 }
 
-// cagesClient returns an HTTP client for connecting to the cage.
-func (c *Client) cagesClient(cageHostname string, caCert []byte) (*http.Client, error) {
-	transport, err := c.cagesTransport(cageHostname, caCert)
+// Deprecated: cagesClient returns an HTTP client for connecting to the cage.
+func (c *Client) cagesClientBeta(cageHostname string, caCert []byte) (*http.Client, error) {
+	transport, err := c.cagesTransportBeta(cageHostname, caCert)
 	if err != nil {
 		return nil, err
 	}
@@ -124,8 +142,24 @@ func (c *Client) cagesClient(cageHostname string, caCert []byte) (*http.Client, 
 	return &http.Client{Transport: transport}, nil
 }
 
-// cagesTransport returns the HTTP transport for connecting to the cage.
-func (c *Client) cagesTransport(cageHostname string, caCert []byte) (*http.Transport, error) {
+// cagesClient returns an HTTP client for connecting to the cage.
+func (c *Client) cagesClient(cageHostname string, cache *attestation.Cache) *http.Client {
+	tlsConfig := &tls.Config{
+		InsecureSkipVerify: false,
+		MinVersion:         tls.VersionTLS12,
+		ServerName:         cageHostname,
+	}
+
+	transport := &http.Transport{
+		DisableKeepAlives: true,
+		DialTLSContext:    c.createDial(tlsConfig, cache),
+	}
+
+	return &http.Client{Transport: transport}
+}
+
+// Deprecated: cagesTransport returns the HTTP transport for connecting to the cage.
+func (c *Client) cagesTransportBeta(cageHostname string, caCert []byte) (*http.Transport, error) {
 	rootCAs, err := x509.SystemCertPool()
 	if err != nil {
 		return nil, fmt.Errorf("error getting system cert pool %w", err)
@@ -139,7 +173,7 @@ func (c *Client) cagesTransport(cageHostname string, caCert []byte) (*http.Trans
 		ServerName:         cageHostname,
 	}
 
-	customDial := c.createDial(tlsConfig)
+	customDial := c.createDialBeta(tlsConfig)
 
 	return &http.Transport{
 		DisableKeepAlives: true,
@@ -147,8 +181,8 @@ func (c *Client) cagesTransport(cageHostname string, caCert []byte) (*http.Trans
 	}, nil
 }
 
-// attestCert attests the certificate against the expected PCRs.
-func attestCert(certificate *x509.Certificate, expectedPCRs []PCRs) (bool, error) {
+// Deprecated: attestCertBeta attests the certificate against the expected PCRs.
+func attestCertBeta(certificate *x509.Certificate, expectedPCRs []PCRs) (bool, error) {
 	// Extract the largest DNS name from the certificate
 	largestIndex := 0
 	for i := 1; i < len(certificate.DNSNames); i++ {
@@ -166,26 +200,7 @@ func attestCert(certificate *x509.Certificate, expectedPCRs []PCRs) (bool, error
 		return false, fmt.Errorf("unable to decode certificate %w", err)
 	}
 
-	res, err := nitrite.Verify(hexDecodedDNS, nitrite.VerifyOptions{CurrentTime: time.Now()})
-	if err != nil {
-		return false, fmt.Errorf("unable to verify certificate %w", err)
-	}
-
-	if !res.SignatureOK {
-		return false, ErrUnVerifiedSignature
-	}
-
-	if verified := verifyPCRs(expectedPCRs, *res.Document); !verified {
-		return verified, nil
-	}
-
-	// Validate that the cert public key is embedded in the attestation doc
-	pubKeyBytes, err := x509.MarshalPKIXPublicKey(certificate.PublicKey)
-	if err != nil {
-		return false, fmt.Errorf("failed to marshal publicKey to bytes %w", err)
-	}
-
-	return bytes.Equal(pubKeyBytes, res.Document.UserData), nil
+	return attestCert(certificate, expectedPCRs, hexDecodedDNS)
 }
 
 // verifyPCRs verifies the expected PCRs against the attestation document.
@@ -211,8 +226,9 @@ func mapAttestationPCRs(attestationPCRs nitrite.Document) PCRs {
 	return PCRs{PCR0, PCR1, PCR2, PCR8}
 }
 
-// createDial returns a custom dial function that performs attestation on the connection.
-func (c *Client) createDial(tlsConfig *tls.Config) func(ctx context.Context, network, addr string) (net.Conn, error) {
+// Deprecated: createDialBeta returns a custom dial function that performs attestation on the connection.
+func (c *Client) createDialBeta(tlsConfig *tls.Config) func(ctx context.Context,
+	network, addr string) (net.Conn, error) {
 	return func(ctx context.Context, network, addr string) (net.Conn, error) {
 		// Create a TCP connection
 		conn, err := net.DialTimeout(network, addr, cageDialTimeout)
@@ -230,15 +246,79 @@ func (c *Client) createDial(tlsConfig *tls.Config) func(ctx context.Context, net
 
 		cert := tlsConn.ConnectionState().PeerCertificates[0]
 
-		attesationDoc, err := attestCert(cert, c.expectedPCRs)
+		attestationDoc, err := attestCertBeta(cert, c.expectedPCRs)
 		if err != nil {
 			return nil, fmt.Errorf("Error attesting Connection %w", err)
 		}
 
-		if !attesationDoc {
+		if !attestationDoc {
 			return nil, ErrAttestionFailure
 		}
 
 		return tlsConn, nil
 	}
+}
+
+// createDial returns a custom dial function that performs attestation on the connection.
+func (c *Client) createDial(tlsConfig *tls.Config, cache *attestation.Cache) func(ctx context.Context,
+	network, addr string) (net.Conn, error) {
+	return func(ctx context.Context, network, addr string) (net.Conn, error) {
+		// Create a TCP connection
+		conn, err := net.DialTimeout(network, addr, cageDialTimeout)
+		if err != nil {
+			return nil, fmt.Errorf("Error creating cage dial %w", err)
+		}
+
+		// Perform TLS handshake with custom configuration
+		tlsConn := tls.Client(conn, tlsConfig)
+
+		err = tlsConn.Handshake()
+		if err != nil {
+			return nil, fmt.Errorf("Error connecting to cage %w", err)
+		}
+
+		cert := tlsConn.ConnectionState().PeerCertificates[0]
+		doc := cache.Get()
+
+		attestationDoc, err := attestCert(cert, c.expectedPCRs, doc)
+		if err != nil {
+			// Get new attestation doc in case of Cage deployment
+			cache.LoadDoc(ctx)
+
+			_, err := attestCert(cert, c.expectedPCRs, doc)
+			if err != nil {
+				return nil, fmt.Errorf("Error attesting Connection %w", err)
+			}
+		}
+
+		if !attestationDoc {
+			return nil, ErrAttestionFailure
+		}
+
+		return tlsConn, nil
+	}
+}
+
+// attestCert attests the certificate against the expected PCRs.
+func attestCert(certificate *x509.Certificate, expectedPCRs []PCRs, attestationDoc []byte) (bool, error) {
+	res, err := nitrite.Verify(attestationDoc, nitrite.VerifyOptions{CurrentTime: time.Now()})
+	if err != nil {
+		return false, fmt.Errorf("unable to verify certificate %w", err)
+	}
+
+	if !res.SignatureOK {
+		return false, ErrUnVerifiedSignature
+	}
+
+	if verified := verifyPCRs(expectedPCRs, *res.Document); !verified {
+		return verified, nil
+	}
+
+	// Validate that the cert public key is embedded in the attestation doc
+	pubKeyBytes, err := x509.MarshalPKIXPublicKey(certificate.PublicKey)
+	if err != nil {
+		return false, fmt.Errorf("failed to marshal publicKey to bytes %w", err)
+	}
+
+	return bytes.Equal(pubKeyBytes, res.Document.UserData), nil
 }
