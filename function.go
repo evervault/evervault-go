@@ -54,7 +54,7 @@ func (c *Client) createRunToken(functionName string, payload any) (RunTokenRespo
 
 	runTokenURL := fmt.Sprintf("%s/v2/functions/%s/run-token", c.Config.EvAPIURL, functionName)
 
-	runToken, err := c.makeRequest(runTokenURL, http.MethodPost, pBytes, "")
+	runToken, _, err := c.makeRequest(runTokenURL, http.MethodPost, pBytes, "")
 	if err != nil {
 		return RunTokenResponse{}, err
 	}
@@ -75,7 +75,7 @@ func (c *Client) runFunction(functionName string, payload any, runToken string) 
 
 	runFunctionURL := fmt.Sprintf("%s/%s", c.Config.FunctionRunURL, functionName)
 
-	resp, err := c.makeRequest(runFunctionURL, http.MethodPost, pBytes, runToken)
+	resp, _, err := c.makeRequest(runFunctionURL, http.MethodPost, pBytes, runToken)
 	if err != nil {
 		return FunctionRunResponse{}, err
 	}
