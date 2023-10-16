@@ -21,9 +21,6 @@ import (
 	"github.com/evervault/evervault-go/internal/datatypes"
 )
 
-// Current version of the evervault SDK.
-const ClientVersion = "0.5.0"
-
 // MakeClient creates a new Client instance if an API key and Evervault App ID is provided. The client
 // will connect to Evervaults API to retrieve the public keys from your Evervault App.
 //
