@@ -88,7 +88,7 @@ func (c *Client) getPublicKey() (KeysResponse, error) {
 	return res, nil
 }
 
-func (c *Client) decrypt(encryptedData any) (any, error) {
+func (c *Client) decrypt(encryptedData string) (any, error) {
 	pBytes, err := json.Marshal(encryptedData)
 	if err != nil {
 		return nil, fmt.Errorf("Error marshalling payload to json %w", err)
