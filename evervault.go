@@ -199,7 +199,12 @@ func (c *Client) DecryptString(encryptedData string) (string, error) {
 		return "", err
 	}
 
-	return decryptResponse.(string), nil
+	decryptedString, ok := decryptResponse.(string)
+	if !ok {
+		return "", ErrInvalidDataType
+	}
+
+	return decryptedString, nil
 }
 
 // DecryptInt decrypts data previously encrypted with Encrypt or through Relay
@@ -211,12 +216,12 @@ func (c *Client) DecryptInt(encryptedData string) (int, error) {
 		return 0, err
 	}
 
-	// decryptedToFloat, err := strconv.ParseFloat(decryptResponse, 64)
-	// if err != nil {
-	// 	return 0, err
-	// }
-	
-	return int(decryptResponse.(float64)), nil
+	decryptedFloat, ok := decryptResponse.(float64)
+	if !ok {
+		return 0, ErrInvalidDataType
+	}
+
+	return int(decryptedFloat), nil
 }
 
 // DecryptFloat64 decrypts data previously encrypted with Encrypt or through Relay
@@ -227,7 +232,13 @@ func (c *Client) DecryptFloat64(encryptedData string) (float64, error) {
 	if err != nil {
 		return 0, err
 	}
-	return decryptResponse.(float64), nil
+
+	decryptedFloat, ok := decryptResponse.(float64)
+	if !ok {
+		return 0, ErrInvalidDataType
+	}
+
+	return decryptedFloat, nil
 }
 
 // DecryptBool decrypts data previously encrypted with Encrypt or through Relay
@@ -238,7 +249,13 @@ func (c *Client) DecryptBool(encryptedData string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return decryptResponse.(bool), nil
+
+	decryptedBool, ok := decryptResponse.(bool)
+	if !ok {
+		return false, ErrInvalidDataType
+	}
+
+	return decryptedBool, nil
 }
 
 // DecryptByteArray decrypts data previously encrypted with Encrypt or through Relay
@@ -249,7 +266,13 @@ func (c *Client) DecryptByteArray(encryptedData string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return []byte(decryptResponse.(string)), nil
+
+	decryptedString, ok := decryptResponse.(string)
+	if !ok {
+		return nil, ErrInvalidDataType
+	}
+
+	return []byte(decryptedString), nil
 }
 
 // CreateClientSideDecryptToken creates a time bound token that can be used to perform decrypts.
