@@ -113,6 +113,7 @@ func (c *Client) EncryptInt(value int) (string, error) {
 	}
 
 	val := strconv.Itoa(value)
+
 	return crypto.EncryptValue(aesKey, compressedEphemeralPublicKey, c.p256PublicKeyCompressed, val, datatypes.Number)
 }
 
@@ -130,6 +131,7 @@ func (c *Client) EncryptFloat64(value float64) (string, error) {
 	}
 
 	val := strconv.FormatFloat(value, 'f', -1, 64)
+
 	return crypto.EncryptValue(aesKey, compressedEphemeralPublicKey, c.p256PublicKeyCompressed, val, datatypes.Number)
 }
 
@@ -147,6 +149,7 @@ func (c *Client) EncryptBool(value bool) (string, error) {
 	}
 
 	val := strconv.FormatBool(value)
+
 	return crypto.EncryptValue(aesKey, compressedEphemeralPublicKey, c.p256PublicKeyCompressed, val, datatypes.Boolean)
 }
 
@@ -164,6 +167,7 @@ func (c *Client) EncryptByteArray(value []byte) (string, error) {
 	}
 
 	val := string(value)
+
 	return crypto.EncryptValue(aesKey, compressedEphemeralPublicKey, c.p256PublicKeyCompressed, val, datatypes.String)
 }
 
