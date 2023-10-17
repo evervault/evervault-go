@@ -18,19 +18,19 @@ func TestE2EOutboundRelay(t *testing.T) {
 
 	client := GetClient(t)
 
-	encryptedString, err := client.Encrypt("some_string")
+	encryptedString, err := client.EncryptString("some_string")
 	if err != nil {
 		t.Errorf("error encrypting string %s", err)
 		return
 	}
 
-	encryptedNumber, err := client.Encrypt(1234567890)
+	encryptedNumber, err := client.EncryptInt(1234567890)
 	if err != nil {
 		t.Errorf("error encrypting number %s", err)
 		return
 	}
 	
-	encryptedBool, err := client.Encrypt(true)
+	encryptedBool, err := client.EncryptBool(true)
 	if err != nil {
 		t.Errorf("error encrypting bool %s", err)
 		return
