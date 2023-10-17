@@ -97,7 +97,7 @@ func (c *Client) EncryptString(value string) (string, error) {
 		return "", err
 	}
 
-	return c.encryptString(value, aesKey, compressedEphemeralPublicKey)
+	return crypto.EncryptValue(aesKey, compressedEphemeralPublicKey, c.p256PublicKeyCompressed, value, datatypes.String)
 }
 
 // EncryptInt encrypts the value passed to it using the Evervault Encryption Scheme.
@@ -113,7 +113,8 @@ func (c *Client) EncryptInt(value int) (string, error) {
 		return "", err
 	}
 
-	return c.encryptInt(value, aesKey, compressedEphemeralPublicKey)
+	val := strconv.Itoa(value)
+	return crypto.EncryptValue(aesKey, compressedEphemeralPublicKey, c.p256PublicKeyCompressed, val, datatypes.Number)
 }
 
 // EncryptFloat64 encrypts the value passed to it using the Evervault Encryption Scheme.
@@ -129,7 +130,8 @@ func (c *Client) EncryptFloat64(value float64) (string, error) {
 		return "", err
 	}
 
-	return c.encryptFloat64(value, aesKey, compressedEphemeralPublicKey)
+	val := strconv.FormatFloat(value, 'f', -1, 64)
+	return crypto.EncryptValue(aesKey, compressedEphemeralPublicKey, c.p256PublicKeyCompressed, val, datatypes.Number)
 }
 
 // EncryptBool encrypts the value passed to it using the Evervault Encryption Scheme.
@@ -145,7 +147,8 @@ func (c *Client) EncryptBool(value bool) (string, error) {
 		return "", err
 	}
 
-	return c.encryptBool(value, aesKey, compressedEphemeralPublicKey)
+	val := strconv.FormatBool(value)
+	return crypto.EncryptValue(aesKey, compressedEphemeralPublicKey, c.p256PublicKeyCompressed, val, datatypes.Boolean)
 }
 
 // EncryptByteArray encrypts the value passed to it using the Evervault Encryption Scheme.
@@ -161,31 +164,8 @@ func (c *Client) EncryptByteArray(value []byte) (string, error) {
 		return "", err
 	}
 
-	return c.encryptByteArray(value, aesKey, compressedEphemeralPublicKey)
-}
-
-func (c *Client) encryptString(value string, aesKey, ephemeralPublicKey []byte) (string, error) {
-	return crypto.EncryptValue(aesKey, ephemeralPublicKey, c.p256PublicKeyCompressed, value, datatypes.String)
-}
-
-func (c *Client) encryptInt(value int, aesKey, ephemeralPublicKey []byte) (string, error) {
-	val := strconv.Itoa(value)
-	return crypto.EncryptValue(aesKey, ephemeralPublicKey, c.p256PublicKeyCompressed, val, datatypes.Number)
-}
-
-func (c *Client) encryptFloat64(value float64, aesKey, ephemeralPublicKey []byte) (string, error) {
-	val := strconv.FormatFloat(value, 'f', -1, 64)
-	return crypto.EncryptValue(aesKey, ephemeralPublicKey, c.p256PublicKeyCompressed, val, datatypes.Number)
-}
-
-func (c *Client) encryptBool(value bool, aesKey, ephemeralPublicKey []byte) (string, error) {
-	val := strconv.FormatBool(value)
-	return crypto.EncryptValue(aesKey, ephemeralPublicKey, c.p256PublicKeyCompressed, val, datatypes.Boolean)
-}
-
-func (c *Client) encryptByteArray(value []byte, aesKey, ephemeralPublicKey []byte) (string, error) {
 	val := string(value)
-	return crypto.EncryptValue(aesKey, ephemeralPublicKey, c.p256PublicKeyCompressed, val, datatypes.String)
+	return crypto.EncryptValue(aesKey, compressedEphemeralPublicKey, c.p256PublicKeyCompressed, val, datatypes.String)
 }
 
 // DecryptString decrypts data previously encrypted with Encrypt or through Relay
