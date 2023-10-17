@@ -14,7 +14,6 @@ import (
 	"crypto/ecdh"
 	"crypto/rand"
 	"fmt"
-	"reflect"
 	"strconv"
 	"time"
 
@@ -248,11 +247,6 @@ func (c *Client) DecryptByteArray(encryptedData string) ([]byte, error) {
 }
 
 func (c *Client) decryptToString(encryptedData string) (string, error) {
-	// Used to check whether encryptedData is the zero value for its type
-	if reflect.ValueOf(encryptedData).IsZero() {
-		return "", ErrInvalidDataType
-	}
-
 	decryptResponse, err := c.decrypt(encryptedData)
 	if err != nil {
 		return "", err
