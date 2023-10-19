@@ -242,7 +242,6 @@ func (c *Client) DecryptBool(encryptedData string) (bool, error) {
 //	decrypted := evClient.DecryptByteArray(encrypted);
 func (c *Client) DecryptByteArray(encryptedData string) ([]byte, error) {
 	decryptResponse, err := c.decryptToString(encryptedData)
-
 	if err != nil {
 		return nil, err
 	}
@@ -258,6 +257,7 @@ func (c *Client) decryptToString(encryptedData string) (string, error) {
 		if strings.Contains(err.Error(), "Error parsing JSON response") {
 			return "", ErrInvalidDataType
 		}
+		
 		return "", err
 	}
 
