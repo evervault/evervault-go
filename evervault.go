@@ -257,7 +257,7 @@ func (c *Client) decryptToString(encryptedData string) (string, error) {
 		if strings.Contains(err.Error(), "Error parsing JSON response") {
 			return "", ErrInvalidDataType
 		}
-		
+
 		return "", err
 	}
 
