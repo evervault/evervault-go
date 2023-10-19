@@ -19,6 +19,7 @@ import (
 	"github.com/evervault/evervault-go"
 	"github.com/evervault/evervault-go/internal/crypto"
 	"github.com/evervault/evervault-go/internal/datatypes"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestDecryptString(t *testing.T) {
@@ -27,7 +28,7 @@ func TestDecryptString(t *testing.T) {
 	response := map[string]any{
 		"result": "decrypted",
 	}
-	server := startMockHTTPServer(response)
+	server := startMockHTTPServer(response, "")
 	defer server.Close()
 
 	testClient := mockedClient(t, server)
@@ -51,7 +52,7 @@ func TestDecryptInt(t *testing.T) {
 	response := map[string]any{
 		"result": "123",
 	}
-	server := startMockHTTPServer(response)
+	server := startMockHTTPServer(response, "")
 	defer server.Close()
 
 	testClient := mockedClient(t, server)
@@ -75,7 +76,7 @@ func TestDecryptFloat64(t *testing.T) {
 	response := map[string]any{
 		"result": "1.1",
 	}
-	server := startMockHTTPServer(response)
+	server := startMockHTTPServer(response, "")
 	defer server.Close()
 
 	testClient := mockedClient(t, server)
@@ -99,7 +100,7 @@ func TestDecryptBoolean(t *testing.T) {
 	response := map[string]any{
 		"result": "true",
 	}
-	server := startMockHTTPServer(response)
+	server := startMockHTTPServer(response, "")
 	defer server.Close()
 
 	testClient := mockedClient(t, server)
@@ -123,7 +124,7 @@ func TestDecryptByteArray(t *testing.T) {
 	response := map[string]any{
 		"result": "Hello World!",
 	}
-	server := startMockHTTPServer(response)
+	server := startMockHTTPServer(response, "")
 	defer server.Close()
 
 	testClient := mockedClient(t, server)
@@ -141,10 +142,25 @@ func TestDecryptByteArray(t *testing.T) {
 	}
 }
 
+func TestDecryptJsonResponse(t *testing.T) {
+	t.Parallel()
+
+	response := map[string]any{
+		"result": "Hello World!",
+	}
+	server := startMockHTTPServer(response, "application/json")
+	defer server.Close()
+
+	testClient := mockedClient(t, server)
+
+	_, err := testClient.DecryptByteArray("ev:abc123")
+	assert.ErrorIs(t, err, evervault.ErrInvalidDataType)
+}
+
 func TestCreateClientSideDecryptToken(t *testing.T) {
 	t.Parallel()
 
-	server := startMockHTTPServer(nil)
+	server := startMockHTTPServer(nil, "")
 	defer server.Close()
 
 	testClient := mockedClient(t, server)
@@ -175,7 +191,7 @@ func TestCreateClientSideDecryptToken(t *testing.T) {
 func TestEncryptString(t *testing.T) {
 	t.Parallel()
 
-	server := startMockHTTPServer(nil)
+	server := startMockHTTPServer(nil, "")
 	defer server.Close()
 
 	testClient := mockedClient(t, server)
@@ -194,7 +210,7 @@ func TestEncryptString(t *testing.T) {
 func TestEncryptInt(t *testing.T) {
 	t.Parallel()
 
-	server := startMockHTTPServer(nil)
+	server := startMockHTTPServer(nil, "")
 	defer server.Close()
 
 	testClient := mockedClient(t, server)
@@ -213,7 +229,7 @@ func TestEncryptInt(t *testing.T) {
 func TestEncryptFloat64(t *testing.T) {
 	t.Parallel()
 
-	server := startMockHTTPServer(nil)
+	server := startMockHTTPServer(nil, "")
 	defer server.Close()
 
 	testClient := mockedClient(t, server)
@@ -232,7 +248,7 @@ func TestEncryptFloat64(t *testing.T) {
 func TestEncryptBoolean(t *testing.T) {
 	t.Parallel()
 
-	server := startMockHTTPServer(nil)
+	server := startMockHTTPServer(nil, "")
 	defer server.Close()
 
 	testClient := mockedClient(t, server)
@@ -251,7 +267,7 @@ func TestEncryptBoolean(t *testing.T) {
 func TestEncryptByte(t *testing.T) {
 	t.Parallel()
 
-	server := startMockHTTPServer(nil)
+	server := startMockHTTPServer(nil, "")
 	defer server.Close()
 
 	testClient := mockedClient(t, server)
@@ -270,7 +286,7 @@ func TestEncryptByte(t *testing.T) {
 func TestClientInitClientErrorWithoutApiKey(t *testing.T) {
 	t.Parallel()
 
-	server := startMockHTTPServer(nil)
+	server := startMockHTTPServer(nil, "")
 	defer server.Close()
 
 	_, err := evervault.MakeClient("", "")
@@ -323,30 +339,42 @@ func testFuncHandler(writer http.ResponseWriter, reader *http.Request, mockRespo
 	}
 }
 
-func handleRoute(writer http.ResponseWriter, reader *http.Request, mockResponse map[string]any) {
+func handleRoute(writer http.ResponseWriter, reader *http.Request, mockResponse map[string]any, contentType string) {
 	if reader.URL.Path == "/test_function" {
 		testFuncHandler(writer, reader, mockResponse)
+		return
 	}
 
 	if reader.URL.Path == "/v2/functions/test_function/run-token" {
+		if contentType == "" {
+			contentType = "application/json"
+		}
+		writer.Header().Set("Content-Type", contentType)
 		writer.WriteHeader(http.StatusOK)
-		writer.Header().Set("Content-Type", "application/json")
 
 		if err := json.NewEncoder(writer).Encode(evervault.RunTokenResponse{Token: "test_token"}); err != nil {
 			log.Printf("error encoding json: %s", err)
 		}
+		return
 	}
 
 	if reader.URL.Path == "/decrypt" {
-		writer.WriteHeader(http.StatusOK)
-		writer.Header().Set("Content-Type", "text/plain")
+		if contentType == "" {
+			contentType = "text/plain"
+		}
 
+		writer.Header().Set("Content-Type", contentType)
+		writer.WriteHeader(http.StatusOK)
 		writer.Write([]byte(mockResponse["result"].(string)))
+		return
 	}
 
 	if reader.URL.Path == "/client-side-tokens" {
+		if contentType == "" {
+			contentType = "application/json"
+		}
+		writer.Header().Set("Content-Type", contentType)
 		writer.WriteHeader(http.StatusOK)
-		writer.Header().Set("Content-Type", "application/json")
 
 		var body map[string]any
 
@@ -377,10 +405,10 @@ func hasSpecialPath(path string) bool {
 	return specialPaths[path]
 }
 
-func startMockHTTPServer(mockResponse map[string]any) *httptest.Server {
+func startMockHTTPServer(mockResponse map[string]any, contentType string) *httptest.Server {
 	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, reader *http.Request) {
 		if hasSpecialPath(reader.URL.Path) {
-			handleRoute(writer, reader, mockResponse)
+			handleRoute(writer, reader, mockResponse, contentType)
 
 			return
 		}
@@ -401,8 +429,8 @@ func startMockHTTPServer(mockResponse map[string]any) *httptest.Server {
 			EcdhP256Key:             base64.StdEncoding.EncodeToString(compressedEphemeralPublicKey),
 			EcdhP256KeyUncompressed: base64.StdEncoding.EncodeToString(ephemeralPublicKey),
 		}
-		writer.WriteHeader(http.StatusOK)
 		writer.Header().Set("Content-Type", "application/json")
+		writer.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(writer).Encode(keys); err != nil {
 			log.Printf("error encoding json: %s", err)
 		}

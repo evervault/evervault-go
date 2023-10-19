@@ -15,6 +15,7 @@ import (
 	"crypto/rand"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/evervault/evervault-go/internal/crypto"
@@ -241,11 +242,12 @@ func (c *Client) DecryptBool(encryptedData string) (bool, error) {
 //	decrypted := evClient.DecryptByteArray(encrypted);
 func (c *Client) DecryptByteArray(encryptedData string) ([]byte, error) {
 	decryptResponse, err := c.decryptToString(encryptedData)
-	decryptResponse = decryptResponse[1 : len(decryptResponse)-1]
 
 	if err != nil {
 		return nil, err
 	}
+
+	decryptResponse = decryptResponse[1 : len(decryptResponse)-1]
 
 	return []byte(decryptResponse), nil
 }
@@ -253,6 +255,9 @@ func (c *Client) DecryptByteArray(encryptedData string) ([]byte, error) {
 func (c *Client) decryptToString(encryptedData string) (string, error) {
 	decryptResponse, err := c.decrypt(encryptedData)
 	if err != nil {
+		if strings.Contains(err.Error(), "Error parsing JSON response") {
+			return "", ErrInvalidDataType
+		}
 		return "", err
 	}
 

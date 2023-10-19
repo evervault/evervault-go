@@ -1,4 +1,5 @@
-//+build unit_test
+//go:build unit_test
+// +build unit_test
 
 package evervault_test
 
@@ -29,7 +30,7 @@ func TestOutboundClientRoutesToOutboundRelay(t *testing.T) {
 
 	defer mockRelayServer.Close()
 
-	server := startMockHTTPServer(nil)
+	server := startMockHTTPServer(nil, "")
 	testClient := mockedClient(t, server)
 
 	relayClient, err := testClient.OutboundRelayClient()
