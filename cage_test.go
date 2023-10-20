@@ -1,4 +1,5 @@
-//+build unit_test
+//go:build unit_test
+// +build unit_test
 
 package evervault_test
 
@@ -8,10 +9,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"testing"
-	"log"
+
 	"github.com/evervault/evervault-go"
 	"github.com/stretchr/testify/assert"
 )

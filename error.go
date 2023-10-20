@@ -39,3 +39,41 @@ type APIError struct {
 func (e APIError) Error() string {
 	return fmt.Sprintf("Status code received %d, %s", e.StatusCode, e.Message)
 }
+
+type Error struct {
+	Code    string `json:"code"`
+	Message string `json:"detail"`
+}
+
+func (e Error) Error() string {
+	return e.Message
+}
+
+type FunctionTimeoutError struct {
+	Message string
+}
+
+func (e FunctionTimeoutError) Error() string {
+	return e.Message
+}
+
+type FunctionNotReadyError struct {
+	Message string
+}
+
+func (e FunctionNotReadyError) Error() string {
+	return e.Message
+}
+
+type FunctionRuntimeError struct {
+	Status    string `json:"status"`
+	ErrorBody struct {
+		Message string `json:"message"`
+		Stack   string `json:"stack"`
+	} `json:"error"`
+	ID string `json:"id"`
+}
+
+func (e FunctionRuntimeError) Error() string {
+	return fmt.Sprintf("Error in Function run %s: %s", e.ID, e.ErrorBody.Message)
+}
