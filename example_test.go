@@ -22,7 +22,7 @@ func Example() {
 		log.Fatal(err)
 	}
 
-	encrypted, err := evClient.Encrypt("Hello, world!")
+	encrypted, err := evClient.EncryptString("Hello, world!")
 	if err != nil {
 		log.Fatal(err)
 	}
