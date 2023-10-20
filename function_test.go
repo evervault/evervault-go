@@ -54,7 +54,7 @@ func TestRunFunctionSuccess(t *testing.T) {
 	}
 
 	assert.Equal(t, res.Status, "success")
-	assert.Equal(t, res.Id, id)
+	assert.Equal(t, res.ID, id)
 	assert.Equal(t, res.Result["message"], message)
 }
 
@@ -83,7 +83,7 @@ func TestRunFunctionFailure(t *testing.T) {
 	} else {
 		assert.Equal(t, runtimeError.ErrorBody.Message, message)
 		assert.Equal(t, runtimeError.ErrorBody.Stack, stack)
-		assert.Equal(t, runtimeError.Id, id)
+		assert.Equal(t, runtimeError.ID, id)
 	}
 }
 
