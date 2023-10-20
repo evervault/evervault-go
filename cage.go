@@ -75,7 +75,7 @@ func (c *Client) CageClient(cageHostname string, expectedPCRs []PCRs) (*http.Cli
 		return nil, ErrNoPCRs
 	}
 
-	caCertResponse, err := c.makeRequest(c.Config.EvervaultCagesCaURL, http.MethodGet, nil, "")
+	caCertResponse, _, err := c.makeRequest(c.Config.EvervaultCagesCaURL, http.MethodGet, nil, "")
 	if err != nil {
 		return nil, err
 	}

@@ -1,4 +1,5 @@
-//+build unit_test
+//go:build unit_test
+// +build unit_test
 
 package evervault_test
 
@@ -7,7 +8,7 @@ import "testing"
 func TestGetFunctionRunToken(t *testing.T) {
 	t.Parallel()
 
-	server := startMockHTTPServer(nil)
+	server := startMockHTTPServer(nil, "")
 	defer server.Close()
 	testClient := mockedClient(t, server)
 
@@ -34,7 +35,7 @@ func TestRunFunctionWithRunToken(t *testing.T) {
 		"runId": "func_run_65bc5168cb8b",
 	}
 
-	server := startMockHTTPServer(functionResponsePayload)
+	server := startMockHTTPServer(functionResponsePayload, "")
 	defer server.Close()
 
 	testClient := mockedClient(t, server)
@@ -64,7 +65,7 @@ func TestRunFunctionWithApiKey(t *testing.T) {
 		"runId": "func_run_65bc5168cb8b",
 	}
 
-	server := startMockHTTPServer(functionResponsePayload)
+	server := startMockHTTPServer(functionResponsePayload, "")
 	defer server.Close()
 
 	testClient := mockedClient(t, server)

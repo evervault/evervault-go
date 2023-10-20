@@ -1,4 +1,5 @@
-//+build e2e
+//go:build e2e
+// +build e2e
 
 package e2e_test
 
@@ -28,7 +29,7 @@ func TestE2EFunctionRunWithToken(t *testing.T) {
 
 	data := MyData{"John Doe", 42, true}
 
-	encrypted, err := client.Encrypt(data.Name)
+	encrypted, err := client.EncryptString(data.Name)
 	if err != nil {
 		t.Errorf("error encrypting data %s", err)
 		return
@@ -38,7 +39,7 @@ func TestE2EFunctionRunWithToken(t *testing.T) {
 
 	payload.Name = encrypted
 
-	encrypted, err = client.Encrypt(data.Age)
+	encrypted, err = client.EncryptInt(data.Age)
 	if err != nil {
 		t.Errorf("error encrypting data %s", err)
 		return
@@ -46,7 +47,7 @@ func TestE2EFunctionRunWithToken(t *testing.T) {
 
 	payload.Age = encrypted
 
-	encrypted, err = client.Encrypt(data.IsAlive)
+	encrypted, err = client.EncryptBool(data.IsAlive)
 	if err != nil {
 		t.Errorf("error encrypting data %s", err)
 		return
@@ -67,7 +68,7 @@ func TestE2EFunctionRunWithToken(t *testing.T) {
 	}
 
 	if runResult.Result["message"] != "OK" {
-		t.Errorf("Unexpected function run response %s", runResult.Result["message"])
+		t.Errorf("Unexpected function run response %s", runResult.Result)
 		return
 	}
 

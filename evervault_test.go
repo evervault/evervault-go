@@ -1,4 +1,5 @@
-//+build unit_test
+//go:build unit_test
+// +build unit_test
 
 package evervault_test
 
@@ -18,54 +19,148 @@ import (
 	"github.com/evervault/evervault-go"
 	"github.com/evervault/evervault-go/internal/crypto"
 	"github.com/evervault/evervault-go/internal/datatypes"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestDecrypt(t *testing.T) {
+func TestDecryptString(t *testing.T) {
 	t.Parallel()
 
-	server := startMockHTTPServer(nil)
+	response := map[string]any{
+		"result": "decrypted",
+	}
+	server := startMockHTTPServer(response, "")
 	defer server.Close()
 
 	testClient := mockedClient(t, server)
 
-	type EncryptedCardData struct {
-		number string
-		cvv    string
-		expiry string
-	}
-
 	stringType := reflect.TypeOf("")
 
-	floatType := reflect.TypeOf(1.0)
-
-	res, err := testClient.Decrypt(EncryptedCardData{"ev:abc123", "ev:def456", "ev:ghi789"})
+	res, err := testClient.DecryptString("ev:abc123")
 	if err != nil {
-		t.Errorf("error encrypting data %s", err)
+		t.Errorf("error decrypting data %s", err)
 		return
 	}
 
-	castResponse, ok := res.(map[string]any)
-	if !ok {
-		t.Errorf("Expected to cast response to map correctly")
+	if reflect.TypeOf(res) != stringType {
+		t.Errorf("Expected decrypted string, got %s", reflect.TypeOf(res))
+	}
+}
+
+func TestDecryptInt(t *testing.T) {
+	t.Parallel()
+
+	response := map[string]any{
+		"result": "123",
+	}
+	server := startMockHTTPServer(response, "")
+	defer server.Close()
+
+	testClient := mockedClient(t, server)
+
+	intType := reflect.TypeOf(1)
+
+	res, err := testClient.DecryptInt("ev:abc123")
+	if err != nil {
+		t.Errorf("error decrypting data %s", err)
+		return
 	}
 
-	if reflect.TypeOf(castResponse["number"]) != stringType {
-		t.Errorf("Expected encrypted string, got %s", castResponse["number"])
+	if reflect.TypeOf(res) != intType {
+		t.Errorf("Expected decrypted int, got %s", reflect.TypeOf(res))
+	}
+}
+
+func TestDecryptFloat64(t *testing.T) {
+	t.Parallel()
+
+	response := map[string]any{
+		"result": "1.1",
+	}
+	server := startMockHTTPServer(response, "")
+	defer server.Close()
+
+	testClient := mockedClient(t, server)
+
+	float64Type := reflect.TypeOf(1.1)
+
+	res, err := testClient.DecryptFloat64("ev:abc123")
+	if err != nil {
+		t.Errorf("error decrypting data %s", err)
+		return
 	}
 
-	if reflect.TypeOf(castResponse["cvv"]) != floatType {
-		t.Errorf("Expected encrypted string, got %s", castResponse["cvv"])
+	if reflect.TypeOf(res) != float64Type {
+		t.Errorf("Expected decrypted float64, got %s", reflect.TypeOf(res))
+	}
+}
+
+func TestDecryptBoolean(t *testing.T) {
+	t.Parallel()
+
+	response := map[string]any{
+		"result": "true",
+	}
+	server := startMockHTTPServer(response, "")
+	defer server.Close()
+
+	testClient := mockedClient(t, server)
+
+	booleanType := reflect.TypeOf(true)
+
+	res, err := testClient.DecryptBool("ev:abc123")
+	if err != nil {
+		t.Errorf("error decrypting data %s", err)
+		return
 	}
 
-	if reflect.TypeOf(castResponse["expiry"]) != stringType {
-		t.Errorf("Expected encrypted string, got %s", castResponse["expiry"])
+	if reflect.TypeOf(res) != booleanType {
+		t.Errorf("Expected decrypted bool, got %s", reflect.TypeOf(res))
 	}
+}
+
+func TestDecryptByteArray(t *testing.T) {
+	t.Parallel()
+
+	response := map[string]any{
+		"result": "Hello World!",
+	}
+	server := startMockHTTPServer(response, "")
+	defer server.Close()
+
+	testClient := mockedClient(t, server)
+
+	byteArrayType := reflect.TypeOf([]byte("Hello World!"))
+
+	res, err := testClient.DecryptByteArray("ev:abc123")
+	if err != nil {
+		t.Errorf("error decrypting data %s", err)
+		return
+	}
+
+	if reflect.TypeOf(res) != byteArrayType {
+		t.Errorf("Expected decrypted byte array, got %s", reflect.TypeOf(res))
+	}
+}
+
+func TestDecryptJsonResponse(t *testing.T) {
+	t.Parallel()
+
+	response := map[string]any{
+		"result": "Hello World!",
+	}
+	server := startMockHTTPServer(response, "application/json")
+	defer server.Close()
+
+	testClient := mockedClient(t, server)
+
+	_, err := testClient.DecryptByteArray("ev:abc123")
+	assert.ErrorIs(t, err, evervault.ErrInvalidDataType)
 }
 
 func TestCreateClientSideDecryptToken(t *testing.T) {
 	t.Parallel()
 
-	server := startMockHTTPServer(nil)
+	server := startMockHTTPServer(nil, "")
 	defer server.Close()
 
 	testClient := mockedClient(t, server)
@@ -96,12 +191,12 @@ func TestCreateClientSideDecryptToken(t *testing.T) {
 func TestEncryptString(t *testing.T) {
 	t.Parallel()
 
-	server := startMockHTTPServer(nil)
+	server := startMockHTTPServer(nil, "")
 	defer server.Close()
 
 	testClient := mockedClient(t, server)
 
-	res, err := testClient.Encrypt("plaintext")
+	res, err := testClient.EncryptString("plaintext")
 	if err != nil {
 		t.Errorf("error encrypting data %s", err)
 		return
@@ -115,12 +210,31 @@ func TestEncryptString(t *testing.T) {
 func TestEncryptInt(t *testing.T) {
 	t.Parallel()
 
-	server := startMockHTTPServer(nil)
+	server := startMockHTTPServer(nil, "")
 	defer server.Close()
 
 	testClient := mockedClient(t, server)
 
-	res, err := testClient.Encrypt(123)
+	res, err := testClient.EncryptInt(123)
+	if err != nil {
+		t.Errorf("error encrypting data %s", err)
+		return
+	}
+
+	if !isValidEncryptedString(res, datatypes.Number) {
+		t.Errorf("Expected encrypted string, got %s", res)
+	}
+}
+
+func TestEncryptFloat64(t *testing.T) {
+	t.Parallel()
+
+	server := startMockHTTPServer(nil, "")
+	defer server.Close()
+
+	testClient := mockedClient(t, server)
+
+	res, err := testClient.EncryptFloat64(1.1)
 	if err != nil {
 		t.Errorf("error encrypting data %s", err)
 		return
@@ -134,12 +248,12 @@ func TestEncryptInt(t *testing.T) {
 func TestEncryptBoolean(t *testing.T) {
 	t.Parallel()
 
-	server := startMockHTTPServer(nil)
+	server := startMockHTTPServer(nil, "")
 	defer server.Close()
 
 	testClient := mockedClient(t, server)
 
-	res, err := testClient.Encrypt(true)
+	res, err := testClient.EncryptBool(true)
 	if err != nil {
 		t.Errorf("error encrypting data %s", err)
 		return
@@ -153,12 +267,12 @@ func TestEncryptBoolean(t *testing.T) {
 func TestEncryptByte(t *testing.T) {
 	t.Parallel()
 
-	server := startMockHTTPServer(nil)
+	server := startMockHTTPServer(nil, "")
 	defer server.Close()
 
 	testClient := mockedClient(t, server)
 
-	res, err := testClient.Encrypt([]byte("plaintext"))
+	res, err := testClient.EncryptByteArray([]byte("plaintext"))
 	if err != nil {
 		t.Errorf("error encrypting data %s", err)
 		return
@@ -172,7 +286,7 @@ func TestEncryptByte(t *testing.T) {
 func TestClientInitClientErrorWithoutApiKey(t *testing.T) {
 	t.Parallel()
 
-	server := startMockHTTPServer(nil)
+	server := startMockHTTPServer(nil, "")
 	defer server.Close()
 
 	_, err := evervault.MakeClient("", "")
@@ -225,38 +339,42 @@ func testFuncHandler(writer http.ResponseWriter, reader *http.Request, mockRespo
 	}
 }
 
-func handleRoute(writer http.ResponseWriter, reader *http.Request, mockResponse map[string]any) {
+func handleRoute(writer http.ResponseWriter, reader *http.Request, mockResponse map[string]any, contentType string) {
 	if reader.URL.Path == "/test_function" {
 		testFuncHandler(writer, reader, mockResponse)
+		return
 	}
 
 	if reader.URL.Path == "/v2/functions/test_function/run-token" {
+		if contentType == "" {
+			contentType = "application/json"
+		}
+		writer.Header().Set("Content-Type", contentType)
 		writer.WriteHeader(http.StatusOK)
-		writer.Header().Set("Content-Type", "application/json")
 
 		if err := json.NewEncoder(writer).Encode(evervault.RunTokenResponse{Token: "test_token"}); err != nil {
 			log.Printf("error encoding json: %s", err)
 		}
+		return
 	}
 
 	if reader.URL.Path == "/decrypt" {
+		if contentType == "" {
+			contentType = "text/plain"
+		}
+
+		writer.Header().Set("Content-Type", contentType)
 		writer.WriteHeader(http.StatusOK)
-		writer.Header().Set("Content-Type", "application/json")
-
-		returnData := map[string]interface{}{
-			"number": "4242424242424242",
-			"cvv":    123,
-			"expiry": "01/24",
-		}
-
-		if err := json.NewEncoder(writer).Encode(returnData); err != nil {
-			log.Printf("error encoding json: %s", err)
-		}
+		writer.Write([]byte(mockResponse["result"].(string)))
+		return
 	}
 
 	if reader.URL.Path == "/client-side-tokens" {
+		if contentType == "" {
+			contentType = "application/json"
+		}
+		writer.Header().Set("Content-Type", contentType)
 		writer.WriteHeader(http.StatusOK)
-		writer.Header().Set("Content-Type", "application/json")
 
 		var body map[string]any
 
@@ -287,10 +405,10 @@ func hasSpecialPath(path string) bool {
 	return specialPaths[path]
 }
 
-func startMockHTTPServer(mockResponse map[string]any) *httptest.Server {
+func startMockHTTPServer(mockResponse map[string]any, contentType string) *httptest.Server {
 	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, reader *http.Request) {
 		if hasSpecialPath(reader.URL.Path) {
-			handleRoute(writer, reader, mockResponse)
+			handleRoute(writer, reader, mockResponse, contentType)
 
 			return
 		}
@@ -311,8 +429,8 @@ func startMockHTTPServer(mockResponse map[string]any) *httptest.Server {
 			EcdhP256Key:             base64.StdEncoding.EncodeToString(compressedEphemeralPublicKey),
 			EcdhP256KeyUncompressed: base64.StdEncoding.EncodeToString(ephemeralPublicKey),
 		}
-		writer.WriteHeader(http.StatusOK)
 		writer.Header().Set("Content-Type", "application/json")
+		writer.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(writer).Encode(keys); err != nil {
 			log.Printf("error encoding json: %s", err)
 		}

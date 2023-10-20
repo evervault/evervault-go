@@ -75,7 +75,7 @@ func (c *Client) initClient() error {
 func (c *Client) getPublicKey() (KeysResponse, error) {
 	publicKeyURL := fmt.Sprintf("%s/cages/key", c.Config.EvAPIURL)
 
-	keys, err := c.makeRequest(publicKeyURL, http.MethodGet, nil, "")
+	keys, _, err := c.makeRequest(publicKeyURL, http.MethodGet, nil, "")
 	if err != nil {
 		return KeysResponse{}, err
 	}
@@ -88,7 +88,7 @@ func (c *Client) getPublicKey() (KeysResponse, error) {
 	return res, nil
 }
 
-func (c *Client) decrypt(encryptedData any) (any, error) {
+func (c *Client) decrypt(encryptedData string) (any, error) {
 	pBytes, err := json.Marshal(encryptedData)
 	if err != nil {
 		return nil, fmt.Errorf("Error marshalling payload to json %w", err)
@@ -96,17 +96,23 @@ func (c *Client) decrypt(encryptedData any) (any, error) {
 
 	decryptURL := fmt.Sprintf("%s/decrypt", c.Config.EvAPIURL)
 
-	decryptedData, err := c.makeRequest(decryptURL, "POST", pBytes, "")
+	decryptedData, contentType, err := c.makeRequest(decryptURL, "POST", pBytes, "")
 	if err != nil {
 		return nil, err
 	}
 
 	var res any
-	if err := json.Unmarshal(decryptedData, &res); err != nil {
-		return nil, fmt.Errorf("Error parsing JSON response %w", err)
+	if contentType == "application/json" {
+		if err := json.Unmarshal(decryptedData, &res); err != nil {
+			return nil, fmt.Errorf("Error parsing JSON response %w", err)
+		}
+
+		return res, nil
 	}
 
-	return res, nil
+	decryptedString := string(decryptedData)
+
+	return decryptedString, nil
 }
 
 func (c *Client) createToken(action string, payload any, expiry int64) (TokenResponse, error) {
@@ -123,7 +129,7 @@ func (c *Client) createToken(action string, payload any, expiry int64) (TokenRes
 
 	tokenURL := fmt.Sprintf("%s/client-side-tokens", c.Config.EvAPIURL)
 
-	tokenResult, err := c.makeRequest(tokenURL, "POST", bodyBytes, "")
+	tokenResult, _, err := c.makeRequest(tokenURL, "POST", bodyBytes, "")
 	if err != nil {
 		return TokenResponse{}, err
 	}
@@ -136,7 +142,7 @@ func (c *Client) createToken(action string, payload any, expiry int64) (TokenRes
 	return res, nil
 }
 
-func (c *Client) makeRequest(url, method string, body []byte, runToken string) ([]byte, error) {
+func (c *Client) makeRequest(url, method string, body []byte, runToken string) ([]byte, string, error) {
 	req, err := c.buildRequestContext(clientRequest{
 		url:      url,
 		method:   method,
@@ -146,28 +152,30 @@ func (c *Client) makeRequest(url, method string, body []byte, runToken string) (
 		runToken: runToken,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("Error creating request %w", err)
+		return nil, "", fmt.Errorf("Error creating request %w", err)
 	}
 
 	client := &http.Client{}
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("Error making request %w", err)
+		return nil, "", fmt.Errorf("Error making request %w", err)
 	}
 
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, APIError{StatusCode: resp.StatusCode, Message: "Error making HTTP request"}
+		return nil, "", APIError{StatusCode: resp.StatusCode, Message: "Error making HTTP request"}
 	}
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("Error serialising body %w", err)
+		return nil, "", fmt.Errorf("Error serialising body %w", err)
 	}
 
-	return respBody, nil
+	contentType := resp.Header.Get("Content-Type")
+
+	return respBody, contentType, nil
 }
 
 func (c *Client) buildRequestContext(clientRequest clientRequest) (*http.Request, error) {
