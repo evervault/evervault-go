@@ -28,4 +28,5 @@ jobs:
           EV_API_KEY: ${{ secrets.EV_API_KEY_V1 }}
           EV_FUNCTION_NAME: ${{ secrets.EV_FUNCTION_NAME_V1 }}
           EV_SYNTHETIC_ENDPOINT_URL: ${{ secrets.EV_SYNTHETIC_ENDPOINT_URL }}
+          EV_TEST_ENV_VAR: ${{ secrets.EV_TEST_ENV_VAR_1 }}
         run: go test -v -count=1 -race --tags=e2e ./...

@@ -4,6 +4,7 @@
 package e2e_test
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
@@ -25,6 +26,8 @@ func TestE2EFunctionRun(t *testing.T) {
 	t.Parallel()
 
 	client := GetClient(t)
+
+	fmt.Println("test", os.Getenv("EV_TEST_ENV_VAR"))
 
 	encryptedPayload := map[string]any{}
 
