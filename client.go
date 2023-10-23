@@ -80,10 +80,10 @@ func (c *Client) initClient() error {
 func (c *Client) getPublicKey() (KeysResponse, error) {
 	publicKeyURL := fmt.Sprintf("%s/cages/key", c.Config.EvAPIURL)
 
-	clientResponse, err := c.makeRequest(publicKeyURL, http.MethodGet, nil, false)
+	response, err := c.makeRequest(publicKeyURL, http.MethodGet, nil, false)
 
-	if clientResponse.statusCode != http.StatusOK {
-		return KeysResponse{}, APIError{ Message: "Error making HTTP request" }
+	if response.statusCode != http.StatusOK {
+		return KeysResponse{}, APIError{Message: "Error making HTTP request"}
 	}
 
 	if err != nil {
@@ -91,7 +91,7 @@ func (c *Client) getPublicKey() (KeysResponse, error) {
 	}
 
 	res := KeysResponse{}
-	if err := json.Unmarshal(clientResponse.body, &res); err != nil {
+	if err := json.Unmarshal(response.body, &res); err != nil {
 		return KeysResponse{}, fmt.Errorf("Error parsing JSON response %w", err)
 	}
 
@@ -106,10 +106,10 @@ func (c *Client) decrypt(encryptedData string) (any, error) {
 
 	decryptURL := fmt.Sprintf("%s/decrypt", c.Config.EvAPIURL)
 
-	clientResponse, err := c.makeRequest(decryptURL, http.MethodPost, pBytes, true)
+	response, err := c.makeRequest(decryptURL, http.MethodPost, pBytes, true)
 
-	if clientResponse.statusCode != http.StatusOK {
-		return TokenResponse{}, extractRelevantError(clientResponse.body)
+	if response.statusCode != http.StatusOK {
+		return TokenResponse{}, extractRelevantError(response.body)
 	}
 
 	if err != nil {
@@ -117,15 +117,15 @@ func (c *Client) decrypt(encryptedData string) (any, error) {
 	}
 
 	var res any
-	if clientResponse.contentType == "application/json" {
-		if err := json.Unmarshal(clientResponse.body, &res); err != nil {
+	if response.contentType == "application/json" {
+		if err := json.Unmarshal(response.body, &res); err != nil {
 			return nil, fmt.Errorf("Error parsing JSON response %w", err)
 		}
 
 		return res, nil
 	}
 
-	decryptedString := string(clientResponse.body)
+	decryptedString := string(response.body)
 
 	return decryptedString, nil
 }
@@ -144,10 +144,10 @@ func (c *Client) createToken(action string, payload any, expiry int64) (TokenRes
 
 	tokenURL := fmt.Sprintf("%s/client-side-tokens", c.Config.EvAPIURL)
 
-	clientResponse, err := c.makeRequest(tokenURL, http.MethodPost, bodyBytes, false)
+	response, err := c.makeRequest(tokenURL, http.MethodPost, bodyBytes, false)
 
-	if clientResponse.statusCode != http.StatusOK {
-		return TokenResponse{}, extractRelevantError(clientResponse.body)
+	if response.statusCode != http.StatusOK {
+		return TokenResponse{}, extractRelevantError(response.body)
 	}
 
 	if err != nil {
@@ -155,7 +155,7 @@ func (c *Client) createToken(action string, payload any, expiry int64) (TokenRes
 	}
 
 	res := TokenResponse{}
-	if err := json.Unmarshal(clientResponse.body, &res); err != nil {
+	if err := json.Unmarshal(response.body, &res); err != nil {
 		return TokenResponse{}, fmt.Errorf("Error parsing JSON response %w", err)
 	}
 

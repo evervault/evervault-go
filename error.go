@@ -68,7 +68,9 @@ func (e FunctionTimeoutError) Error() string {
 	return e.Message
 }
 
-// FunctionNotReadyError is returned when the Function is not ready to be invoked yet. This can occur when it hasn't been executed in a while. Retrying to run the Function after a short time should resolve this.
+// FunctionNotReadyError is returned when the Function is not ready to be invoked yet.
+// This can occur when it hasn't been executed in a while.
+// Retrying to run the Function after a short time should resolve this.
 type FunctionNotReadyError struct {
 	Message string
 }

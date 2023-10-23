@@ -54,10 +54,10 @@ func (c *Client) createRunToken(functionName string, payload any) (RunTokenRespo
 
 	runTokenURL := fmt.Sprintf("%s/v2/functions/%s/run-token", c.Config.EvAPIURL, functionName)
 
-	clientResponse, err := c.makeRequest(runTokenURL, http.MethodPost, pBytes, false)
+	response, err := c.makeRequest(runTokenURL, http.MethodPost, pBytes, false)
 
-	if clientResponse.statusCode != http.StatusOK {
-		return RunTokenResponse{}, APIError{ Message: "Error making HTTP request" }
+	if response.statusCode != http.StatusOK {
+		return RunTokenResponse{}, APIError{Message: "Error making HTTP request"}
 	}
 
 	if err != nil {
@@ -65,7 +65,7 @@ func (c *Client) createRunToken(functionName string, payload any) (RunTokenRespo
 	}
 
 	res := RunTokenResponse{}
-	if err := json.Unmarshal(clientResponse.body, &res); err != nil {
+	if err := json.Unmarshal(response.body, &res); err != nil {
 		return RunTokenResponse{}, fmt.Errorf("Error parsing JSON response %w", err)
 	}
 
@@ -81,24 +81,23 @@ func (c *Client) runFunction(functionName string, payload map[string]any) (Funct
 
 	apiURL := fmt.Sprintf("%s/functions/%s/runs", c.Config.EvAPIURL, functionName)
 
-	clientResponse, err := c.makeRequest(apiURL, http.MethodPost, pBytes, true)
+	response, err := c.makeRequest(apiURL, http.MethodPost, pBytes, true)
 	if err != nil {
 		return FunctionRunResponse{}, err
 	}
 
 	functionRunResponse := FunctionRunResponse{}
-	err = json.Unmarshal(clientResponse.body, &functionRunResponse)
+	err = json.Unmarshal(response.body, &functionRunResponse)
 
 	if err == nil && functionRunResponse.Status == "success" {
 		return functionRunResponse, nil
 	} else if err == nil && functionRunResponse.Status == "failure" {
 		functionRuntimeError := FunctionRuntimeError{}
-		err = json.Unmarshal(clientResponse.body, &functionRuntimeError)
+		err = json.Unmarshal(response.body, &functionRuntimeError)
 		if err == nil {
 			return FunctionRunResponse{}, functionRuntimeError
 		}
 	}
 
-	return FunctionRunResponse{}, extractRelevantError(clientResponse.body)
+	return FunctionRunResponse{}, extractRelevantError(response.body)
 }
-
