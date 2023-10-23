@@ -83,7 +83,7 @@ func (c *Client) getPublicKey() (KeysResponse, error) {
 	clientResponse, err := c.makeRequest(publicKeyURL, http.MethodGet, nil, false)
 
 	if clientResponse.statusCode != http.StatusOK {
-		return KeysResponse{}, APIError{StatusCode: clientResponse.statusCode, Message: "Error making HTTP request"}
+		return KeysResponse{}, APIError{ Message: "Error making HTTP request" }
 	}
 
 	if err != nil {
@@ -109,7 +109,7 @@ func (c *Client) decrypt(encryptedData string) (any, error) {
 	clientResponse, err := c.makeRequest(decryptURL, http.MethodPost, pBytes, true)
 
 	if clientResponse.statusCode != http.StatusOK {
-		return TokenResponse{}, APIError{StatusCode: clientResponse.statusCode, Message: "Error making HTTP request"}
+		return TokenResponse{}, extractRelevantError(clientResponse.body)
 	}
 
 	if err != nil {
@@ -147,7 +147,7 @@ func (c *Client) createToken(action string, payload any, expiry int64) (TokenRes
 	clientResponse, err := c.makeRequest(tokenURL, http.MethodPost, bodyBytes, false)
 
 	if clientResponse.statusCode != http.StatusOK {
-		return TokenResponse{}, APIError{StatusCode: clientResponse.statusCode, Message: "Error making HTTP request"}
+		return TokenResponse{}, extractRelevantError(clientResponse.body)
 	}
 
 	if err != nil {

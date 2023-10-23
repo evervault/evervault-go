@@ -23,7 +23,7 @@ func (c *Client) OutboundRelayClient() (*http.Client, error) {
 	clientResponse, err := c.makeRequest(c.Config.EvervaultCaURL, http.MethodGet, nil, false)
 
 	if clientResponse.statusCode != http.StatusOK {
-		return nil, APIError{StatusCode: clientResponse.statusCode, Message: "Error making HTTP request"}
+		return nil, APIError{ Message: "Error making HTTP request" }
 	}
 
 	if err != nil {

@@ -53,7 +53,7 @@ func (c *Client) createRunToken(functionName string, payload any) (RunTokenRespo
 	clientResponse, err := c.makeRequest(runTokenURL, http.MethodPost, pBytes, false)
 
 	if clientResponse.statusCode != http.StatusOK {
-		return RunTokenResponse{}, APIError{StatusCode: clientResponse.statusCode, Message: "Error making HTTP request"}
+		return RunTokenResponse{}, APIError{ Message: "Error making HTTP request" }
 	}
 
 	if err != nil {
@@ -95,24 +95,6 @@ func (c *Client) runFunction(functionName string, payload map[string]any) (Funct
 		}
 	}
 
-	return extractRelevantError(clientResponse.body)
+	return FunctionRunResponse{}, extractRelevantError(clientResponse.body)
 }
 
-func extractRelevantError(resp []byte) (FunctionRunResponse, error) {
-	evervaultError := Error{}
-	if err := json.Unmarshal(resp, &evervaultError); err != nil {
-		return FunctionRunResponse{}, fmt.Errorf("Error parsing JSON response %w", err)
-	}
-
-	if evervaultError.Code == "functions/function-not-ready" {
-		functionNotReadyError := FunctionNotReadyError{Message: evervaultError.Message}
-		return FunctionRunResponse{}, functionNotReadyError
-	}
-
-	if evervaultError.Code == "functions/request-timeout" {
-		functionTimeoutError := FunctionTimeoutError{Message: evervaultError.Message}
-		return FunctionRunResponse{}, functionTimeoutError
-	}
-
-	return FunctionRunResponse{}, evervaultError
-}

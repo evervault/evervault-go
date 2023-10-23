@@ -78,7 +78,7 @@ func (c *Client) CageClient(cageHostname string, expectedPCRs []PCRs) (*http.Cli
 	clientResponse, err := c.makeRequest(c.Config.EvervaultCagesCaURL, http.MethodGet, nil, false)
 
 	if clientResponse.statusCode != http.StatusOK {
-		return nil, APIError{StatusCode: clientResponse.statusCode, Message: "Error making HTTP request"}
+		return nil, APIError{ Message: "Error making HTTP request" }
 	}
 
 	if err != nil {

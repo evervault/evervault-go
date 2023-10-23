@@ -159,7 +159,7 @@ func TestRunFunctionUnauthorized(t *testing.T) {
 	payload := map[string]any{"name": "john", "age": 30}
 
 	_, err := testClient.RunFunction("test_function", payload)
-	if evervaultError, ok := err.(evervault.Error); !ok {
+	if evervaultError, ok := err.(evervault.APIError); !ok {
 		t.Error("Expected Evervault Error, got", err)
 	} else {
 		assert.Equal(t, evervaultError.Code, code)
