@@ -13,14 +13,6 @@ import (
 
 var functionName string = os.Getenv("EV_FUNCTION_NAME")
 
-type Payload struct {
-	String string `json:"string"`
-	Integer int `json:"integer"`
-	Float float64 `json:"float"`
-	True bool `json:"true"`
-	False bool `json:"false"`
-}
-
 func TestE2EFunctionRun(t *testing.T) {
 	t.Parallel()
 
