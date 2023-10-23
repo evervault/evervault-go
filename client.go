@@ -109,7 +109,7 @@ func (c *Client) decrypt(encryptedData string) (any, error) {
 	response, err := c.makeRequest(decryptURL, http.MethodPost, pBytes, true)
 
 	if response.statusCode != http.StatusOK {
-		return TokenResponse{}, extractRelevantError(response.body)
+		return TokenResponse{}, extractAPIError(response.body)
 	}
 
 	if err != nil {
@@ -147,7 +147,7 @@ func (c *Client) createToken(action string, payload any, expiry int64) (TokenRes
 	response, err := c.makeRequest(tokenURL, http.MethodPost, bodyBytes, false)
 
 	if response.statusCode != http.StatusOK {
-		return TokenResponse{}, extractRelevantError(response.body)
+		return TokenResponse{}, extractAPIError(response.body)
 	}
 
 	if err != nil {

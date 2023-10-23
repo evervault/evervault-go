@@ -100,5 +100,5 @@ func (c *Client) runFunction(functionName string, payload map[string]any) (Funct
 		}
 	}
 
-	return FunctionRunResponse{}, extractRelevantError(response.body)
+	return FunctionRunResponse{}, extractAPIError(response.body)
 }

@@ -30,7 +30,7 @@ var ErrCryptoUnableToPerformEncryption = errors.New("unable to perform encryptio
 // ErrInvalidDataType is returned when an unsupported data type was specified for encryption.
 var ErrInvalidDataType = errors.New("Error: Invalid datatype")
 
-func extractRelevantError(resp []byte) error {
+func extractAPIError(resp []byte) error {
 	evervaultError := APIError{}
 	if err := json.Unmarshal(resp, &evervaultError); err != nil {
 		return fmt.Errorf("Error parsing JSON response %w", err)
