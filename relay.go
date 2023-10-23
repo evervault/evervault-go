@@ -20,17 +20,17 @@ import (
 //
 //	resp, err := outboundRelayClient.Post("https://example.com/", "application/json", bytes.NewBuffer(payload))
 func (c *Client) OutboundRelayClient() (*http.Client, error) {
-	caCertResponse, _, statusCode, err := c.makeRequest(c.Config.EvervaultCaURL, http.MethodGet, nil, false)
+	clientResponse, err := c.makeRequest(c.Config.EvervaultCaURL, http.MethodGet, nil, false)
 
-	if statusCode != http.StatusOK {
-		return nil, APIError{StatusCode: statusCode, Message: "Error making HTTP request"}
+	if clientResponse.statusCode != http.StatusOK {
+		return nil, APIError{StatusCode: clientResponse.statusCode, Message: "Error making HTTP request"}
 	}
 
 	if err != nil {
 		return nil, err
 	}
 
-	return c.relayClient(caCertResponse)
+	return c.relayClient(clientResponse.body)
 }
 
 func (c *Client) relayClient(caCert []byte) (*http.Client, error) {
