@@ -100,7 +100,7 @@ func (c *Client) decrypt(encryptedData string) (any, error) {
 
 	decryptURL := fmt.Sprintf("%s/decrypt", c.Config.EvAPIURL)
 
-	decryptedData, contentType, statusCode, err := c.makeRequest(decryptURL, "POST", pBytes, true)
+	decryptedData, contentType, statusCode, err := c.makeRequest(decryptURL, http.MethodPost, pBytes, true)
 
 	if statusCode != http.StatusOK {
 		return TokenResponse{}, APIError{StatusCode: statusCode, Message: "Error making HTTP request"}
@@ -138,7 +138,7 @@ func (c *Client) createToken(action string, payload any, expiry int64) (TokenRes
 
 	tokenURL := fmt.Sprintf("%s/client-side-tokens", c.Config.EvAPIURL)
 
-	tokenResult, _, statusCode, err := c.makeRequest(tokenURL, "POST", bodyBytes, false)
+	tokenResult, _, statusCode, err := c.makeRequest(tokenURL, http.MethodPost, bodyBytes, false)
 
 	if statusCode != http.StatusOK {
 		return TokenResponse{}, APIError{StatusCode: statusCode, Message: "Error making HTTP request"}
