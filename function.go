@@ -24,6 +24,10 @@ func (c *Client) CreateFunctionRunToken(functionName string, payload any) (RunTo
 	return tokenResponse, nil
 }
 
+// Response containing the results of a Function run.
+// - FunctionRunResponse.Status contains the status of the function invocation (success/failure).
+// - FunctionRunResponse.ID contains the run ID of the function invocation.
+// - FunctionRunResponse.Result contains the response from the function invocation.
 type FunctionRunResponse struct {
 	Status string         `json:"status"`
 	ID     string         `json:"id"`
