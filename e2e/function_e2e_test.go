@@ -12,6 +12,7 @@ import (
 )
 
 var functionName string = os.Getenv("EV_FUNCTION_NAME")
+var initializationErrorFunctionName string = os.Getenv("EV_INITIALIZATION_ERROR_FUNCTION_NAME")
 
 func TestE2EFunctionRun(t *testing.T) {
 	t.Parallel()
@@ -84,5 +85,20 @@ func TestE2EFunctionRunWithError(t *testing.T) {
 		t.Error("Expected FunctionRuntimeError, got", err)
 	} else {
 		assert.Equal(t, runtimeError.ErrorBody.Message, "User threw an error")
+	}
+}
+
+func TestE2EFunctionRunWithInitializationError(t *testing.T) {
+	t.Parallel()
+
+	client := GetClient(t)
+
+	payload := map[string]any{}
+
+	_, err := client.RunFunction(initializationErrorFunctionName, payload)
+	if runtimeError, ok := err.(evervault.FunctionRuntimeError); !ok {
+		t.Error("Expected FunctionRuntimeError, got", err)
+	} else {
+		assert.Equal(t, runtimeError.ErrorBody.Message, "The function failed to initialize. This error is commonly encountered when there are problems with the function code (e.g. a syntax error) or when a required import is missing.")
 	}
 }
