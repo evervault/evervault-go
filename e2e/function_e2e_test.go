@@ -6,70 +6,99 @@ package e2e_test
 import (
 	"os"
 	"testing"
+
+	"github.com/evervault/evervault-go"
+	"github.com/stretchr/testify/assert"
 )
 
 var functionName string = os.Getenv("EV_FUNCTION_NAME")
+var initializationErrorFunctionName string = os.Getenv("EV_INITIALIZATION_ERROR_FUNCTION_NAME")
 
-type MyData struct {
-	Name string `json:"name"`
-	Age int `json:"age"`
-	IsAlive bool `json:"isAlive"`
-}
-
-type payload struct {
-	Name string `json:"name"`
-	Age string `json:"age"`
-	IsAlive string `json:"isAlive"`
-}
-
-func TestE2EFunctionRunWithToken(t *testing.T) {
+func TestE2EFunctionRun(t *testing.T) {
 	t.Parallel()
 
 	client := GetClient(t)
 
-	data := MyData{"John Doe", 42, true}
+	encryptedPayload := map[string]any{}
 
-	encrypted, err := client.EncryptString(data.Name)
+	encrypted, err := client.EncryptString("hello")
 	if err != nil {
-		t.Errorf("error encrypting data %s", err)
+		t.Errorf("error encrypting string %s", err)
 		return
 	}
+	encryptedPayload["String"] = encrypted
 
-	payload := payload{}
-
-	payload.Name = encrypted
-
-	encrypted, err = client.EncryptInt(data.Age)
+	encrypted, err = client.EncryptInt(1)
 	if err != nil {
-		t.Errorf("error encrypting data %s", err)
+		t.Errorf("error encrypting integer %s", err)
 		return
 	}
+	encryptedPayload["Integer"] = encrypted
 
-	payload.Age = encrypted
-
-	encrypted, err = client.EncryptBool(data.IsAlive)
+	encrypted, err = client.EncryptFloat64(1.5)
 	if err != nil {
-		t.Errorf("error encrypting data %s", err)
+		t.Errorf("error encrypting float %s", err)
 		return
 	}
+	encryptedPayload["Float"] = encrypted
 
-	payload.IsAlive = encrypted
-
-	token, err := client.CreateFunctionRunToken(functionName, data)
+	encrypted, err = client.EncryptBool(true)
 	if err != nil {
-		t.Errorf("error creating token %s", err)
+		t.Errorf("error encrypting true %s", err)
 		return
 	}
+	encryptedPayload["True"] = encrypted
 
-	runResult, err := client.RunFunction(functionName, data, token.Token)
+	encrypted, err = client.EncryptBool(false)
+	if err != nil {
+		t.Errorf("error encrypting false %s", err)
+		return
+	}
+	encryptedPayload["False"] = encrypted
+
+	runResult, err := client.RunFunction(functionName, encryptedPayload)
 	if err != nil {
 		t.Errorf("error running function %s", err)
 		return
 	}
 
-	if runResult.Result["message"] != "OK" {
-		t.Errorf("Unexpected function run response %s", runResult.Result)
-		return
+	if runResult.Status != "success" {
+		t.Errorf("Expected success, got %s", runResult.Status)
 	}
 
+	assert.Equal(t, runResult.Result["String"], "string")
+	assert.Equal(t, runResult.Result["Integer"], "number")
+	assert.Equal(t, runResult.Result["Float"], "number")
+	assert.Equal(t, runResult.Result["True"], "boolean")
+	assert.Equal(t, runResult.Result["False"], "boolean")
+}
+
+func TestE2EFunctionRunWithError(t *testing.T) {
+	t.Parallel()
+
+	client := GetClient(t)
+
+	payload := map[string]any{"shouldError": true}
+
+	_, err := client.RunFunction(functionName, payload)
+	if runtimeError, ok := err.(evervault.FunctionRuntimeError); !ok {
+		t.Error("Expected FunctionRuntimeError, got", err)
+	} else {
+		assert.Equal(t, runtimeError.ErrorBody.Message, "User threw an error")
+	}
+}
+
+func TestE2EFunctionRunWithInitializationError(t *testing.T) {
+	t.Parallel()
+
+	client := GetClient(t)
+
+	payload := map[string]any{}
+
+	_, err := client.RunFunction(initializationErrorFunctionName, payload)
+	if runtimeError, ok := err.(evervault.FunctionRuntimeError); !ok {
+		t.Error("Expected FunctionRuntimeError, got", err)
+	} else {
+		assert.Equal(t, runtimeError.ErrorBody.Message, "The function failed to initialize. This error is commonly encountered when there are problems with the function code (e.g. a syntax error) or when a required import is missing.")
+	}
 }

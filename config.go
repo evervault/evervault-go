@@ -11,7 +11,6 @@ type Config struct {
 	EvervaultCaURL       string        // URL for the Evervault CA.
 	EvervaultCagesCaURL  string        // URL for the Evervault Cages CA.
 	RelayURL             string        // URL for the Evervault Relay.
-	FunctionRunURL       string        // URL for running Evervault functions.
 	EvAPIURL             string        // URL for the Evervault API.
 	CagesPollingInterval time.Duration // Polling interval for obtaining fresh attestation doc in seconds
 }
@@ -23,7 +22,6 @@ func MakeConfig() Config {
 		EvervaultCaURL:       getEnvOrDefault("EV_CA_URL", "https://ca.evervault.com"),
 		EvervaultCagesCaURL:  getEnvOrDefault("EV_CAGES_CA_URL", "https://cages-ca.evervault.com/cages-ca.crt"),
 		RelayURL:             getEnvOrDefault("EV_RELAY_URL", "https://relay.evervault.com"),
-		FunctionRunURL:       getEnvOrDefault("EV_FUNCTION_RUN_URL", "https://run.evervault.com"),
 		EvAPIURL:             getEnvOrDefault("EV_API_URL", "https://api.evervault.com"),
 		CagesPollingInterval: getPollingInterval(),
 	}

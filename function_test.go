@@ -3,12 +3,18 @@
 
 package evervault_test
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+
+	"github.com/evervault/evervault-go"
+	"github.com/stretchr/testify/assert"
+)
 
 func TestGetFunctionRunToken(t *testing.T) {
 	t.Parallel()
 
-	server := startMockHTTPServer(nil, "")
+	server := startMockHTTPServer("", "")
 	defer server.Close()
 	testClient := mockedClient(t, server)
 
@@ -23,47 +29,75 @@ func TestGetFunctionRunToken(t *testing.T) {
 	}
 }
 
-func TestRunFunctionWithRunToken(t *testing.T) {
+func TestRunFunctionSuccess(t *testing.T) {
 	t.Parallel()
 
-	functionResponsePayload := map[string]any{
-		"appUuid": "app_89a080d2228e",
-		"result": map[string]any{
-			"message": "Hello from a Function! It seems you have 4 letters in your name",
-			"name":    "ev:z6CVgEMXL2eqh0io:A4K51eCnhkHkwJ5GiZs9pOGvsWQJv4MBdckQ5rPjm/O7:FgbRc2CYwxuuzFmyh86mTKQ/ah0=:$",
-		},
-		"runId": "func_run_65bc5168cb8b",
-	}
+	message := "Hello from a Function! It seems you have 4 letters in your name"
+	id := "func_run_65bc5168cb8b"
+	functionResponsePayload := fmt.Sprintf(`
+	{
+		"status": "success",
+		"result": { "message": "%s" },
+		"id": "%s"
+	}`, message, id);
 
 	server := startMockHTTPServer(functionResponsePayload, "")
 	defer server.Close()
 
 	testClient := mockedClient(t, server)
 	payload := map[string]any{"name": "john", "age": 30}
-	runToken := "test_token"
 
-	res, err := testClient.RunFunction("test_function", payload, runToken)
+	res, err := testClient.RunFunction("test_function", payload)
 	if err != nil {
 		t.Errorf("Failed to run Function, got %s", err)
 		return
 	}
 
-	if res.AppUUID != functionResponsePayload["appUuid"] {
-		t.Errorf("Expected encrypted string, got %s", res)
+	assert.Equal(t, res.Status, "success")
+	assert.Equal(t, res.ID, id)
+	assert.Equal(t, res.Result["message"], message)
+}
+
+func TestRunFunctionFailure(t *testing.T) {
+	t.Parallel()
+
+	message := "Uh oh!"
+	stack := "Error: Uh oh!..."
+	id := "func_run_65bc5168cb8b"
+	functionResponsePayload := fmt.Sprintf(`
+	{
+		"status": "failure",
+		"error": { "message": "%s", "stack": "%s" },
+		"id": "%s"
+	}`, message, stack, id);
+
+	server := startMockHTTPServer(functionResponsePayload, "")
+	defer server.Close()
+
+	testClient := mockedClient(t, server)
+	payload := map[string]any{"name": "john", "age": 30}
+
+	_, err := testClient.RunFunction("test_function", payload)
+	if runtimeError, ok := err.(evervault.FunctionRuntimeError); !ok {
+		t.Error("Expected FunctionRuntimeError, got", err)
+	} else {
+		assert.Equal(t, runtimeError.ErrorBody.Message, message)
+		assert.Equal(t, runtimeError.ErrorBody.Stack, stack)
+		assert.Equal(t, runtimeError.ID, id)
 	}
 }
 
-func TestRunFunctionWithApiKey(t *testing.T) {
+func TestRunFunctionTimeout(t *testing.T) {
 	t.Parallel()
 
-	functionResponsePayload := map[string]any{
-		"appUuid": "app_89a080d2228e",
-		"result": map[string]any{
-			"message": "Hello from a Function! It seems you have 4 letters in your name",
-			"name":    "ev:z6CVgEMXL2eqh0io:A4K51eCnhkHkwJ5GiZs9pOGvsWQJv4MBdckQ5rPjm/O7:FgbRc2CYwxuuzFmyh86mTKQ/ah0=:$",
-		},
-		"runId": "func_run_65bc5168cb8b",
-	}
+	message := "Function execution exceeded the allotted time and has timed out. Please review your code to ensure it finishes within the time limit set in function.toml."
+	functionResponsePayload := fmt.Sprintf(`
+	{
+		"status": 408,
+		"code": "functions/request-timeout",
+		"title": "Function Request Timeout",
+		"detail": "%s"
+	}`, message)
 
 	server := startMockHTTPServer(functionResponsePayload, "")
 	defer server.Close()
@@ -71,13 +105,64 @@ func TestRunFunctionWithApiKey(t *testing.T) {
 	testClient := mockedClient(t, server)
 	payload := map[string]any{"name": "john", "age": 30}
 
-	res, err := testClient.RunFunction("test_function", payload, "")
-	if err != nil {
-		t.Errorf("Failed to run Function, got %s", err)
-		return
+	_, err := testClient.RunFunction("test_function", payload)
+	if functionTimeoutError, ok := err.(evervault.FunctionTimeoutError); !ok {
+		t.Error("Expected FunctionTimeoutError, got", err)
+	} else {
+		assert.Equal(t, functionTimeoutError.Message, message)
 	}
+}
 
-	if res.AppUUID != functionResponsePayload["appUuid"] {
-		t.Errorf("Expected encrypted string, got %s", res)
+func TestRunFunctionNotReady(t *testing.T) {
+	t.Parallel()
+
+	message := "The Function is not ready to be invoked yet. This can occur when it hasn't been executed recently. Please try again shortly."
+	functionResponsePayload := fmt.Sprintf(`
+	{
+		"status": 409,
+		"code": "functions/function-not-ready",
+		"title": "Function Not Ready",
+		"detail": "%s"
+	}`, message)
+
+	server := startMockHTTPServer(functionResponsePayload, "")
+	defer server.Close()
+
+	testClient := mockedClient(t, server)
+	payload := map[string]any{"name": "john", "age": 30}
+
+	_, err := testClient.RunFunction("test_function", payload)
+	if functionNotReadyError, ok := err.(evervault.FunctionNotReadyError); !ok {
+		t.Error("Expected FunctionNotReadyError, got", err)
+	} else {
+		assert.Equal(t, functionNotReadyError.Message, message)
+	}
+}
+
+func TestRunFunctionUnauthorized(t *testing.T) {
+	t.Parallel()
+
+	message := "The request cannot be authenticated. The request does not contain valid credentials. Please retry with a valid API key."
+	code := "unauthorized"
+	functionResponsePayload := fmt.Sprintf(`
+	{
+		"status": 409,
+		"code": "%s",
+		"title": "Unauthorized",
+		"detail": "%s"
+	}`, code, message)
+
+	server := startMockHTTPServer(functionResponsePayload, "")
+	defer server.Close()
+
+	testClient := mockedClient(t, server)
+	payload := map[string]any{"name": "john", "age": 30}
+
+	_, err := testClient.RunFunction("test_function", payload)
+	if evervaultError, ok := err.(evervault.APIError); !ok {
+		t.Error("Expected Evervault Error, got", err)
+	} else {
+		assert.Equal(t, evervaultError.Code, code)
+		assert.Equal(t, evervaultError.Message, message)
 	}
 }

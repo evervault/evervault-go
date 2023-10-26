@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 )
 
 // Evervault Client.
@@ -36,12 +35,18 @@ type KeysResponse struct {
 }
 
 type clientRequest struct {
-	url      string
-	method   string
-	body     []byte
-	appUUID  string
-	apiKey   string
-	runToken string
+	url          string
+	method       string
+	body         []byte
+	appUUID      string
+	apiKey       string
+	useBasicAuth bool
+}
+
+type clientResponse struct {
+	body        []byte
+	contentType string
+	statusCode  int
 }
 
 type TokenResponse struct {
@@ -75,13 +80,18 @@ func (c *Client) initClient() error {
 func (c *Client) getPublicKey() (KeysResponse, error) {
 	publicKeyURL := fmt.Sprintf("%s/cages/key", c.Config.EvAPIURL)
 
-	keys, _, err := c.makeRequest(publicKeyURL, http.MethodGet, nil, "")
+	response, err := c.makeRequest(publicKeyURL, http.MethodGet, nil, false)
+
+	if response.statusCode != http.StatusOK {
+		return KeysResponse{}, APIError{Message: "Error making HTTP request"}
+	}
+
 	if err != nil {
 		return KeysResponse{}, err
 	}
 
 	res := KeysResponse{}
-	if err := json.Unmarshal(keys, &res); err != nil {
+	if err := json.Unmarshal(response.body, &res); err != nil {
 		return KeysResponse{}, fmt.Errorf("Error parsing JSON response %w", err)
 	}
 
@@ -96,21 +106,26 @@ func (c *Client) decrypt(encryptedData string) (any, error) {
 
 	decryptURL := fmt.Sprintf("%s/decrypt", c.Config.EvAPIURL)
 
-	decryptedData, contentType, err := c.makeRequest(decryptURL, "POST", pBytes, "")
+	response, err := c.makeRequest(decryptURL, http.MethodPost, pBytes, true)
+
+	if response.statusCode != http.StatusOK {
+		return TokenResponse{}, extractAPIError(response.body)
+	}
+
 	if err != nil {
 		return nil, err
 	}
 
 	var res any
-	if contentType == "application/json" {
-		if err := json.Unmarshal(decryptedData, &res); err != nil {
+	if response.contentType == "application/json" {
+		if err := json.Unmarshal(response.body, &res); err != nil {
 			return nil, fmt.Errorf("Error parsing JSON response %w", err)
 		}
 
 		return res, nil
 	}
 
-	decryptedString := string(decryptedData)
+	decryptedString := string(response.body)
 
 	return decryptedString, nil
 }
@@ -129,53 +144,56 @@ func (c *Client) createToken(action string, payload any, expiry int64) (TokenRes
 
 	tokenURL := fmt.Sprintf("%s/client-side-tokens", c.Config.EvAPIURL)
 
-	tokenResult, _, err := c.makeRequest(tokenURL, "POST", bodyBytes, "")
+	response, err := c.makeRequest(tokenURL, http.MethodPost, bodyBytes, false)
+
+	if response.statusCode != http.StatusOK {
+		return TokenResponse{}, extractAPIError(response.body)
+	}
+
 	if err != nil {
 		return TokenResponse{}, err
 	}
 
 	res := TokenResponse{}
-	if err := json.Unmarshal(tokenResult, &res); err != nil {
+	if err := json.Unmarshal(response.body, &res); err != nil {
 		return TokenResponse{}, fmt.Errorf("Error parsing JSON response %w", err)
 	}
 
 	return res, nil
 }
 
-func (c *Client) makeRequest(url, method string, body []byte, runToken string) ([]byte, string, error) {
+func (c *Client) makeRequest(url, method string, body []byte, useBasicAuth bool) (clientResponse, error) {
 	req, err := c.buildRequestContext(clientRequest{
-		url:      url,
-		method:   method,
-		body:     body,
-		appUUID:  c.appUUID,
-		apiKey:   c.apiKey,
-		runToken: runToken,
+		url:          url,
+		method:       method,
+		body:         body,
+		appUUID:      c.appUUID,
+		apiKey:       c.apiKey,
+		useBasicAuth: useBasicAuth,
 	})
 	if err != nil {
-		return nil, "", fmt.Errorf("Error creating request %w", err)
+		return clientResponse{}, fmt.Errorf("Error creating request %w", err)
 	}
 
 	client := &http.Client{}
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, "", fmt.Errorf("Error making request %w", err)
+		return clientResponse{}, fmt.Errorf("Error making request %w", err)
 	}
 
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, "", APIError{StatusCode: resp.StatusCode, Message: "Error making HTTP request"}
-	}
+	statusCode := resp.StatusCode
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, "", fmt.Errorf("Error serialising body %w", err)
+		return clientResponse{}, fmt.Errorf("Error serialising body %w", err)
 	}
 
 	contentType := resp.Header.Get("Content-Type")
 
-	return respBody, contentType, nil
+	return clientResponse{respBody, contentType, statusCode}, nil
 }
 
 func (c *Client) buildRequestContext(clientRequest clientRequest) (*http.Request, error) {
@@ -186,7 +204,7 @@ func (c *Client) buildRequestContext(clientRequest clientRequest) (*http.Request
 			return nil, fmt.Errorf("Error creating request %w", err)
 		}
 
-		setRequestHeaders(req, clientRequest.appUUID, clientRequest.apiKey, clientRequest.url, clientRequest.runToken)
+		setRequestHeaders(req, clientRequest.appUUID, clientRequest.apiKey, clientRequest.useBasicAuth)
 
 		return req, nil
 	}
@@ -198,33 +216,25 @@ func (c *Client) buildRequestContext(clientRequest clientRequest) (*http.Request
 		return nil, fmt.Errorf("Error creating request %w", err)
 	}
 
-	setRequestHeaders(req, clientRequest.appUUID, clientRequest.apiKey, clientRequest.url, clientRequest.runToken)
+	setRequestHeaders(req, clientRequest.appUUID, clientRequest.apiKey, clientRequest.useBasicAuth)
 
 	return req, nil
 }
 
-func setRequestHeaders(req *http.Request, appUUID, apiKey, url, runToken string) {
-	if runToken != "" {
+func setRequestHeaders(req *http.Request, appUUID, apiKey string, useBasicAuth bool) {
+	if useBasicAuth {
+		stringBytes := []byte(fmt.Sprintf("%s:%s", appUUID, apiKey))
+		base64EncodedHeaderValue := base64.StdEncoding.EncodeToString(stringBytes)
 		req.Header = http.Header{
-			"Authorization": {fmt.Sprintf("Bearer %s", runToken)},
+			"Authorization": {fmt.Sprintf("Basic %s", base64EncodedHeaderValue)},
 			"Content-Type":  {"application/json"},
 			"user-agent":    {fmt.Sprintf("evervault-go/%s", ClientVersion)},
 		}
 	} else {
-		if strings.Contains(url, "/decrypt") {
-			stringBytes := []byte(fmt.Sprintf("%s:%s", appUUID, apiKey))
-			base64EncodedHeaderValue := base64.StdEncoding.EncodeToString(stringBytes)
-			req.Header = http.Header{
-				"Authorization": {fmt.Sprintf("Basic %s", base64EncodedHeaderValue)},
-				"Content-Type":  {"application/json"},
-				"user-agent":    {fmt.Sprintf("evervault-go/%s", ClientVersion)},
-			}
-		} else {
-			req.Header = http.Header{
-				"API-KEY":      {apiKey},
-				"Content-Type": {"application/json"},
-				"user-agent":   {fmt.Sprintf("evervault-go/%s", ClientVersion)},
-			}
+		req.Header = http.Header{
+			"API-KEY":      {apiKey},
+			"Content-Type": {"application/json"},
+			"user-agent":   {fmt.Sprintf("evervault-go/%s", ClientVersion)},
 		}
 	}
 }

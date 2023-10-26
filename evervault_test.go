@@ -25,10 +25,7 @@ import (
 func TestDecryptString(t *testing.T) {
 	t.Parallel()
 
-	response := map[string]any{
-		"result": "decrypted",
-	}
-	server := startMockHTTPServer(response, "")
+	server := startMockHTTPServer("decrypted", "")
 	defer server.Close()
 
 	testClient := mockedClient(t, server)
@@ -49,10 +46,7 @@ func TestDecryptString(t *testing.T) {
 func TestDecryptInt(t *testing.T) {
 	t.Parallel()
 
-	response := map[string]any{
-		"result": "123",
-	}
-	server := startMockHTTPServer(response, "")
+	server := startMockHTTPServer("123", "")
 	defer server.Close()
 
 	testClient := mockedClient(t, server)
@@ -73,10 +67,7 @@ func TestDecryptInt(t *testing.T) {
 func TestDecryptFloat64(t *testing.T) {
 	t.Parallel()
 
-	response := map[string]any{
-		"result": "1.1",
-	}
-	server := startMockHTTPServer(response, "")
+	server := startMockHTTPServer("1.1", "")
 	defer server.Close()
 
 	testClient := mockedClient(t, server)
@@ -97,10 +88,7 @@ func TestDecryptFloat64(t *testing.T) {
 func TestDecryptBoolean(t *testing.T) {
 	t.Parallel()
 
-	response := map[string]any{
-		"result": "true",
-	}
-	server := startMockHTTPServer(response, "")
+	server := startMockHTTPServer("true", "")
 	defer server.Close()
 
 	testClient := mockedClient(t, server)
@@ -121,10 +109,7 @@ func TestDecryptBoolean(t *testing.T) {
 func TestDecryptByteArray(t *testing.T) {
 	t.Parallel()
 
-	response := map[string]any{
-		"result": "Hello World!",
-	}
-	server := startMockHTTPServer(response, "")
+	server := startMockHTTPServer("Hello World!", "")
 	defer server.Close()
 
 	testClient := mockedClient(t, server)
@@ -145,10 +130,7 @@ func TestDecryptByteArray(t *testing.T) {
 func TestDecryptJsonResponse(t *testing.T) {
 	t.Parallel()
 
-	response := map[string]any{
-		"result": "Hello World!",
-	}
-	server := startMockHTTPServer(response, "application/json")
+	server := startMockHTTPServer("Hello World!", "application/json")
 	defer server.Close()
 
 	testClient := mockedClient(t, server)
@@ -160,7 +142,7 @@ func TestDecryptJsonResponse(t *testing.T) {
 func TestCreateClientSideDecryptToken(t *testing.T) {
 	t.Parallel()
 
-	server := startMockHTTPServer(nil, "")
+	server := startMockHTTPServer("", "")
 	defer server.Close()
 
 	testClient := mockedClient(t, server)
@@ -191,7 +173,7 @@ func TestCreateClientSideDecryptToken(t *testing.T) {
 func TestEncryptString(t *testing.T) {
 	t.Parallel()
 
-	server := startMockHTTPServer(nil, "")
+	server := startMockHTTPServer("", "")
 	defer server.Close()
 
 	testClient := mockedClient(t, server)
@@ -210,7 +192,7 @@ func TestEncryptString(t *testing.T) {
 func TestEncryptInt(t *testing.T) {
 	t.Parallel()
 
-	server := startMockHTTPServer(nil, "")
+	server := startMockHTTPServer("", "")
 	defer server.Close()
 
 	testClient := mockedClient(t, server)
@@ -229,7 +211,7 @@ func TestEncryptInt(t *testing.T) {
 func TestEncryptFloat64(t *testing.T) {
 	t.Parallel()
 
-	server := startMockHTTPServer(nil, "")
+	server := startMockHTTPServer("", "")
 	defer server.Close()
 
 	testClient := mockedClient(t, server)
@@ -248,7 +230,7 @@ func TestEncryptFloat64(t *testing.T) {
 func TestEncryptBoolean(t *testing.T) {
 	t.Parallel()
 
-	server := startMockHTTPServer(nil, "")
+	server := startMockHTTPServer("", "")
 	defer server.Close()
 
 	testClient := mockedClient(t, server)
@@ -267,7 +249,7 @@ func TestEncryptBoolean(t *testing.T) {
 func TestEncryptByte(t *testing.T) {
 	t.Parallel()
 
-	server := startMockHTTPServer(nil, "")
+	server := startMockHTTPServer("", "")
 	defer server.Close()
 
 	testClient := mockedClient(t, server)
@@ -286,7 +268,7 @@ func TestEncryptByte(t *testing.T) {
 func TestClientInitClientErrorWithoutApiKey(t *testing.T) {
 	t.Parallel()
 
-	server := startMockHTTPServer(nil, "")
+	server := startMockHTTPServer("", "")
 	defer server.Close()
 
 	_, err := evervault.MakeClient("", "")
@@ -302,7 +284,7 @@ func TestClientInitClientErrorWithoutApiKey(t *testing.T) {
 	}
 }
 
-func testFuncHandler(writer http.ResponseWriter, reader *http.Request, mockResponse map[string]any) {
+func testFuncHandler(writer http.ResponseWriter, reader *http.Request, mockResponse string) {
 	apiKey := reader.Header.Get("API-KEY")
 	authHeader := reader.Header.Get("Authorization")
 
@@ -314,33 +296,35 @@ func testFuncHandler(writer http.ResponseWriter, reader *http.Request, mockRespo
 	writer.WriteHeader(http.StatusOK)
 	writer.Header().Set("Content-Type", "application/json")
 
-	appUUIDResponse, appUUIDOk := mockResponse["appUuid"].(string)
-	if !appUUIDOk {
-		appUUIDResponse = ""
-	}
+	// statusResponse, statusOk := mockResponse["status"].(string)
+	// if !statusOk {
+	// 	statusResponse = ""
+	// }
 
-	runIDResposne, ok := mockResponse["runId"].(string)
-	if !ok {
-		runIDResposne = ""
-	}
+	// idResponse, ok := mockResponse["id"].(string)
+	// if !ok {
+	// 	idResponse = ""
+	// }
 
-	resultResponse, ok := mockResponse["result"].(map[string]any)
-	if !ok {
-		resultResponse = map[string]any{}
-	}
+	// resultResponse, ok := mockResponse["result"].(map[string]any)
+	// if !ok {
+	// 	resultResponse = map[string]any{}
+	// }
 
-	responseBody := evervault.FunctionRunResponse{
-		AppUUID: appUUIDResponse,
-		RunID:   runIDResposne,
-		Result:  resultResponse,
-	}
-	if err := json.NewEncoder(writer).Encode(responseBody); err != nil {
-		log.Printf("error encoding json: %s", err)
-	}
+	// responseBody := evervault.FunctionRunResponse{
+	// 	Status: statusResponse,
+	// 	Id: idResponse,
+	// 	Result: resultResponse,
+	// }
+	// if err := json.NewEncoder(writer).Encode(responseBody); err != nil {
+	// 	log.Printf("error encoding json: %s", err)
+	// }
+
+	writer.Write([]byte(mockResponse))
 }
 
-func handleRoute(writer http.ResponseWriter, reader *http.Request, mockResponse map[string]any, contentType string) {
-	if reader.URL.Path == "/test_function" {
+func handleRoute(writer http.ResponseWriter, reader *http.Request, mockResponse string, contentType string) {
+	if reader.URL.Path == "/functions/test_function/runs" {
 		testFuncHandler(writer, reader, mockResponse)
 		return
 	}
@@ -365,7 +349,7 @@ func handleRoute(writer http.ResponseWriter, reader *http.Request, mockResponse 
 
 		writer.Header().Set("Content-Type", contentType)
 		writer.WriteHeader(http.StatusOK)
-		writer.Write([]byte(mockResponse["result"].(string)))
+		writer.Write([]byte(mockResponse))
 		return
 	}
 
@@ -396,7 +380,7 @@ func handleRoute(writer http.ResponseWriter, reader *http.Request, mockResponse 
 
 func hasSpecialPath(path string) bool {
 	specialPaths := map[string]bool{
-		"/test_function":                        true,
+		"/functions/test_function/runs":         true,
 		"/v2/functions/test_function/run-token": true,
 		"/decrypt":                              true,
 		"/client-side-tokens":                   true,
@@ -405,7 +389,7 @@ func hasSpecialPath(path string) bool {
 	return specialPaths[path]
 }
 
-func startMockHTTPServer(mockResponse map[string]any, contentType string) *httptest.Server {
+func startMockHTTPServer(mockResponse string, contentType string) *httptest.Server {
 	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, reader *http.Request) {
 		if hasSpecialPath(reader.URL.Path) {
 			handleRoute(writer, reader, mockResponse, contentType)
@@ -445,7 +429,6 @@ func mockedClient(t *testing.T, server *httptest.Server) *evervault.Client {
 	config := evervault.Config{
 		EvervaultCaURL: server.URL,
 		EvAPIURL:       server.URL,
-		FunctionRunURL: server.URL,
 		RelayURL:       server.URL,
 	}
 

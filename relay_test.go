@@ -30,7 +30,7 @@ func TestOutboundClientRoutesToOutboundRelay(t *testing.T) {
 
 	defer mockRelayServer.Close()
 
-	server := startMockHTTPServer(nil, "")
+	server := startMockHTTPServer("", "")
 	testClient := mockedClient(t, server)
 
 	relayClient, err := testClient.OutboundRelayClient()
