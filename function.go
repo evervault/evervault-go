@@ -74,8 +74,8 @@ func (c *Client) createRunToken(functionName string, payload any) (RunTokenRespo
 
 func (c *Client) runFunction(functionName string, payload map[string]any) (FunctionRunResponse, error) {
 	wrappedPayload := map[string]any{"payload": payload}
-	pBytes, err := json.Marshal(wrappedPayload)
 
+	pBytes, err := json.Marshal(wrappedPayload)
 	if err != nil {
 		return FunctionRunResponse{}, fmt.Errorf("Error parsing payload as json %w", err)
 	}
