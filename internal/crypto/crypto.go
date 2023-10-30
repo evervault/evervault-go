@@ -1,15 +1,18 @@
 package crypto
 
 import (
+	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"io"
 	"strings"
+	"time"
 
 	"github.com/evervault/evervault-go/internal/datatypes"
 )
@@ -56,7 +59,7 @@ func CompressPublicKey(keyToCompress []byte) []byte {
 
 // EncryptValue encrypts the given value using AES encryption.
 func EncryptValue(
-	aesKey, ephemeralPublicKey, appPublicKey []byte, value string, datatype datatypes.Datatype,
+	aesKey, ephemeralPublicKey, appPublicKey []byte, value, role string, datatype datatypes.Datatype,
 ) (string, error) {
 	block, err := aes.NewCipher(aesKey)
 	if err != nil {
@@ -73,14 +76,62 @@ func EncryptValue(
 		return "", fmt.Errorf("unable to encrypt block %w", err)
 	}
 
-	ciphertext := aesgcm.Seal(nil, nonce, []byte(value), appPublicKey)
+	metadata := buildEncodedMetadata(role)
+	metadataLength := uint16(len(metadata))
+	metadataOffset := make([]byte, 2)
+	binary.LittleEndian.PutUint16(metadataOffset, metadataLength)
+	value_with_metadata := append(append(metadataOffset, metadata...), []byte(value)...)
+
+	ciphertext := aesgcm.Seal(nil, nonce, value_with_metadata, appPublicKey)
 
 	return evFormat(ciphertext, nonce, ephemeralPublicKey, datatype), nil
 }
 
+func buildEncodedMetadata(role string) []byte {
+	var buffer bytes.Buffer
+
+	// Binary representation of a fixed map with 2 or 3 items, followed by the key-value pairs.
+	if role == "" {
+		binary.Write(&buffer, binary.BigEndian, byte(0x82))
+	} else {
+		binary.Write(&buffer, binary.BigEndian, byte(0x83))
+
+		// `dr` (data role) => role_name
+		// Binary representation for a fixed string of length 2, followed by `dr`
+		binary.Write(&buffer, binary.BigEndian, byte(0xa2))
+		buffer.WriteString("dr")
+
+		// Binary representation for a fixed string of role name length, followed by the role name itself.
+		binary.Write(&buffer, binary.BigEndian, byte(0xa0|len(role)))
+		buffer.WriteString(role)
+	}
+
+	// "eo" (encryption origin) => 9 (Go SDK)
+	// Binary representation for a fixed string of length 2, followed by `eo`
+	binary.Write(&buffer, binary.BigEndian, byte(0xa2))
+	buffer.WriteString("eo")
+
+	// Binary representation for the integer 9
+	binary.Write(&buffer, binary.BigEndian, byte(0x09))
+
+	// "et" (encryption timestamp) => current time
+	// Binary representation for a fixed string of length 2, followed by `et`
+	binary.Write(&buffer, binary.BigEndian, byte(0xa2))
+	buffer.WriteString("et")
+
+	// Get the current time and convert it to Unix timestamp (seconds since Jan 1, 1970)
+	currentTime := uint32(time.Now().Unix())
+
+	// Binary representation for a 4-byte unsigned integer (uint 32), followed by the epoch time
+	binary.Write(&buffer, binary.BigEndian, byte(0xce))
+	binary.Write(&buffer, binary.BigEndian, currentTime)
+
+	return buffer.Bytes()
+}
+
 // evFormat formats the cipher text, IV, public key, and datatype into an "ev" formatted string.
 func evFormat(cipherText, iv, publicKey []byte, datatype datatypes.Datatype) string {
-	formattedString := fmt.Sprintf("ev:%s:", base64EncodeStripped([]byte("NOC")))
+	formattedString := fmt.Sprintf("ev:%s:", base64EncodeStripped([]byte("LCY")))
 
 	if datatype != datatypes.String {
 		if datatype == datatypes.Number {

@@ -91,13 +91,13 @@ func (c *Client) getAesKeyAndCompressedEphemeralPublicKey() ([]byte, []byte, err
 //
 // If an error occurs then nil is returned. If the error is due a problem with Key creation then
 // ErrCryptoKeyImportError is returned. For anyother error ErrCryptoUnableToPerformEncryption is returned.
-func (c *Client) EncryptString(value string) (string, error) {
+func (c *Client) EncryptString(value, role string) (string, error) {
 	aesKey, compressedEphemeralPublicKey, err := c.getAesKeyAndCompressedEphemeralPublicKey()
 	if err != nil {
 		return "", err
 	}
 
-	return crypto.EncryptValue(aesKey, compressedEphemeralPublicKey, c.p256PublicKeyCompressed, value, datatypes.String)
+	return crypto.EncryptValue(aesKey, compressedEphemeralPublicKey, c.p256PublicKeyCompressed, value, role, datatypes.String)
 }
 
 // EncryptInt encrypts the value passed to it using the Evervault Encryption Scheme.
@@ -107,7 +107,7 @@ func (c *Client) EncryptString(value string) (string, error) {
 //
 // If an error occurs then nil is returned. If the error is due a problem with Key creation then
 // ErrCryptoKeyImportError is returned. For anyother error ErrCryptoUnableToPerformEncryption is returned.
-func (c *Client) EncryptInt(value int) (string, error) {
+func (c *Client) EncryptInt(value int, role string) (string, error) {
 	aesKey, compressedEphemeralPublicKey, err := c.getAesKeyAndCompressedEphemeralPublicKey()
 	if err != nil {
 		return "", err
@@ -115,7 +115,7 @@ func (c *Client) EncryptInt(value int) (string, error) {
 
 	val := strconv.Itoa(value)
 
-	return crypto.EncryptValue(aesKey, compressedEphemeralPublicKey, c.p256PublicKeyCompressed, val, datatypes.Number)
+	return crypto.EncryptValue(aesKey, compressedEphemeralPublicKey, c.p256PublicKeyCompressed, val, role, datatypes.Number)
 }
 
 // EncryptFloat64 encrypts the value passed to it using the Evervault Encryption Scheme.
@@ -125,7 +125,7 @@ func (c *Client) EncryptInt(value int) (string, error) {
 //
 // If an error occurs then nil is returned. If the error is due a problem with Key creation then
 // ErrCryptoKeyImportError is returned. For anyother error ErrCryptoUnableToPerformEncryption is returned.
-func (c *Client) EncryptFloat64(value float64) (string, error) {
+func (c *Client) EncryptFloat64(value float64, role string) (string, error) {
 	aesKey, compressedEphemeralPublicKey, err := c.getAesKeyAndCompressedEphemeralPublicKey()
 	if err != nil {
 		return "", err
@@ -133,7 +133,7 @@ func (c *Client) EncryptFloat64(value float64) (string, error) {
 
 	val := strconv.FormatFloat(value, 'f', -1, 64)
 
-	return crypto.EncryptValue(aesKey, compressedEphemeralPublicKey, c.p256PublicKeyCompressed, val, datatypes.Number)
+	return crypto.EncryptValue(aesKey, compressedEphemeralPublicKey, c.p256PublicKeyCompressed, val, role, datatypes.Number)
 }
 
 // EncryptBool encrypts the value passed to it using the Evervault Encryption Scheme.
@@ -143,7 +143,7 @@ func (c *Client) EncryptFloat64(value float64) (string, error) {
 //
 // If an error occurs then nil is returned. If the error is due a problem with Key creation then
 // ErrCryptoKeyImportError is returned. For anyother error ErrCryptoUnableToPerformEncryption is returned.
-func (c *Client) EncryptBool(value bool) (string, error) {
+func (c *Client) EncryptBool(value bool, role string) (string, error) {
 	aesKey, compressedEphemeralPublicKey, err := c.getAesKeyAndCompressedEphemeralPublicKey()
 	if err != nil {
 		return "", err
@@ -151,7 +151,7 @@ func (c *Client) EncryptBool(value bool) (string, error) {
 
 	val := strconv.FormatBool(value)
 
-	return crypto.EncryptValue(aesKey, compressedEphemeralPublicKey, c.p256PublicKeyCompressed, val, datatypes.Boolean)
+	return crypto.EncryptValue(aesKey, compressedEphemeralPublicKey, c.p256PublicKeyCompressed, val, role, datatypes.Boolean)
 }
 
 // EncryptByteArray encrypts the value passed to it using the Evervault Encryption Scheme.
@@ -161,7 +161,7 @@ func (c *Client) EncryptBool(value bool) (string, error) {
 //
 // If an error occurs then nil is returned. If the error is due a problem with Key creation then
 // ErrCryptoKeyImportError is returned. For anyother error ErrCryptoUnableToPerformEncryption is returned.
-func (c *Client) EncryptByteArray(value []byte) (string, error) {
+func (c *Client) EncryptByteArray(value []byte, role string) (string, error) {
 	aesKey, compressedEphemeralPublicKey, err := c.getAesKeyAndCompressedEphemeralPublicKey()
 	if err != nil {
 		return "", err
@@ -169,7 +169,7 @@ func (c *Client) EncryptByteArray(value []byte) (string, error) {
 
 	val := string(value)
 
-	return crypto.EncryptValue(aesKey, compressedEphemeralPublicKey, c.p256PublicKeyCompressed, val, datatypes.String)
+	return crypto.EncryptValue(aesKey, compressedEphemeralPublicKey, c.p256PublicKeyCompressed, val, role, datatypes.String)
 }
 
 // DecryptString decrypts data previously encrypted with Encrypt or through Relay
