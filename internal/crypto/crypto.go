@@ -119,18 +119,18 @@ func buildEncodedMetadata(role string) ([]byte, error) {
 			return nil, fmt.Errorf("error building metadata %w", err)
 		}
 
-		err = encodeRole(buffer, role)
+		err = encodeRole(&buffer, role)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	err := encodeEncryptionOrigin(buffer)
+	err := encodeEncryptionOrigin(&buffer)
 	if err != nil {
 		return nil, err
 	}
 
-	err = encodeEncryptionTimestamp(buffer)
+	err = encodeEncryptionTimestamp(&buffer)
 	if err != nil {
 		return nil, err
 	}
@@ -138,10 +138,10 @@ func buildEncodedMetadata(role string) ([]byte, error) {
 	return buffer.Bytes(), nil
 }
 
-func encodeEncryptionTimestamp(buffer bytes.Buffer) error {
+func encodeEncryptionTimestamp(buffer *bytes.Buffer) error {
 	// "et" (encryption timestamp) => current time
 	// Binary representation for a fixed string of length 2, followed by `et`
-	err := binary.Write(&buffer, binary.BigEndian, byte(lengthOfFixedLengthStringWith2Bytes))
+	err := binary.Write(buffer, binary.BigEndian, byte(lengthOfFixedLengthStringWith2Bytes))
 	if err != nil {
 		return fmt.Errorf("error building metadata %w", err)
 	}
@@ -152,7 +152,7 @@ func encodeEncryptionTimestamp(buffer bytes.Buffer) error {
 	}
 
 	// Binary representation for a 4-byte unsigned integer (uint 32), followed by the epoch time
-	err = binary.Write(&buffer, binary.BigEndian, byte(binaryRepresentationOfFourByteUnsignedInteger))
+	err = binary.Write(buffer, binary.BigEndian, byte(binaryRepresentationOfFourByteUnsignedInteger))
 	if err != nil {
 		return fmt.Errorf("error building metadata %w", err)
 	}
@@ -160,7 +160,7 @@ func encodeEncryptionTimestamp(buffer bytes.Buffer) error {
 	// Get the current time and convert it to Unix timestamp (seconds since Jan 1, 1970)
 	currentTime := uint32(time.Now().Unix())
 
-	err = binary.Write(&buffer, binary.BigEndian, currentTime)
+	err = binary.Write(buffer, binary.BigEndian, currentTime)
 	if err != nil {
 		return fmt.Errorf("error building metadata %w", err)
 	}
@@ -168,10 +168,10 @@ func encodeEncryptionTimestamp(buffer bytes.Buffer) error {
 	return nil
 }
 
-func encodeEncryptionOrigin(buffer bytes.Buffer) error {
+func encodeEncryptionOrigin(buffer *bytes.Buffer) error {
 	// "eo" (encryption origin) => 9 (Go SDK)
 	// Binary representation for a fixed string of length 2, followed by `eo`
-	err := binary.Write(&buffer, binary.BigEndian, byte(lengthOfFixedLengthStringWith2Bytes))
+	err := binary.Write(buffer, binary.BigEndian, byte(lengthOfFixedLengthStringWith2Bytes))
 	if err != nil {
 		return fmt.Errorf("error building metadata %w", err)
 	}
@@ -182,7 +182,7 @@ func encodeEncryptionOrigin(buffer bytes.Buffer) error {
 	}
 
 	// Binary representation for the integer 9
-	err = binary.Write(&buffer, binary.BigEndian, byte(encryptionOrigin))
+	err = binary.Write(buffer, binary.BigEndian, byte(encryptionOrigin))
 	if err != nil {
 		return fmt.Errorf("error building metadata %w", err)
 	}
@@ -190,10 +190,10 @@ func encodeEncryptionOrigin(buffer bytes.Buffer) error {
 	return nil
 }
 
-func encodeRole(buffer bytes.Buffer, role string) error {
+func encodeRole(buffer *bytes.Buffer, role string) error {
 	// `dr` (data role) => role_name
 	// Binary representation for a fixed string of length 2, followed by `dr`
-	err := binary.Write(&buffer, binary.BigEndian, byte(lengthOfFixedLengthStringWith2Bytes))
+	err := binary.Write(buffer, binary.BigEndian, byte(lengthOfFixedLengthStringWith2Bytes))
 	if err != nil {
 		return fmt.Errorf("error building metadata %w", err)
 	}
@@ -204,7 +204,7 @@ func encodeRole(buffer bytes.Buffer, role string) error {
 	}
 
 	// Binary representation for a fixed string of role name length, followed by the role name itself.
-	err = binary.Write(&buffer, binary.BigEndian, byte(defaultRoleNameLength|len(role)))
+	err = binary.Write(buffer, binary.BigEndian, byte(defaultRoleNameLength|len(role)))
 	if err != nil {
 		return fmt.Errorf("error building metadata %w", err)
 	}
