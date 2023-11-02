@@ -1,5 +1,5 @@
 ---
-"evervault-go": minor
+"evervault-go": major
 ---
 
 The `Encrypt` functions have been enhanced to accept an optional Data Role.
