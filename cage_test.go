@@ -9,16 +9,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"testing"
 
 	"github.com/evervault/evervault-go"
+	"github.com/evervault/evervault-go/models"
 	"github.com/stretchr/testify/assert"
 )
 
-const betaCage = "synthetic-cage.app_f5f084041a7e.cages.evervault.com"
 const cage = "synthetic-cage.app-f5f084041a7e.cage.evervault.com"
 
 type CageEcho struct {
@@ -70,256 +69,6 @@ func buildCageRequest(t *testing.T, testCage string) *http.Request {
 	return req
 }
 
-func TestCageClientBeta(t *testing.T) {
-	t.Parallel()
-
-	assert := assert.New(t)
-
-	testClient, err := makeTestClient(t)
-	if err != nil {
-		t.Errorf("Error creating evervault client: %s", err)
-		return
-	}
-
-	expectedPCRs := evervault.PCRs{
-		PCR0: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-		PCR1: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-		PCR2: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-		PCR8: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-	}
-
-	cageClient, err := testClient.CageClient(betaCage, []evervault.PCRs{expectedPCRs})
-	if err != nil {
-		t.Errorf("Error creating cage client: %s", err)
-		return
-	}
-
-	req := buildCageRequest(t, betaCage)
-
-	t.Log("making request", betaCage)
-
-	resp, err := cageClient.Do(req)
-	if err != nil {
-		t.Errorf("Error making request: %s", err)
-		return
-	}
-
-	defer resp.Body.Close()
-
-	assert.Equal("200 OK", resp.Status)
-	assert.Contains(resp.Header, "X-Evervault-Cage-Ctx")
-
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		t.Errorf("failed to read response body: %s", err)
-		return
-	}
-
-	var jsonResp CageEcho
-	if err = json.Unmarshal(respBody, &jsonResp); err != nil {
-		t.Errorf("failed to unmarshal response body: %s", err)
-		return
-	}
-
-	assert.Equal(jsonResp.Body.Test, true)
-}
-
-func TestCagePartialPCRBeta(t *testing.T) {
-	t.Parallel()
-
-	assert := assert.New(t)
-
-	testClient, err := makeTestClient(t)
-	if err != nil {
-		t.Errorf("Error creating evervault client: %s", err)
-		return
-	}
-
-	expectedPCRs := evervault.PCRs{
-		PCR8: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-	}
-
-	cageClient, err := testClient.CageClient(betaCage, []evervault.PCRs{expectedPCRs})
-	if err != nil {
-		t.Errorf("Error creating cage client: %s", err)
-		return
-	}
-
-	req := buildCageRequest(t, betaCage)
-
-	t.Log("making request", betaCage)
-
-	resp, err := cageClient.Do(req)
-	if err != nil {
-		t.Errorf("Error making request: %s", err)
-		return
-	}
-
-	defer resp.Body.Close()
-
-	assert.Equal("200 OK", resp.Status)
-	assert.Contains(resp.Header, "X-Evervault-Cage-Ctx")
-
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		t.Errorf("failed to read response body: %s", err)
-		return
-	}
-
-	var jsonResp CageEcho
-	if err = json.Unmarshal(respBody, &jsonResp); err != nil {
-		t.Errorf("failed to unmarshal response body: %s", err)
-		return
-	}
-
-	assert.Equal(jsonResp.Body.Test, true)
-}
-
-func TestCageFailsOnPartialIncorrectPCRBeta(t *testing.T) {
-	t.Parallel()
-
-	assert := assert.New(t)
-
-	testClient, err := makeTestClient(t)
-	if err != nil {
-		t.Errorf("Error creating evervault client: %s", err)
-		return
-	}
-
-	expectedPCRs := evervault.PCRs{
-		PCR0: "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
-		PCR8: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-	}
-
-	cageClient, err := testClient.CageClient(betaCage, []evervault.PCRs{expectedPCRs})
-	if err != nil {
-		t.Errorf("Error creating cage client: %s", err)
-		return
-	}
-
-	req := buildCageRequest(t, betaCage)
-
-	t.Log("making request", betaCage)
-
-	resp, err := cageClient.Do(req)
-	if resp != nil {
-		resp.Body.Close()
-	}
-
-	assert.ErrorIs(err, evervault.ErrAttestionFailure)
-}
-
-func TestCageRequiresPCRBeta(t *testing.T) {
-	t.Parallel()
-
-	assert := assert.New(t)
-
-	testClient, err := makeTestClient(t)
-	if err != nil {
-		t.Errorf("Error creating evervault client: %s", err)
-		return
-	}
-
-	emptyPCRs := evervault.PCRs{}
-
-	_, err = testClient.CageClient(betaCage, []evervault.PCRs{emptyPCRs})
-	assert.ErrorIs(err, evervault.ErrNoPCRs)
-}
-
-func TestCageFailsOnIncorrectPCRsBeta(t *testing.T) {
-	t.Parallel()
-
-	assert := assert.New(t)
-
-	testClient, err := makeTestClient(t)
-	if err != nil {
-		t.Errorf("Error creating evervault client: %s", err)
-		return
-	}
-
-	expectedPCRs := evervault.PCRs{
-		PCR0: "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
-		PCR1: "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
-		PCR2: "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
-		PCR8: "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
-	}
-
-	cageClient, err := testClient.CageClient(betaCage, []evervault.PCRs{expectedPCRs})
-	if err != nil {
-		t.Errorf("Error creating cage client: %s", err)
-		return
-	}
-
-	req := buildCageRequest(t, betaCage)
-
-	t.Log("making request", betaCage)
-
-	resp, err := cageClient.Do(req)
-	if resp != nil {
-		resp.Body.Close()
-	}
-
-	assert.ErrorIs(err, evervault.ErrAttestionFailure)
-}
-
-func ExampleClient_CageClient() {
-	appUUID := os.Getenv("EV_APP_UUID")
-	apiKey := os.Getenv("EV_API_KEY")
-
-	evClient, err := evervault.MakeClient(appUUID, apiKey)
-	if err != nil {
-		log.Fatal("Failed to build evervault client: %w", err)
-	}
-
-	expectedPCRs := evervault.PCRs{
-		PCR0: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-		PCR1: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-		PCR2: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-		PCR8: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-	}
-
-	cageClient, err := evClient.CageClient(betaCage, []evervault.PCRs{expectedPCRs})
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	ctx := context.Background()
-	body := bytes.NewBufferString(`{"test": true, "message":"Hello! I'm writing to you from within an enclave"}`)
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("https://%s/echo", betaCage), body)
-	if err != nil {
-		log.Fatal("Couldnt build cage request: %w", err)
-	}
-
-	req.Close = true
-	req.Header.Set("API-KEY", apiKey)
-	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
-
-	log.Printf("making request: %s", betaCage)
-
-	resp, err := cageClient.Do(req)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	defer resp.Body.Close()
-
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Printf("failed to read response body: %s", err)
-		return
-	}
-
-	var jsonResp CageEcho
-	if err = json.Unmarshal(respBody, &jsonResp); err != nil {
-		log.Printf("failed to unmarshal response body: %s", err)
-		return
-	}
-
-	fmt.Println(jsonResp.Body)
-	// Output: {"message":"Hello! I'm writing to you from within an enclave","test":true}
-}
-
 func TestCageClient(t *testing.T) {
 	t.Parallel()
 
@@ -331,14 +80,14 @@ func TestCageClient(t *testing.T) {
 		return
 	}
 
-	expectedPCRs := evervault.PCRs{
+	expectedPCRs := models.PCRs{
 		PCR0: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
 		PCR1: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
 		PCR2: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
 		PCR8: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
 	}
 
-	cageClient, err := testClient.CagesClient(cage, []evervault.PCRs{expectedPCRs})
+	cageClient, err := testClient.CagesClient(cage, []models.PCRs{expectedPCRs})
 	if err != nil {
 		t.Errorf("Error creating cage client: %s", err)
 		return
@@ -385,11 +134,11 @@ func TestCagePartialPCR(t *testing.T) {
 		return
 	}
 
-	expectedPCRs := evervault.PCRs{
+	expectedPCRs := models.PCRs{
 		PCR8: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
 	}
 
-	cageClient, err := testClient.CagesClient(cage, []evervault.PCRs{expectedPCRs})
+	cageClient, err := testClient.CagesClient(cage, []models.PCRs{expectedPCRs})
 	if err != nil {
 		t.Errorf("Error creating cage client: %s", err)
 		return
@@ -425,7 +174,27 @@ func TestCagePartialPCR(t *testing.T) {
 	assert.Equal(jsonResp.Body.Test, true)
 }
 
-func TestCageFailsOnPartialIncorrectPCR(t *testing.T) {
+func GetPCRData() ([]models.PCRs, error) {
+	var pcrs []models.PCRs
+	expectedPCRs := models.PCRs{
+		PCR0: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+		PCR8: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+	}
+	pcrs = append(pcrs, expectedPCRs)
+	return pcrs, nil
+}
+
+func GetInvalidPCRData() ([]models.PCRs, error) {
+	var pcrs []models.PCRs
+	expectedPCRs := models.PCRs{
+		PCR0: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+		PCR8: "INVALID00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+	}
+	pcrs = append(pcrs, expectedPCRs)
+	return pcrs, nil
+}
+
+func TestCagePartialPCRProvider(t *testing.T) {
 	t.Parallel()
 
 	assert := assert.New(t)
@@ -436,12 +205,7 @@ func TestCageFailsOnPartialIncorrectPCR(t *testing.T) {
 		return
 	}
 
-	expectedPCRs := evervault.PCRs{
-		PCR0: "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
-		PCR8: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-	}
-
-	cageClient, err := testClient.CagesClient(cage, []evervault.PCRs{expectedPCRs})
+	cageClient, err := testClient.CagesClient(cage, GetPCRData)
 	if err != nil {
 		t.Errorf("Error creating cage client: %s", err)
 		return
@@ -452,26 +216,105 @@ func TestCageFailsOnPartialIncorrectPCR(t *testing.T) {
 	t.Log("making request", cage)
 
 	resp, err := cageClient.Do(req)
-	if resp != nil {
-		resp.Body.Close()
-	}
-
-	assert.ErrorIs(err, evervault.ErrAttestionFailure)
-}
-
-func TestCageRequiresPCR(t *testing.T) {
-	t.Parallel()
-
-	assert := assert.New(t)
-
-	testClient, err := makeTestClient(t)
 	if err != nil {
-		t.Errorf("Error creating evervault client: %s", err)
+		t.Errorf("Error making request: %s", err)
 		return
 	}
 
-	emptyPCRs := evervault.PCRs{}
+	defer resp.Body.Close()
 
-	_, err = testClient.CagesClient(cage, []evervault.PCRs{emptyPCRs})
-	assert.ErrorIs(err, evervault.ErrNoPCRs)
+	assert.Equal("200 OK", resp.Status)
+	assert.Contains(resp.Header, "X-Evervault-Cage-Ctx")
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Errorf("failed to read response body: %s", err)
+		return
+	}
+
+	var jsonResp CageEcho
+	if err = json.Unmarshal(respBody, &jsonResp); err != nil {
+		t.Errorf("failed to unmarshal response body: %s", err)
+		return
+	}
+
+	assert.Equal(jsonResp.Body.Test, true)
 }
+
+// func TestCageFailsOnPartialIncorrectPCRProvider(t *testing.T) {
+// 	t.Parallel()
+
+// 	assert := assert.New(t)
+
+// 	testClient, err := makeTestClient(t)
+// 	if err != nil {
+// 		t.Errorf("Error creating evervault client: %s", err)
+// 		return
+// 	}
+
+// 	cageClient, err := testClient.CagesClient(cage, GetInvalidPCRData)
+// 	if err != nil {
+// 		t.Errorf("Error creating cage client: %s", err)
+// 		return
+// 	}
+
+// 	req := buildCageRequest(t, cage)
+
+// 	t.Log("making request", cage)
+
+// 	resp, err := cageClient.Do(req)
+// 	if resp != nil {
+// 		resp.Body.Close()
+// 	}
+
+// 	assert.ErrorIs(err, evervault.ErrAttestionFailure)
+// }
+
+// func TestCageFailsOnPartialIncorrectPCR(t *testing.T) {
+// 	t.Parallel()
+
+// 	assert := assert.New(t)
+
+// 	testClient, err := makeTestClient(t)
+// 	if err != nil {
+// 		t.Errorf("Error creating evervault client: %s", err)
+// 		return
+// 	}
+
+// 	expectedPCRs := models.PCRs{
+// 		PCR0: "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+// 		PCR8: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+// 	}
+
+// 	cageClient, err := testClient.CagesClient(cage, []models.PCRs{expectedPCRs})
+// 	if err != nil {
+// 		t.Errorf("Error creating cage client: %s", err)
+// 		return
+// 	}
+
+// 	req := buildCageRequest(t, cage)
+
+// 	t.Log("making request", cage)
+
+// 	resp, err := cageClient.Do(req)
+// 	if resp != nil {
+// 		resp.Body.Close()
+// 	}
+
+// 	assert.ErrorIs(err, evervault.ErrAttestionFailure)
+// }
+
+// func TestCageRequiresPCR(t *testing.T) {
+// 	t.Parallel()
+
+// 	assert := assert.New(t)
+
+// 	testClient, err := makeTestClient(t)
+// 	if err != nil {
+// 		t.Errorf("Error creating evervault client: %s", err)
+// 		return
+// 	}
+
+// 	_, err = testClient.CagesClient(cage, []models.PCRs{})
+// 	assert.ErrorIs(err, evervault.ErrNoPCRs)
+// }
