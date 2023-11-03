@@ -29,7 +29,7 @@ func TestE2EOutboundRelay(t *testing.T) {
 		t.Errorf("error encrypting number %s", err)
 		return
 	}
-	
+
 	encryptedBool, err := client.EncryptBool(true)
 	if err != nil {
 		t.Errorf("error encrypting bool %s", err)
@@ -37,23 +37,23 @@ func TestE2EOutboundRelay(t *testing.T) {
 	}
 
 	outboundRelayClient, err := client.OutboundRelayClient()
-    if err != nil {
+	if err != nil {
 		t.Errorf("Error getting outbound client %s", err)
 		return
-    }
+	}
 
 	data := map[string]string{"string": encryptedString, "number": encryptedNumber, "boolean": encryptedBool}
-    payload, err := json.Marshal(data)
-    if err != nil {
-        t.Errorf("error Marshalling payload %s", err)
+	payload, err := json.Marshal(data)
+	if err != nil {
+		t.Errorf("error Marshalling payload %s", err)
 		return
-    }
+	}
 
-    resp, err := outboundRelayClient.Post(syntheticEndpointUrl, "application/json", bytes.NewReader(payload))
-    if err != nil {
-        t.Errorf("error posting with outbound client %s", err)
+	resp, err := outboundRelayClient.Post(syntheticEndpointUrl, "application/json", bytes.NewReader(payload))
+	if err != nil {
+		t.Errorf("error posting with outbound client %s", err)
 		return
-    }
+	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {

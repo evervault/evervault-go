@@ -189,6 +189,25 @@ func TestEncryptString(t *testing.T) {
 	}
 }
 
+func TestEncryptStringWithRole(t *testing.T) {
+	t.Parallel()
+
+	server := startMockHTTPServer("", "")
+	defer server.Close()
+
+	testClient := mockedClient(t, server)
+
+	res, err := testClient.EncryptStringWithDataRole("plaintext", "role")
+	if err != nil {
+		t.Errorf("error encrypting data %s", err)
+		return
+	}
+
+	if !isValidEncryptedString(res, datatypes.String) {
+		t.Errorf("Expected encrypted string, got %s", res)
+	}
+}
+
 func TestEncryptInt(t *testing.T) {
 	t.Parallel()
 
@@ -198,6 +217,25 @@ func TestEncryptInt(t *testing.T) {
 	testClient := mockedClient(t, server)
 
 	res, err := testClient.EncryptInt(123)
+	if err != nil {
+		t.Errorf("error encrypting data %s", err)
+		return
+	}
+
+	if !isValidEncryptedString(res, datatypes.Number) {
+		t.Errorf("Expected encrypted string, got %s", res)
+	}
+}
+
+func TestEncryptIntWithRole(t *testing.T) {
+	t.Parallel()
+
+	server := startMockHTTPServer("", "")
+	defer server.Close()
+
+	testClient := mockedClient(t, server)
+
+	res, err := testClient.EncryptIntWithDataRole(123, "role")
 	if err != nil {
 		t.Errorf("error encrypting data %s", err)
 		return
@@ -227,6 +265,25 @@ func TestEncryptFloat64(t *testing.T) {
 	}
 }
 
+func TestEncryptFloat64WithRole(t *testing.T) {
+	t.Parallel()
+
+	server := startMockHTTPServer("", "")
+	defer server.Close()
+
+	testClient := mockedClient(t, server)
+
+	res, err := testClient.EncryptFloat64WithDataRole(1.1, "role")
+	if err != nil {
+		t.Errorf("error encrypting data %s", err)
+		return
+	}
+
+	if !isValidEncryptedString(res, datatypes.Number) {
+		t.Errorf("Expected encrypted string, got %s", res)
+	}
+}
+
 func TestEncryptBoolean(t *testing.T) {
 	t.Parallel()
 
@@ -246,6 +303,25 @@ func TestEncryptBoolean(t *testing.T) {
 	}
 }
 
+func TestEncryptBooleanWithRole(t *testing.T) {
+	t.Parallel()
+
+	server := startMockHTTPServer("", "")
+	defer server.Close()
+
+	testClient := mockedClient(t, server)
+
+	res, err := testClient.EncryptBoolWithDataRole(true, "role")
+	if err != nil {
+		t.Errorf("error encrypting data %s", err)
+		return
+	}
+
+	if !isValidEncryptedString(res, datatypes.Boolean) {
+		t.Errorf("Expected encrypted string, got %s", res)
+	}
+}
+
 func TestEncryptByte(t *testing.T) {
 	t.Parallel()
 
@@ -255,6 +331,25 @@ func TestEncryptByte(t *testing.T) {
 	testClient := mockedClient(t, server)
 
 	res, err := testClient.EncryptByteArray([]byte("plaintext"))
+	if err != nil {
+		t.Errorf("error encrypting data %s", err)
+		return
+	}
+
+	if !isValidEncryptedString(res, datatypes.String) {
+		t.Errorf("Expected encrypted string, got %s", res)
+	}
+}
+
+func TestEncryptByteWithRole(t *testing.T) {
+	t.Parallel()
+
+	server := startMockHTTPServer("", "")
+	defer server.Close()
+
+	testClient := mockedClient(t, server)
+
+	res, err := testClient.EncryptByteArrayWithDataRole([]byte("plaintext"), "role")
 	if err != nil {
 		t.Errorf("error encrypting data %s", err)
 		return

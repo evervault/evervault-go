@@ -1,15 +1,18 @@
 package crypto
 
 import (
+	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"io"
 	"strings"
+	"time"
 
 	"github.com/evervault/evervault-go/internal/datatypes"
 )
@@ -22,6 +25,13 @@ const (
 		"26b7819f7e900441046b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c2964fe342e2fe1a7f9b8ee7eb4a7c0" +
 		"f9e162bce33576b315ececbb6406837bf51f5022100ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc63255102" +
 		"0101034200"
+	metadataOffsetLength                          = 0x02
+	lengthOfTwoMetadataItems                      = 0x82
+	lengthOfThreeMetadataItems                    = 0x83
+	lengthOfFixedLengthStringWith2Bytes           = 0xa2
+	encryptionOrigin                              = 0x09
+	defaultRoleNameLength                         = 0xa0
+	binaryRepresentationOfFourByteUnsignedInteger = 0xce
 )
 
 // DeriveKDFAESKey derives an AES key using the given public key and shared ECDH secret.
@@ -56,7 +66,7 @@ func CompressPublicKey(keyToCompress []byte) []byte {
 
 // EncryptValue encrypts the given value using AES encryption.
 func EncryptValue(
-	aesKey, ephemeralPublicKey, appPublicKey []byte, value string, datatype datatypes.Datatype,
+	aesKey, ephemeralPublicKey, appPublicKey []byte, value, role string, datatype datatypes.Datatype,
 ) (string, error) {
 	block, err := aes.NewCipher(aesKey)
 	if err != nil {
@@ -73,14 +83,143 @@ func EncryptValue(
 		return "", fmt.Errorf("unable to encrypt block %w", err)
 	}
 
-	ciphertext := aesgcm.Seal(nil, nonce, []byte(value), appPublicKey)
+	metadata, err := buildEncodedMetadata(role)
+	if err != nil {
+		return "", fmt.Errorf("unable to build metadata %w", err)
+	}
+
+	// Get the concatenated result as a byte slice
+	metadataOffset := make([]byte, metadataOffsetLength)
+	binary.LittleEndian.PutUint16(metadataOffset, uint16(len(metadata)))
+
+	var buffer bytes.Buffer
+
+	buffer.Write(metadataOffset)
+	buffer.Write(metadata)
+	buffer.WriteString(value)
+	valueWithMetadata := buffer.Bytes()
+
+	ciphertext := aesgcm.Seal(nil, nonce, valueWithMetadata, appPublicKey)
 
 	return evFormat(ciphertext, nonce, ephemeralPublicKey, datatype), nil
 }
 
+func buildEncodedMetadata(role string) ([]byte, error) {
+	var buffer bytes.Buffer
+
+	// Binary representation of a fixed map with 2 or 3 items, followed by the key-value pairs.
+	if role == "" {
+		err := binary.Write(&buffer, binary.BigEndian, byte(lengthOfTwoMetadataItems))
+		if err != nil {
+			return nil, fmt.Errorf("error building metadata %w", err)
+		}
+	} else {
+		err := binary.Write(&buffer, binary.BigEndian, byte(lengthOfThreeMetadataItems))
+		if err != nil {
+			return nil, fmt.Errorf("error building metadata %w", err)
+		}
+
+		err = encodeRole(&buffer, role)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	err := encodeEncryptionOrigin(&buffer)
+	if err != nil {
+		return nil, err
+	}
+
+	err = encodeEncryptionTimestamp(&buffer)
+	if err != nil {
+		return nil, err
+	}
+
+	return buffer.Bytes(), nil
+}
+
+func encodeEncryptionTimestamp(buffer *bytes.Buffer) error {
+	// "et" (encryption timestamp) => current time
+	// Binary representation for a fixed string of length 2, followed by `et`
+	err := binary.Write(buffer, binary.BigEndian, byte(lengthOfFixedLengthStringWith2Bytes))
+	if err != nil {
+		return fmt.Errorf("error building metadata %w", err)
+	}
+
+	_, err = buffer.WriteString("et")
+	if err != nil {
+		return fmt.Errorf("error building metadata %w", err)
+	}
+
+	// Binary representation for a 4-byte unsigned integer (uint 32), followed by the epoch time
+	err = binary.Write(buffer, binary.BigEndian, byte(binaryRepresentationOfFourByteUnsignedInteger))
+	if err != nil {
+		return fmt.Errorf("error building metadata %w", err)
+	}
+
+	// Get the current time and convert it to Unix timestamp (seconds since Jan 1, 1970)
+	currentTime := uint32(time.Now().Unix())
+
+	err = binary.Write(buffer, binary.BigEndian, currentTime)
+	if err != nil {
+		return fmt.Errorf("error building metadata %w", err)
+	}
+
+	return nil
+}
+
+func encodeEncryptionOrigin(buffer *bytes.Buffer) error {
+	// "eo" (encryption origin) => 9 (Go SDK)
+	// Binary representation for a fixed string of length 2, followed by `eo`
+	err := binary.Write(buffer, binary.BigEndian, byte(lengthOfFixedLengthStringWith2Bytes))
+	if err != nil {
+		return fmt.Errorf("error building metadata %w", err)
+	}
+
+	_, err = buffer.WriteString("eo")
+	if err != nil {
+		return fmt.Errorf("error building metadata %w", err)
+	}
+
+	// Binary representation for the integer 9
+	err = binary.Write(buffer, binary.BigEndian, byte(encryptionOrigin))
+	if err != nil {
+		return fmt.Errorf("error building metadata %w", err)
+	}
+
+	return nil
+}
+
+func encodeRole(buffer *bytes.Buffer, role string) error {
+	// `dr` (data role) => role_name
+	// Binary representation for a fixed string of length 2, followed by `dr`
+	err := binary.Write(buffer, binary.BigEndian, byte(lengthOfFixedLengthStringWith2Bytes))
+	if err != nil {
+		return fmt.Errorf("error building metadata %w", err)
+	}
+
+	_, err = buffer.WriteString("dr")
+	if err != nil {
+		return fmt.Errorf("error building metadata %w", err)
+	}
+
+	// Binary representation for a fixed string of role name length, followed by the role name itself.
+	err = binary.Write(buffer, binary.BigEndian, byte(defaultRoleNameLength|len(role)))
+	if err != nil {
+		return fmt.Errorf("error building metadata %w", err)
+	}
+
+	_, err = buffer.WriteString(role)
+	if err != nil {
+		return fmt.Errorf("error building metadata %w", err)
+	}
+
+	return nil
+}
+
 // evFormat formats the cipher text, IV, public key, and datatype into an "ev" formatted string.
 func evFormat(cipherText, iv, publicKey []byte, datatype datatypes.Datatype) string {
-	formattedString := fmt.Sprintf("ev:%s:", base64EncodeStripped([]byte("NOC")))
+	formattedString := fmt.Sprintf("ev:%s:", base64EncodeStripped([]byte("LCY")))
 
 	if datatype != datatypes.String {
 		if datatype == datatypes.Number {

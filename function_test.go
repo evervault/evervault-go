@@ -39,7 +39,7 @@ func TestRunFunctionSuccess(t *testing.T) {
 		"status": "success",
 		"result": { "message": "%s" },
 		"id": "%s"
-	}`, message, id);
+	}`, message, id)
 
 	server := startMockHTTPServer(functionResponsePayload, "")
 	defer server.Close()
@@ -53,9 +53,9 @@ func TestRunFunctionSuccess(t *testing.T) {
 		return
 	}
 
-	assert.Equal(t, res.Status, "success")
-	assert.Equal(t, res.ID, id)
-	assert.Equal(t, res.Result["message"], message)
+	assert.Equal(t, "success", res.Status)
+	assert.Equal(t, id, res.ID)
+	assert.Equal(t, message, res.Result["message"])
 }
 
 func TestRunFunctionFailure(t *testing.T) {
@@ -69,7 +69,7 @@ func TestRunFunctionFailure(t *testing.T) {
 		"status": "failure",
 		"error": { "message": "%s", "stack": "%s" },
 		"id": "%s"
-	}`, message, stack, id);
+	}`, message, stack, id)
 
 	server := startMockHTTPServer(functionResponsePayload, "")
 	defer server.Close()
@@ -81,9 +81,9 @@ func TestRunFunctionFailure(t *testing.T) {
 	if runtimeError, ok := err.(evervault.FunctionRuntimeError); !ok {
 		t.Error("Expected FunctionRuntimeError, got", err)
 	} else {
-		assert.Equal(t, runtimeError.ErrorBody.Message, message)
-		assert.Equal(t, runtimeError.ErrorBody.Stack, stack)
-		assert.Equal(t, runtimeError.ID, id)
+		assert.Equal(t, message, runtimeError.ErrorBody.Message)
+		assert.Equal(t, stack, runtimeError.ErrorBody.Stack)
+		assert.Equal(t, id, runtimeError.ID)
 	}
 }
 
@@ -109,7 +109,7 @@ func TestRunFunctionTimeout(t *testing.T) {
 	if functionTimeoutError, ok := err.(evervault.FunctionTimeoutError); !ok {
 		t.Error("Expected FunctionTimeoutError, got", err)
 	} else {
-		assert.Equal(t, functionTimeoutError.Message, message)
+		assert.Equal(t, message, functionTimeoutError.Message)
 	}
 }
 
@@ -135,7 +135,7 @@ func TestRunFunctionNotReady(t *testing.T) {
 	if functionNotReadyError, ok := err.(evervault.FunctionNotReadyError); !ok {
 		t.Error("Expected FunctionNotReadyError, got", err)
 	} else {
-		assert.Equal(t, functionNotReadyError.Message, message)
+		assert.Equal(t, message, functionNotReadyError.Message)
 	}
 }
 
@@ -162,7 +162,7 @@ func TestRunFunctionUnauthorized(t *testing.T) {
 	if evervaultError, ok := err.(evervault.APIError); !ok {
 		t.Error("Expected Evervault Error, got", err)
 	} else {
-		assert.Equal(t, evervaultError.Code, code)
-		assert.Equal(t, evervaultError.Message, message)
+		assert.Equal(t, code, evervaultError.Code)
+		assert.Equal(t, message, evervaultError.Message)
 	}
 }
