@@ -17,7 +17,7 @@ func TestE2EEncryptString(t *testing.T) {
 
 	payload := "hello world"
 
-	encrypted, err := client.EncryptString(payload, "")
+	encrypted, err := client.EncryptString(payload)
 	if err != nil {
 		t.Errorf("error encrypting data %s", err)
 		return
@@ -42,7 +42,7 @@ func TestE2EEncryptStringWithPermittedRole(t *testing.T) {
 
 	payload := "hello world"
 
-	encrypted, err := client.EncryptString(payload, "permit-all")
+	encrypted, err := client.EncryptStringWithDataRole(payload, "permit-all")
 	if err != nil {
 		t.Errorf("error encrypting data %s", err)
 		return
@@ -67,7 +67,7 @@ func TestE2EEncryptStringWithDeniedRole(t *testing.T) {
 
 	payload := "hello world"
 
-	encrypted, err := client.EncryptString(payload, "deny-all")
+	encrypted, err := client.EncryptStringWithDataRole(payload, "deny-all")
 	if err != nil {
 		t.Errorf("error encrypting data %s", err)
 		return
@@ -87,7 +87,7 @@ func TestE2EEncryptBoolTrue(t *testing.T) {
 
 	payload := true
 
-	encrypted, err := client.EncryptBool(payload, "")
+	encrypted, err := client.EncryptBool(payload)
 	if err != nil {
 		t.Errorf("error encrypting data %s", err)
 		return
@@ -112,7 +112,7 @@ func TestE2EEncryptBoolTrueWithPermittedRole(t *testing.T) {
 
 	payload := true
 
-	encrypted, err := client.EncryptBool(payload, "permit-all")
+	encrypted, err := client.EncryptBoolWithDataRole(payload, "permit-all")
 	if err != nil {
 		t.Errorf("error encrypting data %s", err)
 		return
@@ -130,7 +130,6 @@ func TestE2EEncryptBoolTrueWithPermittedRole(t *testing.T) {
 	}
 }
 
-
 func TestE2EEncryptBoolTrueWithDeniedRole(t *testing.T) {
 	t.Parallel()
 
@@ -138,7 +137,7 @@ func TestE2EEncryptBoolTrueWithDeniedRole(t *testing.T) {
 
 	payload := true
 
-	encrypted, err := client.EncryptBool(payload, "deny-all")
+	encrypted, err := client.EncryptBoolWithDataRole(payload, "deny-all")
 	if err != nil {
 		t.Errorf("error encrypting data %s", err)
 		return
@@ -158,7 +157,7 @@ func TestE2EEncryptBoolFalse(t *testing.T) {
 
 	payload := false
 
-	encrypted, err := client.EncryptBool(payload, "")
+	encrypted, err := client.EncryptBool(payload)
 	if err != nil {
 		t.Errorf("error encrypting data %s", err)
 		return
@@ -183,7 +182,7 @@ func TestE2EEncryptBoolFalseWithPermittedRole(t *testing.T) {
 
 	payload := false
 
-	encrypted, err := client.EncryptBool(payload, "permit-all")
+	encrypted, err := client.EncryptBoolWithDataRole(payload, "permit-all")
 	if err != nil {
 		t.Errorf("error encrypting data %s", err)
 		return
@@ -208,7 +207,7 @@ func TestE2EEncryptBoolFalseWithDeniedRole(t *testing.T) {
 
 	payload := false
 
-	encrypted, err := client.EncryptBool(payload, "deny-all")
+	encrypted, err := client.EncryptBoolWithDataRole(payload, "deny-all")
 	if err != nil {
 		t.Errorf("error encrypting data %s", err)
 		return
@@ -228,7 +227,7 @@ func TestE2EEncryptInt(t *testing.T) {
 
 	payload := 1
 
-	encrypted, err := client.EncryptInt(payload, "")
+	encrypted, err := client.EncryptInt(payload)
 	if err != nil {
 		t.Errorf("error encrypting data %s", err)
 		return
@@ -253,7 +252,7 @@ func TestE2EEncryptIntWithPermittedRole(t *testing.T) {
 
 	payload := 1
 
-	encrypted, err := client.EncryptInt(payload, "permit-all")
+	encrypted, err := client.EncryptIntWithDataRole(payload, "permit-all")
 	if err != nil {
 		t.Errorf("error encrypting data %s", err)
 		return
@@ -278,7 +277,7 @@ func TestE2EEncryptIntWithDeniedRole(t *testing.T) {
 
 	payload := 1
 
-	encrypted, err := client.EncryptInt(payload, "deny-all")
+	encrypted, err := client.EncryptIntWithDataRole(payload, "deny-all")
 	if err != nil {
 		t.Errorf("error encrypting data %s", err)
 		return
@@ -298,7 +297,7 @@ func TestE2EEncryptFloat(t *testing.T) {
 
 	payload := 1.5
 
-	encrypted, err := client.EncryptFloat64(payload, "")
+	encrypted, err := client.EncryptFloat64(payload)
 	if err != nil {
 		t.Errorf("error encrypting data %s", err)
 		return
@@ -323,7 +322,7 @@ func TestE2EEncryptFloatWithPermittedRole(t *testing.T) {
 
 	payload := 1.5
 
-	encrypted, err := client.EncryptFloat64(payload, "permit-all")
+	encrypted, err := client.EncryptFloat64WithDataRole(payload, "permit-all")
 	if err != nil {
 		t.Errorf("error encrypting data %s", err)
 		return
@@ -347,7 +346,7 @@ func TestE2EEncryptFloatWithDeniedRole(t *testing.T) {
 
 	payload := 1.5
 
-	encrypted, err := client.EncryptFloat64(payload, "deny-all")
+	encrypted, err := client.EncryptFloat64WithDataRole(payload, "deny-all")
 	if err != nil {
 		t.Errorf("error encrypting data %s", err)
 		return
@@ -367,7 +366,7 @@ func TestE2EEncryptBytes(t *testing.T) {
 
 	payload := []byte{97, 98, 99, 100, 101, 102}
 
-	encrypted, err := client.EncryptByteArray(payload, "")
+	encrypted, err := client.EncryptByteArray(payload)
 	if err != nil {
 		t.Errorf("error encrypting data %s", err)
 		return
@@ -384,7 +383,6 @@ func TestE2EEncryptBytes(t *testing.T) {
 		return
 	}
 }
-
 
 func TestE2EEncryptBytesWithPermittedRole(t *testing.T) {
 	t.Parallel()
@@ -393,7 +391,7 @@ func TestE2EEncryptBytesWithPermittedRole(t *testing.T) {
 
 	payload := []byte{97, 98, 99, 100, 101, 102}
 
-	encrypted, err := client.EncryptByteArray(payload, "permit-all")
+	encrypted, err := client.EncryptByteArrayWithDataRole(payload, "permit-all")
 	if err != nil {
 		t.Errorf("error encrypting data %s", err)
 		return
@@ -411,7 +409,6 @@ func TestE2EEncryptBytesWithPermittedRole(t *testing.T) {
 	}
 }
 
-
 func TestE2EEncryptBytesWithDeniedRole(t *testing.T) {
 	t.Parallel()
 
@@ -419,7 +416,7 @@ func TestE2EEncryptBytesWithDeniedRole(t *testing.T) {
 
 	payload := []byte{97, 98, 99, 100, 101, 102}
 
-	encrypted, err := client.EncryptByteArray(payload, "deny-all")
+	encrypted, err := client.EncryptByteArrayWithDataRole(payload, "deny-all")
 	if err != nil {
 		t.Errorf("error encrypting data %s", err)
 		return

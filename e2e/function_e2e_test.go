@@ -21,35 +21,35 @@ func TestE2EFunctionRun(t *testing.T) {
 
 	encryptedPayload := map[string]any{}
 
-	encrypted, err := client.EncryptString("hello", "")
+	encrypted, err := client.EncryptString("hello")
 	if err != nil {
 		t.Errorf("error encrypting string %s", err)
 		return
 	}
 	encryptedPayload["String"] = encrypted
 
-	encrypted, err = client.EncryptInt(1, "")
+	encrypted, err = client.EncryptInt(1)
 	if err != nil {
 		t.Errorf("error encrypting integer %s", err)
 		return
 	}
 	encryptedPayload["Integer"] = encrypted
 
-	encrypted, err = client.EncryptFloat64(1.5, "")
+	encrypted, err = client.EncryptFloat64(1.5)
 	if err != nil {
 		t.Errorf("error encrypting float %s", err)
 		return
 	}
 	encryptedPayload["Float"] = encrypted
 
-	encrypted, err = client.EncryptBool(true, "")
+	encrypted, err = client.EncryptBool(true)
 	if err != nil {
 		t.Errorf("error encrypting true %s", err)
 		return
 	}
 	encryptedPayload["True"] = encrypted
 
-	encrypted, err = client.EncryptBool(false, "")
+	encrypted, err = client.EncryptBool(false)
 	if err != nil {
 		t.Errorf("error encrypting false %s", err)
 		return

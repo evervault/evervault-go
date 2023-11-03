@@ -91,7 +91,19 @@ func (c *Client) getAesKeyAndCompressedEphemeralPublicKey() ([]byte, []byte, err
 //
 // If an error occurs then nil is returned. If the error is due a problem with Key creation then
 // ErrCryptoKeyImportError is returned. For anyother error ErrCryptoUnableToPerformEncryption is returned.
-func (c *Client) EncryptString(value, role string) (string, error) {
+func (c *Client) EncryptString(value string) (string, error) {
+	return c.EncryptStringWithDataRole(value, "")
+}
+
+// EncryptString encrypts the value passed to it using the Evervault Encryption Scheme.
+// The data role included is embedded in the encrypted string and can be used to control access to the data.
+// The encrypted value is returned as an Evervault formatted encrypted string.
+//
+//	encrypted := evClient.EncryptString("Hello, world!");
+//
+// If an error occurs then nil is returned. If the error is due a problem with Key creation then
+// ErrCryptoKeyImportError is returned. For anyother error ErrCryptoUnableToPerformEncryption is returned.
+func (c *Client) EncryptStringWithDataRole(value, role string) (string, error) {
 	aesKey, compressedEphemeralPublicKey, err := c.getAesKeyAndCompressedEphemeralPublicKey()
 	if err != nil {
 		return "", err
@@ -108,7 +120,19 @@ func (c *Client) EncryptString(value, role string) (string, error) {
 //
 // If an error occurs then nil is returned. If the error is due a problem with Key creation then
 // ErrCryptoKeyImportError is returned. For anyother error ErrCryptoUnableToPerformEncryption is returned.
-func (c *Client) EncryptInt(value int, role string) (string, error) {
+func (c *Client) EncryptInt(value int) (string, error) {
+	return c.EncryptIntWithDataRole(value, "")
+}
+
+// EncryptInt encrypts the value passed to it using the Evervault Encryption Scheme.
+// The data role included is embedded in the encrypted string and can be used to control access to the data.
+// The encrypted value is returned as an Evervault formatted encrypted string.
+//
+//	encrypted := evClient.EncryptInt(100);
+//
+// If an error occurs then nil is returned. If the error is due a problem with Key creation then
+// ErrCryptoKeyImportError is returned. For anyother error ErrCryptoUnableToPerformEncryption is returned.
+func (c *Client) EncryptIntWithDataRole(value int, role string) (string, error) {
 	aesKey, compressedEphemeralPublicKey, err := c.getAesKeyAndCompressedEphemeralPublicKey()
 	if err != nil {
 		return "", err
@@ -127,7 +151,19 @@ func (c *Client) EncryptInt(value int, role string) (string, error) {
 //
 // If an error occurs then nil is returned. If the error is due a problem with Key creation then
 // ErrCryptoKeyImportError is returned. For anyother error ErrCryptoUnableToPerformEncryption is returned.
-func (c *Client) EncryptFloat64(value float64, role string) (string, error) {
+func (c *Client) EncryptFloat64(value float64) (string, error) {
+	return c.EncryptFloat64WithDataRole(value, "")
+}
+
+// EncryptFloat64 encrypts the value passed to it using the Evervault Encryption Scheme.
+// The data role included is embedded in the encrypted string and can be used to control access to the data.
+// The encrypted value is returned as an Evervault formatted encrypted string.
+//
+//	encrypted := evClient.EncryptInt(100.1);
+//
+// If an error occurs then nil is returned. If the error is due a problem with Key creation then
+// ErrCryptoKeyImportError is returned. For anyother error ErrCryptoUnableToPerformEncryption is returned.
+func (c *Client) EncryptFloat64WithDataRole(value float64, role string) (string, error) {
 	aesKey, compressedEphemeralPublicKey, err := c.getAesKeyAndCompressedEphemeralPublicKey()
 	if err != nil {
 		return "", err
@@ -146,7 +182,19 @@ func (c *Client) EncryptFloat64(value float64, role string) (string, error) {
 //
 // If an error occurs then nil is returned. If the error is due a problem with Key creation then
 // ErrCryptoKeyImportError is returned. For anyother error ErrCryptoUnableToPerformEncryption is returned.
-func (c *Client) EncryptBool(value bool, role string) (string, error) {
+func (c *Client) EncryptBool(value bool) (string, error) {
+	return c.EncryptBoolWithDataRole(value, "")
+}
+
+// EncryptBool encrypts the value passed to it using the Evervault Encryption Scheme.
+// The data role included is embedded in the encrypted string and can be used to control access to the data.
+// The encrypted value is returned as an Evervault formatted encrypted string.
+//
+//	encrypted := evClient.EncryptBool(true);
+//
+// If an error occurs then nil is returned. If the error is due a problem with Key creation then
+// ErrCryptoKeyImportError is returned. For anyother error ErrCryptoUnableToPerformEncryption is returned.
+func (c *Client) EncryptBoolWithDataRole(value bool, role string) (string, error) {
 	aesKey, compressedEphemeralPublicKey, err := c.getAesKeyAndCompressedEphemeralPublicKey()
 	if err != nil {
 		return "", err
@@ -165,7 +213,19 @@ func (c *Client) EncryptBool(value bool, role string) (string, error) {
 //
 // If an error occurs then nil is returned. If the error is due a problem with Key creation then
 // ErrCryptoKeyImportError is returned. For anyother error ErrCryptoUnableToPerformEncryption is returned.
-func (c *Client) EncryptByteArray(value []byte, role string) (string, error) {
+func (c *Client) EncryptByteArray(value []byte) (string, error) {
+	return c.EncryptByteArrayWithDataRole(value, "")
+}
+
+// EncryptByteArray encrypts the value passed to it using the Evervault Encryption Scheme.
+// The data role included is embedded in the encrypted string and can be used to control access to the data.
+// The encrypted value is returned as an Evervault formatted encrypted string.
+//
+//	encrypted := evClient.EncryptByteArray([]byte("Hello, world!"));
+//
+// If an error occurs then nil is returned. If the error is due a problem with Key creation then
+// ErrCryptoKeyImportError is returned. For anyother error ErrCryptoUnableToPerformEncryption is returned.
+func (c *Client) EncryptByteArrayWithDataRole(value []byte, role string) (string, error) {
 	aesKey, compressedEphemeralPublicKey, err := c.getAesKeyAndCompressedEphemeralPublicKey()
 	if err != nil {
 		return "", err
