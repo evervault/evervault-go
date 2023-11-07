@@ -61,7 +61,6 @@ func filterEmptyPCRs(expectedPCRs []types.PCRs) []types.PCRs {
 //
 //	resp, err := cageClient.Do(req)
 func (c *Client) CagesClient(cageHostname string, pcrs interface{}) (*http.Client, error) {
-
 	pcrManager, err := attestation.NewCagePCRManager(cageHostname, c.Config.CagesPollingInterval, pcrs)
 	if err != nil {
 		return nil, err
@@ -70,7 +69,7 @@ func (c *Client) CagesClient(cageHostname string, pcrs interface{}) (*http.Clien
 	expectedPCRs := pcrManager.Get()
 
 	if len(filterEmptyPCRs(*expectedPCRs)) == 0 {
-		return nil, ErrNoPCRs
+		return nil, types.ErrNoPCRs
 	}
 
 	cache, err := attestation.NewAttestationCache(cageHostname, c.Config.CagesPollingInterval)
@@ -157,7 +156,7 @@ func (c *Client) createDial(tlsConfig *tls.Config, cache *attestation.Cache, pcr
 		}
 
 		if !attestationDoc {
-			return nil, ErrAttestionFailure
+			return nil, types.ErrAttestionFailure
 		}
 
 		return tlsConn, nil
@@ -172,7 +171,7 @@ func attestCert(certificate *x509.Certificate, expectedPCRs []types.PCRs, attest
 	}
 
 	if !res.SignatureOK {
-		return false, ErrUnVerifiedSignature
+		return false, types.ErrUnVerifiedSignature
 	}
 
 	if verified := verifyPCRs(expectedPCRs, *res.Document); !verified {

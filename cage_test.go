@@ -267,7 +267,7 @@ func TestCageFailsOnPartialIncorrectPCRProvider(t *testing.T) {
 		resp.Body.Close()
 	}
 
-	assert.ErrorIs(err, evervault.ErrAttestionFailure)
+	assert.ErrorIs(err, types.ErrAttestionFailure)
 }
 
 func TestCageFailsOnPartialIncorrectPCR(t *testing.T) {
@@ -301,7 +301,7 @@ func TestCageFailsOnPartialIncorrectPCR(t *testing.T) {
 		resp.Body.Close()
 	}
 
-	assert.ErrorIs(err, evervault.ErrAttestionFailure)
+	assert.ErrorIs(err, types.ErrAttestionFailure)
 }
 
 func TestCageRequiresPCR(t *testing.T) {
@@ -316,5 +316,5 @@ func TestCageRequiresPCR(t *testing.T) {
 	}
 
 	_, err = testClient.CagesClient(cage, []types.PCRs{})
-	assert.ErrorIs(err, evervault.ErrNoPCRs)
+	assert.ErrorIs(err, types.ErrNoPCRs)
 }

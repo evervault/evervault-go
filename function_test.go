@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/evervault/evervault-go"
+	"github.com/evervault/evervault-go/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -39,7 +40,7 @@ func TestRunFunctionSuccess(t *testing.T) {
 		"status": "success",
 		"result": { "message": "%s" },
 		"id": "%s"
-	}`, message, id);
+	}`, message, id)
 
 	server := startMockHTTPServer(functionResponsePayload, "")
 	defer server.Close()
@@ -69,7 +70,7 @@ func TestRunFunctionFailure(t *testing.T) {
 		"status": "failure",
 		"error": { "message": "%s", "stack": "%s" },
 		"id": "%s"
-	}`, message, stack, id);
+	}`, message, stack, id)
 
 	server := startMockHTTPServer(functionResponsePayload, "")
 	defer server.Close()
@@ -78,7 +79,7 @@ func TestRunFunctionFailure(t *testing.T) {
 	payload := map[string]any{"name": "john", "age": 30}
 
 	_, err := testClient.RunFunction("test_function", payload)
-	if runtimeError, ok := err.(evervault.FunctionRuntimeError); !ok {
+	if runtimeError, ok := err.(types.FunctionRuntimeError); !ok {
 		t.Error("Expected FunctionRuntimeError, got", err)
 	} else {
 		assert.Equal(t, runtimeError.ErrorBody.Message, message)

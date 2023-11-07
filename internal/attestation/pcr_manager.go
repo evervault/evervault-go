@@ -1,8 +1,6 @@
 package attestation
 
 import (
-	"context"
-	"errors"
 	"log"
 	"sync"
 	"time"
@@ -26,10 +24,7 @@ type PollingProvider struct {
 	stopPoll chan bool
 }
 
-const pcrPollTimeout = 5 * time.Second
-
-func NewCagePCRManager(cageDomain string, pollingInterval time.Duration, pcrs interface{}) (PCRManager, error) {
-
+func NewCagePCRManager(pollingInterval time.Duration, pcrs interface{}) (PCRManager, error) {
 	switch data := pcrs.(type) {
 	case func() ([]types.PCRs, error):
 		emptyPCRs := []types.PCRs{}
@@ -40,10 +35,8 @@ func NewCagePCRManager(cageDomain string, pollingInterval time.Duration, pcrs in
 			ticker:   time.NewTicker(pollingInterval),
 			stopPoll: make(chan bool),
 		}
-		ctx, cancel := context.WithTimeout(context.Background(), pcrPollTimeout)
-		defer cancel()
 
-		cache.Load(ctx)
+		cache.Load()
 
 		go cache.pollAPI()
 
@@ -52,9 +45,10 @@ func NewCagePCRManager(cageDomain string, pollingInterval time.Duration, pcrs in
 		cache := &StaticProvider{
 			pcrs: &data,
 		}
+
 		return cache, nil
 	default:
-		return nil, errors.New("unsupported PCRs type, must be array or callback with type: func() ([]types.PCRs, error)")
+		return nil, types.ErrInvalidPCRProvider
 	}
 }
 
@@ -67,6 +61,7 @@ func (c *PollingProvider) Set(pcrs *[]types.PCRs) {
 func (c *PollingProvider) Get() *[]types.PCRs {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
+
 	return c.pcrs
 }
 
@@ -78,7 +73,7 @@ func (c *PollingProvider) StopPolling() {
 	c.stopPoll <- true
 }
 
-func (c *PollingProvider) Load(ctx context.Context) {
+func (c *PollingProvider) Load() {
 	pcrs, err := c.getPcrs()
 	if err != nil {
 		log.Printf("could not get pcrs doc: %v", err)

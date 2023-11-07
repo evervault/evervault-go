@@ -19,6 +19,7 @@ import (
 	"github.com/evervault/evervault-go"
 	"github.com/evervault/evervault-go/internal/crypto"
 	"github.com/evervault/evervault-go/internal/datatypes"
+	"github.com/evervault/evervault-go/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -136,7 +137,7 @@ func TestDecryptJsonResponse(t *testing.T) {
 	testClient := mockedClient(t, server)
 
 	_, err := testClient.DecryptByteArray("ev:abc123")
-	assert.ErrorIs(t, err, evervault.ErrInvalidDataType)
+	assert.ErrorIs(t, err, types.ErrInvalidDataType)
 }
 
 func TestCreateClientSideDecryptToken(t *testing.T) {
@@ -273,13 +274,13 @@ func TestClientInitClientErrorWithoutApiKey(t *testing.T) {
 
 	_, err := evervault.MakeClient("", "")
 
-	if err.Error() != evervault.ErrAppCredentialsRequired.Error() {
+	if err.Error() != types.ErrAppCredentialsRequired.Error() {
 		t.Errorf("Unexpected error, got error message %s", err)
 		return
 	}
 
 	_, err = evervault.MakeCustomClient("test_api_key", "", evervault.MakeConfig())
-	if err.Error() != evervault.ErrAppCredentialsRequired.Error() {
+	if err.Error() != types.ErrAppCredentialsRequired.Error() {
 		t.Errorf("Unexpected error, got error message %s", err)
 	}
 }
