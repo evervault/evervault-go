@@ -11,17 +11,17 @@ import (
 )
 
 type PCRManager interface {
-	Get() []models.PCRs
+	Get() *[]models.PCRs
 }
 
 type StaticProvider struct {
-	pcrs []models.PCRs
+	pcrs *[]models.PCRs
 }
 
 type PollingProvider struct {
 	getPcrs  func() ([]models.PCRs, error)
-	pcrs     []models.PCRs
-	mutex    *sync.RWMutex
+	pcrs     *[]models.PCRs
+	mutex    sync.RWMutex
 	ticker   *time.Ticker
 	stopPoll chan bool
 }
@@ -32,10 +32,11 @@ func NewCagePCRManager(cageDomain string, pollingInterval time.Duration, pcrs in
 
 	switch data := pcrs.(type) {
 	case func() ([]models.PCRs, error):
+		emptyPCRs := []models.PCRs{}
 		cache := &PollingProvider{
 			getPcrs:  data,
-			pcrs:     []models.PCRs{},
-			mutex:    &sync.RWMutex{},
+			pcrs:     &emptyPCRs,
+			mutex:    sync.RWMutex{},
 			ticker:   time.NewTicker(pollingInterval),
 			stopPoll: make(chan bool),
 		}
@@ -48,9 +49,8 @@ func NewCagePCRManager(cageDomain string, pollingInterval time.Duration, pcrs in
 
 		return cache, nil
 	case []models.PCRs:
-		// TODO: remove mutex for static PCRs
 		cache := &StaticProvider{
-			pcrs: data,
+			pcrs: &data,
 		}
 		return cache, nil
 	default:
@@ -58,19 +58,19 @@ func NewCagePCRManager(cageDomain string, pollingInterval time.Duration, pcrs in
 	}
 }
 
-func (c *PollingProvider) Set(pcrs []models.PCRs) {
+func (c *PollingProvider) Set(pcrs *[]models.PCRs) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	c.pcrs = pcrs
 }
 
-func (c PollingProvider) Get() []models.PCRs {
+func (c *PollingProvider) Get() *[]models.PCRs {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
 	return c.pcrs
 }
 
-func (c *StaticProvider) Get() []models.PCRs {
+func (c *StaticProvider) Get() *[]models.PCRs {
 	return c.pcrs
 }
 
@@ -84,7 +84,7 @@ func (c *PollingProvider) LoadDoc(ctx context.Context) {
 		log.Printf("could not get pcrs doc: %v", err)
 	}
 
-	c.Set(pcrs)
+	c.Set(&pcrs)
 }
 
 func (c *PollingProvider) pollAPI() {
@@ -96,7 +96,7 @@ func (c *PollingProvider) pollAPI() {
 				log.Printf("couldn't get pcrs: %v", err)
 			}
 
-			c.Set(pcrs)
+			c.Set(&pcrs)
 		case <-c.stopPoll:
 			c.ticker.Stop()
 			return

@@ -69,7 +69,7 @@ func (c *Client) CagesClient(cageHostname string, pcrs interface{}) (*http.Clien
 
 	expectedPCRs := pcrManager.Get()
 
-	if len(expectedPCRs) == 0 {
+	if len(*expectedPCRs) == 0 {
 		return nil, ErrNoPCRs
 	}
 
@@ -145,12 +145,12 @@ func (c *Client) createDial(tlsConfig *tls.Config, cache *attestation.Cache, pcr
 		cert := tlsConn.ConnectionState().PeerCertificates[0]
 		doc := cache.Get()
 
-		attestationDoc, err := attestCert(cert, expectedPCRs, doc)
+		attestationDoc, err := attestCert(cert, *expectedPCRs, doc)
 		if err != nil {
 			// Get new attestation doc in case of Cage deployment
 			cache.LoadDoc(ctx)
 
-			_, err := attestCert(cert, expectedPCRs, doc)
+			_, err := attestCert(cert, *expectedPCRs, doc)
 			if err != nil {
 				return nil, fmt.Errorf("Error attesting Connection %w", err)
 			}
