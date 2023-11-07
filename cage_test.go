@@ -14,7 +14,7 @@ import (
 	"testing"
 
 	"github.com/evervault/evervault-go"
-	"github.com/evervault/evervault-go/models"
+	"github.com/evervault/evervault-go/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -80,14 +80,14 @@ func TestCageClient(t *testing.T) {
 		return
 	}
 
-	expectedPCRs := models.PCRs{
+	expectedPCRs := types.PCRs{
 		PCR0: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
 		PCR1: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
 		PCR2: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
 		PCR8: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
 	}
 
-	cageClient, err := testClient.CagesClient(cage, []models.PCRs{expectedPCRs})
+	cageClient, err := testClient.CagesClient(cage, []types.PCRs{expectedPCRs})
 	if err != nil {
 		t.Errorf("Error creating cage client: %s", err)
 		return
@@ -134,11 +134,11 @@ func TestCagePartialPCR(t *testing.T) {
 		return
 	}
 
-	expectedPCRs := models.PCRs{
+	expectedPCRs := types.PCRs{
 		PCR8: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
 	}
 
-	cageClient, err := testClient.CagesClient(cage, []models.PCRs{expectedPCRs})
+	cageClient, err := testClient.CagesClient(cage, []types.PCRs{expectedPCRs})
 	if err != nil {
 		t.Errorf("Error creating cage client: %s", err)
 		return
@@ -174,9 +174,9 @@ func TestCagePartialPCR(t *testing.T) {
 	assert.Equal(jsonResp.Body.Test, true)
 }
 
-func GetPCRData() ([]models.PCRs, error) {
-	var pcrs []models.PCRs
-	expectedPCRs := models.PCRs{
+func GetPCRData() ([]types.PCRs, error) {
+	var pcrs []types.PCRs
+	expectedPCRs := types.PCRs{
 		PCR0: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
 		PCR8: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
 	}
@@ -184,9 +184,9 @@ func GetPCRData() ([]models.PCRs, error) {
 	return pcrs, nil
 }
 
-func GetInvalidPCRData() ([]models.PCRs, error) {
-	var pcrs []models.PCRs
-	expectedPCRs := models.PCRs{
+func GetInvalidPCRData() ([]types.PCRs, error) {
+	var pcrs []types.PCRs
+	expectedPCRs := types.PCRs{
 		PCR0: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
 		PCR8: "INVALID00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
 	}
@@ -281,12 +281,12 @@ func TestCageFailsOnPartialIncorrectPCR(t *testing.T) {
 		return
 	}
 
-	expectedPCRs := models.PCRs{
+	expectedPCRs := types.PCRs{
 		PCR0: "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
 		PCR8: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
 	}
 
-	cageClient, err := testClient.CagesClient(cage, []models.PCRs{expectedPCRs})
+	cageClient, err := testClient.CagesClient(cage, []types.PCRs{expectedPCRs})
 	if err != nil {
 		t.Errorf("Error creating cage client: %s", err)
 		return
@@ -315,6 +315,6 @@ func TestCageRequiresPCR(t *testing.T) {
 		return
 	}
 
-	_, err = testClient.CagesClient(cage, []models.PCRs{})
+	_, err = testClient.CagesClient(cage, []types.PCRs{})
 	assert.ErrorIs(err, evervault.ErrNoPCRs)
 }

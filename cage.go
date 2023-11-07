@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/evervault/evervault-go/internal/attestation"
-	"github.com/evervault/evervault-go/models"
+	"github.com/evervault/evervault-go/types"
 	"github.com/hf/nitrite"
 )
 
@@ -20,8 +20,8 @@ import (
 var cageDialTimeout = 5 * time.Second
 
 // filterEmptyPCRs removes empty PCR sets from the given slice.
-func filterEmptyPCRs(expectedPCRs []models.PCRs) []models.PCRs {
-	var ret []models.PCRs
+func filterEmptyPCRs(expectedPCRs []types.PCRs) []types.PCRs {
+	var ret []types.PCRs
 
 	for _, pcrs := range expectedPCRs {
 		if !pcrs.IsEmpty() {
@@ -69,7 +69,7 @@ func (c *Client) CagesClient(cageHostname string, pcrs interface{}) (*http.Clien
 
 	expectedPCRs := pcrManager.Get()
 
-	if len(*expectedPCRs) == 0 {
+	if len(filterEmptyPCRs(*expectedPCRs)) == 0 {
 		return nil, ErrNoPCRs
 	}
 
@@ -100,7 +100,7 @@ func (c *Client) cagesClient(cageHostname string, cache *attestation.Cache, prov
 }
 
 // verifyPCRs verifies the expected PCRs against the attestation document.
-func verifyPCRs(expectedPCRs []models.PCRs, attestationDocument nitrite.Document) bool {
+func verifyPCRs(expectedPCRs []types.PCRs, attestationDocument nitrite.Document) bool {
 	attestationPCRs := mapAttestationPCRs(attestationDocument)
 	for _, expectedPCR := range expectedPCRs {
 		if expectedPCR.Equal(attestationPCRs) {
@@ -112,14 +112,14 @@ func verifyPCRs(expectedPCRs []models.PCRs, attestationDocument nitrite.Document
 }
 
 // mapAttestationPCRs maps the attestation document's PCRs to a PCRs struct.
-func mapAttestationPCRs(attestationPCRs nitrite.Document) models.PCRs {
+func mapAttestationPCRs(attestationPCRs nitrite.Document) types.PCRs {
 	// We verify a subset of non zero PCRs
 	PCR0 := hex.EncodeToString(attestationPCRs.PCRs[0])
 	PCR1 := hex.EncodeToString(attestationPCRs.PCRs[1])
 	PCR2 := hex.EncodeToString(attestationPCRs.PCRs[2])
 	PCR8 := hex.EncodeToString(attestationPCRs.PCRs[8])
 
-	return models.PCRs{PCR0, PCR1, PCR2, PCR8}
+	return types.PCRs{PCR0, PCR1, PCR2, PCR8}
 }
 
 // createDial returns a custom dial function that performs attestation on the connection.
@@ -165,7 +165,7 @@ func (c *Client) createDial(tlsConfig *tls.Config, cache *attestation.Cache, pcr
 }
 
 // attestCert attests the certificate against the expected PCRs.
-func attestCert(certificate *x509.Certificate, expectedPCRs []models.PCRs, attestationDoc []byte) (bool, error) {
+func attestCert(certificate *x509.Certificate, expectedPCRs []types.PCRs, attestationDoc []byte) (bool, error) {
 	res, err := nitrite.Verify(attestationDoc, nitrite.VerifyOptions{CurrentTime: time.Now()})
 	if err != nil {
 		return false, fmt.Errorf("unable to verify certificate %w", err)

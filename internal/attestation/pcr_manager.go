@@ -7,20 +7,20 @@ import (
 	"sync"
 	"time"
 
-	"github.com/evervault/evervault-go/models"
+	"github.com/evervault/evervault-go/types"
 )
 
 type PCRManager interface {
-	Get() *[]models.PCRs
+	Get() *[]types.PCRs
 }
 
 type StaticProvider struct {
-	pcrs *[]models.PCRs
+	pcrs *[]types.PCRs
 }
 
 type PollingProvider struct {
-	getPcrs  func() ([]models.PCRs, error)
-	pcrs     *[]models.PCRs
+	getPcrs  func() ([]types.PCRs, error)
+	pcrs     *[]types.PCRs
 	mutex    sync.RWMutex
 	ticker   *time.Ticker
 	stopPoll chan bool
@@ -31,8 +31,8 @@ const pcrPollTimeout = 5 * time.Second
 func NewCagePCRManager(cageDomain string, pollingInterval time.Duration, pcrs interface{}) (PCRManager, error) {
 
 	switch data := pcrs.(type) {
-	case func() ([]models.PCRs, error):
-		emptyPCRs := []models.PCRs{}
+	case func() ([]types.PCRs, error):
+		emptyPCRs := []types.PCRs{}
 		cache := &PollingProvider{
 			getPcrs:  data,
 			pcrs:     &emptyPCRs,
@@ -43,34 +43,34 @@ func NewCagePCRManager(cageDomain string, pollingInterval time.Duration, pcrs in
 		ctx, cancel := context.WithTimeout(context.Background(), pcrPollTimeout)
 		defer cancel()
 
-		cache.LoadDoc(ctx)
+		cache.Load(ctx)
 
 		go cache.pollAPI()
 
 		return cache, nil
-	case []models.PCRs:
+	case []types.PCRs:
 		cache := &StaticProvider{
 			pcrs: &data,
 		}
 		return cache, nil
 	default:
-		return nil, errors.New("unsupported PCRs type, must be array or callback with type: func() ([]models.PCRs, error)")
+		return nil, errors.New("unsupported PCRs type, must be array or callback with type: func() ([]types.PCRs, error)")
 	}
 }
 
-func (c *PollingProvider) Set(pcrs *[]models.PCRs) {
+func (c *PollingProvider) Set(pcrs *[]types.PCRs) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	c.pcrs = pcrs
 }
 
-func (c *PollingProvider) Get() *[]models.PCRs {
+func (c *PollingProvider) Get() *[]types.PCRs {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
 	return c.pcrs
 }
 
-func (c *StaticProvider) Get() *[]models.PCRs {
+func (c *StaticProvider) Get() *[]types.PCRs {
 	return c.pcrs
 }
 
@@ -78,7 +78,7 @@ func (c *PollingProvider) StopPolling() {
 	c.stopPoll <- true
 }
 
-func (c *PollingProvider) LoadDoc(ctx context.Context) {
+func (c *PollingProvider) Load(ctx context.Context) {
 	pcrs, err := c.getPcrs()
 	if err != nil {
 		log.Printf("could not get pcrs doc: %v", err)
