@@ -61,7 +61,7 @@ func filterEmptyPCRs(expectedPCRs []types.PCRs) []types.PCRs {
 //
 //	resp, err := cageClient.Do(req)
 func (c *Client) CagesClient(cageHostname string, pcrs interface{}) (*http.Client, error) {
-	pcrManager, err := attestation.NewCagePCRManager(cageHostname, c.Config.CagesPollingInterval, pcrs)
+	pcrManager, err := attestation.NewCagePCRManager(c.Config.CagesPollingInterval, pcrs)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +83,9 @@ func (c *Client) CagesClient(cageHostname string, pcrs interface{}) (*http.Clien
 }
 
 // cagesClient returns an HTTP client for connecting to the cage.
-func (c *Client) cagesClient(cageHostname string, cache *attestation.Cache, provider attestation.PCRManager) *http.Client {
+func (c *Client) cagesClient(cageHostname string,
+	cache *attestation.Cache, provider attestation.PCRManager,
+) *http.Client {
 	tlsConfig := &tls.Config{
 		InsecureSkipVerify: false,
 		MinVersion:         tls.VersionTLS12,
@@ -128,7 +130,7 @@ func (c *Client) createDial(tlsConfig *tls.Config, cache *attestation.Cache, pcr
 		// Create a TCP connection
 		conn, err := net.DialTimeout(network, addr, cageDialTimeout)
 		if err != nil {
-			return nil, fmt.Errorf("Error creating cage dial %w", err)
+			return nil, fmt.Errorf("error creating cage dial %w", err)
 		}
 
 		expectedPCRs := pcrManager.Get()
@@ -138,7 +140,7 @@ func (c *Client) createDial(tlsConfig *tls.Config, cache *attestation.Cache, pcr
 
 		err = tlsConn.Handshake()
 		if err != nil {
-			return nil, fmt.Errorf("Error connecting to cage %w", err)
+			return nil, fmt.Errorf("error connecting to cage %w", err)
 		}
 
 		cert := tlsConn.ConnectionState().PeerCertificates[0]
@@ -151,7 +153,7 @@ func (c *Client) createDial(tlsConfig *tls.Config, cache *attestation.Cache, pcr
 
 			_, err := attestCert(cert, *expectedPCRs, doc)
 			if err != nil {
-				return nil, fmt.Errorf("Error attesting Connection %w", err)
+				return nil, fmt.Errorf("error attesting Connection %w", err)
 			}
 		}
 

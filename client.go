@@ -215,7 +215,7 @@ func (c *Client) buildRequestContext(clientRequest clientRequest) (*http.Request
 
 	req, err := http.NewRequestWithContext(ctx, clientRequest.method, clientRequest.url, bodyReader)
 	if err != nil {
-		return nil, fmt.Errorf("Error creating request %w", err)
+		return nil, fmt.Errorf("error creating request %w", err)
 	}
 
 	setRequestHeaders(req, clientRequest.appUUID, clientRequest.apiKey, clientRequest.useBasicAuth)

@@ -13,7 +13,7 @@ var ErrUnVerifiedSignature = errors.New("unable to verify certificate signature"
 var ErrNoPCRs = errors.New("Error: no PCRs where provided to attest with")
 
 // ErrInvalidPCRProvider is returned when an invalid PCR provider type is passed to CagesClient.
-var ErrInvalidPCRProvider = errors.New("unsupported PCRs type, must be array or callback with type: func() ([]types.PCRs, error)")
+var ErrInvalidPCRProvider = errors.New("unsupported type, must be array or callback: func() ([]types.PCRs, error)")
 
 // ErrAttestionFailure is retuned when a connection to a cage cannot be attested.
 var ErrAttestionFailure = errors.New("attestation failed")
