@@ -61,9 +61,20 @@ func filterEmptyPCRs(expectedPCRs []types.PCRs) []types.PCRs {
 //
 //	resp, err := cageClient.Do(req)
 func (c *Client) CagesClient(cageHostname string, pcrs interface{}) (*http.Client, error) {
-	pcrManager, err := attestation.NewCagePCRManager(c.Config.CagesPollingInterval, pcrs)
-	if err != nil {
-		return nil, err
+	var pcrManager attestation.PCRManager
+
+	switch data := pcrs.(type) {
+	case func() ([]types.PCRs, error):
+		var err error
+
+		pcrManager, err = attestation.NewPollingPCRManager(c.Config.CagesPollingInterval, data)
+		if err != nil {
+			return nil, err
+		}
+	case []types.PCRs:
+		pcrManager = attestation.NewStaticPCRManager(data)
+	default:
+		return nil, types.ErrInvalidPCRProvider
 	}
 
 	expectedPCRs := pcrManager.Get()
@@ -120,11 +131,12 @@ func mapAttestationPCRs(attestationPCRs nitrite.Document) types.PCRs {
 	PCR2 := hex.EncodeToString(attestationPCRs.PCRs[2])
 	PCR8 := hex.EncodeToString(attestationPCRs.PCRs[8])
 
-	return types.PCRs{PCR0, PCR1, PCR2, PCR8}
+	return types.PCRs{PCR0: PCR0, PCR1: PCR1, PCR2: PCR2, PCR8: PCR8}
 }
 
 // createDial returns a custom dial function that performs attestation on the connection.
-func (c *Client) createDial(tlsConfig *tls.Config, cache *attestation.Cache, pcrManager attestation.PCRManager) func(ctx context.Context,
+func (c *Client) createDial(tlsConfig *tls.Config, cache *attestation.Cache,
+	pcrManager attestation.PCRManager) func(ctx context.Context,
 	network, addr string) (net.Conn, error) {
 	return func(ctx context.Context, network, addr string) (net.Conn, error) {
 		// Create a TCP connection

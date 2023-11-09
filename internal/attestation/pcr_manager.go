@@ -24,31 +24,28 @@ type PollingProvider struct {
 	stopPoll chan bool
 }
 
-func NewCagePCRManager(pollingInterval time.Duration, pcrs interface{}) (PCRManager, error) {
-	switch data := pcrs.(type) {
-	case func() ([]types.PCRs, error):
-		emptyPCRs := []types.PCRs{}
-		cache := &PollingProvider{
-			getPcrs:  data,
-			pcrs:     &emptyPCRs,
-			mutex:    sync.RWMutex{},
-			ticker:   time.NewTicker(pollingInterval),
-			stopPoll: make(chan bool),
-		}
+func NewPollingPCRManager(pollingInterval time.Duration,
+	getPcrs func() ([]types.PCRs, error),
+) (*PollingProvider, error) {
+	emptyPCRs := []types.PCRs{}
+	cache := &PollingProvider{
+		getPcrs:  getPcrs,
+		pcrs:     &emptyPCRs,
+		mutex:    sync.RWMutex{},
+		ticker:   time.NewTicker(pollingInterval),
+		stopPoll: make(chan bool),
+	}
 
-		cache.Load()
+	cache.load()
 
-		go cache.pollAPI()
+	go cache.pollAPI()
 
-		return cache, nil
-	case []types.PCRs:
-		cache := &StaticProvider{
-			pcrs: &data,
-		}
+	return cache, nil
+}
 
-		return cache, nil
-	default:
-		return nil, types.ErrInvalidPCRProvider
+func NewStaticPCRManager(pcrs []types.PCRs) *StaticProvider {
+	return &StaticProvider{
+		pcrs: &pcrs,
 	}
 }
 
@@ -73,7 +70,7 @@ func (c *PollingProvider) StopPolling() {
 	c.stopPoll <- true
 }
 
-func (c *PollingProvider) Load() {
+func (c *PollingProvider) load() {
 	pcrs, err := c.getPcrs()
 	if err != nil {
 		log.Printf("could not get pcrs doc: %v", err)
