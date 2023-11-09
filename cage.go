@@ -60,23 +60,31 @@ func filterEmptyPCRs(expectedPCRs []types.PCRs) []types.PCRs {
 //	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
 //
 //	resp, err := cageClient.Do(req)
-func (c *Client) CagesClient(cageHostname string, pcrs interface{}) (*http.Client, error) {
-	var pcrManager attestation.PCRManager
+func (c *Client) CagesClient(cageHostname string, pcrs []types.PCRs) (*http.Client, error) {
+	pcrManager := attestation.NewStaticPCRManager(pcrs)
 
-	switch data := pcrs.(type) {
-	case func() ([]types.PCRs, error):
-		var err error
-
-		pcrManager, err = attestation.NewPollingPCRManager(c.Config.CagesPollingInterval, data)
-		if err != nil {
-			return nil, err
-		}
-	case []types.PCRs:
-		pcrManager = attestation.NewStaticPCRManager(data)
-	default:
-		return nil, types.ErrInvalidPCRProvider
+	client, err := c.createCagesClient(pcrManager, cageHostname)
+	if err != nil {
+		return nil, err
 	}
 
+	return client, nil
+}
+
+func (c *Client) CagesClientWithProvider(cageHostname string,
+	pcrsProvider func() ([]types.PCRs, error),
+) (*http.Client, error) {
+	pcrManager := attestation.NewPollingPCRManager(c.Config.CagesPollingInterval, pcrsProvider)
+
+	cagesClient, err := c.createCagesClient(pcrManager, cageHostname)
+	if err != nil {
+		return nil, err
+	}
+
+	return cagesClient, nil
+}
+
+func (c *Client) createCagesClient(pcrManager attestation.PCRManager, cageHostname string) (*http.Client, error) {
 	expectedPCRs := pcrManager.Get()
 
 	if len(filterEmptyPCRs(*expectedPCRs)) == 0 {

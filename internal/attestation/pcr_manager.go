@@ -26,7 +26,7 @@ type PollingProvider struct {
 
 func NewPollingPCRManager(pollingInterval time.Duration,
 	getPcrs func() ([]types.PCRs, error),
-) (*PollingProvider, error) {
+) *PollingProvider {
 	emptyPCRs := []types.PCRs{}
 	cache := &PollingProvider{
 		getPcrs:  getPcrs,
@@ -40,7 +40,7 @@ func NewPollingPCRManager(pollingInterval time.Duration,
 
 	go cache.pollAPI()
 
-	return cache, nil
+	return cache
 }
 
 func NewStaticPCRManager(pcrs []types.PCRs) *StaticProvider {

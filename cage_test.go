@@ -205,7 +205,7 @@ func TestCagePartialPCRProvider(t *testing.T) {
 		return
 	}
 
-	cageClient, err := testClient.CagesClient(cage, GetPCRData)
+	cageClient, err := testClient.CagesClientWithProvider(cage, GetPCRData)
 	if err != nil {
 		t.Errorf("Error creating cage client: %s", err)
 		return
@@ -252,7 +252,7 @@ func TestCageFailsOnPartialIncorrectPCRProvider(t *testing.T) {
 		return
 	}
 
-	cageClient, err := testClient.CagesClient(cage, GetInvalidPCRData)
+	cageClient, err := testClient.CagesClientWithProvider(cage, GetInvalidPCRData)
 	if err != nil {
 		t.Errorf("Error creating cage client: %s", err)
 		return
