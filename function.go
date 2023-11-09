@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-
-	"github.com/evervault/evervault-go/types"
 )
 
 // Struct containing a token for Function invocation.
@@ -59,7 +57,7 @@ func (c *Client) createRunToken(functionName string, payload any) (RunTokenRespo
 	response, err := c.makeRequest(runTokenURL, http.MethodPost, pBytes, false)
 
 	if response.statusCode != http.StatusOK {
-		return RunTokenResponse{}, types.APIError{Message: "Error making HTTP request"}
+		return RunTokenResponse{}, APIError{Message: "Error making HTTP request"}
 	}
 
 	if err != nil {
@@ -95,12 +93,12 @@ func (c *Client) runFunction(functionName string, payload map[string]any) (Funct
 	if err == nil && functionRunResponse.Status == "success" {
 		return functionRunResponse, nil
 	} else if err == nil && functionRunResponse.Status == "failure" {
-		functionRuntimeError := types.FunctionRuntimeError{}
+		functionRuntimeError := FunctionRuntimeError{}
 		err = json.Unmarshal(response.body, &functionRuntimeError)
 		if err == nil {
 			return FunctionRunResponse{}, functionRuntimeError
 		}
 	}
 
-	return FunctionRunResponse{}, types.ExtractAPIError(response.body)
+	return FunctionRunResponse{}, ExtractAPIError(response.body)
 }

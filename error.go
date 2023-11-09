@@ -1,4 +1,4 @@
-package types
+package evervault
 
 import (
 	"encoding/json"

@@ -9,7 +9,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/evervault/evervault-go/types"
+	"github.com/evervault/evervault-go/attestation"
 )
 
 // Evervault Client.
@@ -25,7 +25,7 @@ type Client struct {
 	apiKey                    string
 	p256PublicKeyUncompressed []byte
 	p256PublicKeyCompressed   []byte
-	expectedPCRs              []types.PCRs
+	expectedPCRs              []attestation.PCRs
 }
 
 type KeysResponse struct {
@@ -74,7 +74,7 @@ func (c *Client) initClient() error {
 
 	c.p256PublicKeyUncompressed = decodedPublicKeyUncompressed
 	c.p256PublicKeyCompressed = decodedPublicKeyCompressed
-	c.expectedPCRs = []types.PCRs{}
+	c.expectedPCRs = []attestation.PCRs{}
 
 	return nil
 }
@@ -85,7 +85,7 @@ func (c *Client) getPublicKey() (KeysResponse, error) {
 	response, err := c.makeRequest(publicKeyURL, http.MethodGet, nil, false)
 
 	if response.statusCode != http.StatusOK {
-		return KeysResponse{}, types.APIError{Message: "error making HTTP request"}
+		return KeysResponse{}, APIError{Message: "error making HTTP request"}
 	}
 
 	if err != nil {
@@ -111,7 +111,7 @@ func (c *Client) decrypt(encryptedData string) (any, error) {
 	response, err := c.makeRequest(decryptURL, http.MethodPost, pBytes, true)
 
 	if response.statusCode != http.StatusOK {
-		return TokenResponse{}, types.ExtractAPIError(response.body)
+		return TokenResponse{}, ExtractAPIError(response.body)
 	}
 
 	if err != nil {
@@ -149,7 +149,7 @@ func (c *Client) createToken(action string, payload any, expiry int64) (TokenRes
 	response, err := c.makeRequest(tokenURL, http.MethodPost, bodyBytes, false)
 
 	if response.statusCode != http.StatusOK {
-		return TokenResponse{}, types.ExtractAPIError(response.body)
+		return TokenResponse{}, ExtractAPIError(response.body)
 	}
 
 	if err != nil {

@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/evervault/evervault-go/types"
+	"github.com/evervault/evervault-go"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -78,7 +78,7 @@ func TestRunFunctionFailure(t *testing.T) {
 	payload := map[string]any{"name": "john", "age": 30}
 
 	_, err := testClient.RunFunction("test_function", payload)
-	if runtimeError, ok := err.(types.FunctionRuntimeError); !ok {
+	if runtimeError, ok := err.(evervault.FunctionRuntimeError); !ok {
 		t.Error("Expected FunctionRuntimeError, got", err)
 	} else {
 		assert.Equal(t, runtimeError.ErrorBody.Message, message)
@@ -106,7 +106,7 @@ func TestRunFunctionTimeout(t *testing.T) {
 	payload := map[string]any{"name": "john", "age": 30}
 
 	_, err := testClient.RunFunction("test_function", payload)
-	if functionTimeoutError, ok := err.(types.FunctionTimeoutError); !ok {
+	if functionTimeoutError, ok := err.(evervault.FunctionTimeoutError); !ok {
 		t.Error("Expected FunctionTimeoutError, got", err)
 	} else {
 		assert.Equal(t, functionTimeoutError.Message, message)
@@ -132,7 +132,7 @@ func TestRunFunctionNotReady(t *testing.T) {
 	payload := map[string]any{"name": "john", "age": 30}
 
 	_, err := testClient.RunFunction("test_function", payload)
-	if functionNotReadyError, ok := err.(types.FunctionNotReadyError); !ok {
+	if functionNotReadyError, ok := err.(evervault.FunctionNotReadyError); !ok {
 		t.Error("Expected FunctionNotReadyError, got", err)
 	} else {
 		assert.Equal(t, functionNotReadyError.Message, message)
@@ -159,7 +159,7 @@ func TestRunFunctionUnauthorized(t *testing.T) {
 	payload := map[string]any{"name": "john", "age": 30}
 
 	_, err := testClient.RunFunction("test_function", payload)
-	if evervaultError, ok := err.(types.APIError); !ok {
+	if evervaultError, ok := err.(evervault.APIError); !ok {
 		t.Error("Expected Evervault Error, got", err)
 	} else {
 		assert.Equal(t, evervaultError.Code, code)

@@ -20,7 +20,6 @@ import (
 
 	"github.com/evervault/evervault-go/internal/crypto"
 	"github.com/evervault/evervault-go/internal/datatypes"
-	"github.com/evervault/evervault-go/types"
 )
 
 // MakeClient creates a new Client instance if an API key and Evervault App ID is provided. The client
@@ -43,7 +42,7 @@ func MakeClient(appUUID, apiKey string) (*Client, error) {
 // be created then nil will be returned.
 func MakeCustomClient(appUUID, apiKey string, config Config) (*Client, error) {
 	if apiKey == "" || appUUID == "" {
-		return nil, types.ErrAppCredentialsRequired
+		return nil, ErrAppCredentialsRequired
 	}
 
 	client := &Client{appUUID: appUUID, apiKey: apiKey, Config: config}
@@ -66,7 +65,7 @@ func (c *Client) getAesKeyAndCompressedEphemeralPublicKey() ([]byte, []byte, err
 
 	appPubKey, err := appPublicKeyCurve.NewPublicKey(c.p256PublicKeyUncompressed)
 	if err != nil {
-		return nil, nil, types.ErrCryptoKeyImportError
+		return nil, nil, ErrCryptoKeyImportError
 	}
 
 	shared, err := ephemeralECDHKey.ECDH(appPubKey)
@@ -198,7 +197,7 @@ func (c *Client) DecryptInt(encryptedData string) (int, error) {
 
 	decryptedToFloat, err := strconv.ParseFloat(decryptResponse, 64)
 	if err != nil {
-		return 0, types.ErrInvalidDataType
+		return 0, ErrInvalidDataType
 	}
 
 	return int(decryptedToFloat), nil
@@ -215,7 +214,7 @@ func (c *Client) DecryptFloat64(encryptedData string) (float64, error) {
 
 	parsedFloat, err := strconv.ParseFloat(decryptResponse, 64)
 	if err != nil {
-		return 0, types.ErrInvalidDataType
+		return 0, ErrInvalidDataType
 	}
 
 	return parsedFloat, nil
@@ -232,7 +231,7 @@ func (c *Client) DecryptBool(encryptedData string) (bool, error) {
 
 	parsedBool, err := strconv.ParseBool(decryptResponse)
 	if err != nil {
-		return false, types.ErrInvalidDataType
+		return false, ErrInvalidDataType
 	}
 
 	return parsedBool, nil
@@ -256,7 +255,7 @@ func (c *Client) decryptToString(encryptedData string) (string, error) {
 	decryptResponse, err := c.decrypt(encryptedData)
 	if err != nil {
 		if strings.Contains(err.Error(), "Error parsing JSON response") {
-			return "", types.ErrInvalidDataType
+			return "", ErrInvalidDataType
 		}
 
 		return "", err
@@ -264,7 +263,7 @@ func (c *Client) decryptToString(encryptedData string) (string, error) {
 
 	decryptedString, ok := decryptResponse.(string)
 	if !ok {
-		return "", types.ErrInvalidDataType
+		return "", ErrInvalidDataType
 	}
 
 	return decryptedString, nil
@@ -282,7 +281,7 @@ func (c *Client) decryptToString(encryptedData string) (string, error) {
 func (c *Client) CreateClientSideDecryptToken(payload any, expiry ...time.Time) (TokenResponse, error) {
 	// Used to check whether payload is the zero value for its type
 	if payload == nil {
-		return TokenResponse{}, types.ErrInvalidDataType
+		return TokenResponse{}, ErrInvalidDataType
 	}
 
 	var epochTime int64

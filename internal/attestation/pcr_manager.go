@@ -1,73 +1,75 @@
 package attestation
 
 import (
+	"context"
 	"log"
 	"sync"
 	"time"
 
-	"github.com/evervault/evervault-go/types"
+	"github.com/evervault/evervault-go/attestation"
 )
 
 type PCRManager interface {
-	Get() *[]types.PCRs
+	Get() *[]attestation.PCRs
 }
 
 type StaticProvider struct {
-	pcrs *[]types.PCRs
+	pcrs *[]attestation.PCRs
 }
 
 type PollingProvider struct {
-	getPcrs  func() ([]types.PCRs, error)
-	pcrs     *[]types.PCRs
-	mutex    sync.RWMutex
-	ticker   *time.Ticker
-	stopPoll chan bool
+	getPcrs func() ([]attestation.PCRs, error)
+	pcrs    *[]attestation.PCRs
+	mutex   sync.RWMutex
+	ticker  *time.Ticker
+	cancel  context.CancelFunc
 }
 
 func NewPollingPCRManager(pollingInterval time.Duration,
-	getPcrs func() ([]types.PCRs, error),
+	getPcrs func() ([]attestation.PCRs, error),
 ) *PollingProvider {
-	emptyPCRs := []types.PCRs{}
+	emptyPCRs := []attestation.PCRs{}
+	ctx, cancel := context.WithCancel(context.Background())
 	cache := &PollingProvider{
-		getPcrs:  getPcrs,
-		pcrs:     &emptyPCRs,
-		mutex:    sync.RWMutex{},
-		ticker:   time.NewTicker(pollingInterval),
-		stopPoll: make(chan bool),
+		getPcrs: getPcrs,
+		pcrs:    &emptyPCRs,
+		mutex:   sync.RWMutex{},
+		ticker:  time.NewTicker(pollingInterval),
+		cancel:  cancel,
 	}
 
 	cache.load()
 
-	go cache.pollAPI()
+	go cache.pollAPI(ctx)
 
 	return cache
 }
 
-func NewStaticPCRManager(pcrs []types.PCRs) *StaticProvider {
+func NewStaticPCRManager(pcrs []attestation.PCRs) *StaticProvider {
 	return &StaticProvider{
 		pcrs: &pcrs,
 	}
 }
 
-func (c *PollingProvider) Set(pcrs *[]types.PCRs) {
+func (c *PollingProvider) Set(pcrs *[]attestation.PCRs) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	c.pcrs = pcrs
 }
 
-func (c *PollingProvider) Get() *[]types.PCRs {
+func (c *PollingProvider) Get() *[]attestation.PCRs {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
 
 	return c.pcrs
 }
 
-func (c *StaticProvider) Get() *[]types.PCRs {
+func (c *StaticProvider) Get() *[]attestation.PCRs {
 	return c.pcrs
 }
 
 func (c *PollingProvider) StopPolling() {
-	c.stopPoll <- true
+	c.cancel()
 }
 
 func (c *PollingProvider) load() {
@@ -79,7 +81,7 @@ func (c *PollingProvider) load() {
 	c.Set(&pcrs)
 }
 
-func (c *PollingProvider) pollAPI() {
+func (c *PollingProvider) pollAPI(ctx context.Context) {
 	for {
 		select {
 		case <-c.ticker.C:
@@ -89,7 +91,7 @@ func (c *PollingProvider) pollAPI() {
 			}
 
 			c.Set(&pcrs)
-		case <-c.stopPoll:
+		case <-ctx.Done():
 			c.ticker.Stop()
 			return
 		}

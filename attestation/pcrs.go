@@ -1,4 +1,4 @@
-package types
+package attestation
 
 // prcEqual Checks if 2 PCR strings are not equal.
 func pcrNotEqual(p1, p2 string) bool {

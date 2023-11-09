@@ -11,8 +11,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/evervault/evervault-go/internal/attestation"
-	"github.com/evervault/evervault-go/types"
+	"github.com/evervault/evervault-go/attestation"
+	internalAttestation "github.com/evervault/evervault-go/internal/attestation"
 	"github.com/hf/nitrite"
 )
 
@@ -20,8 +20,8 @@ import (
 var cageDialTimeout = 5 * time.Second
 
 // filterEmptyPCRs removes empty PCR sets from the given slice.
-func filterEmptyPCRs(expectedPCRs []types.PCRs) []types.PCRs {
-	var ret []types.PCRs
+func filterEmptyPCRs(expectedPCRs []attestation.PCRs) []attestation.PCRs {
+	var ret []attestation.PCRs
 
 	for _, pcrs := range expectedPCRs {
 		if !pcrs.IsEmpty() {
@@ -60,8 +60,8 @@ func filterEmptyPCRs(expectedPCRs []types.PCRs) []types.PCRs {
 //	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
 //
 //	resp, err := cageClient.Do(req)
-func (c *Client) CagesClient(cageHostname string, pcrs []types.PCRs) (*http.Client, error) {
-	pcrManager := attestation.NewStaticPCRManager(pcrs)
+func (c *Client) CagesClient(cageHostname string, pcrs []attestation.PCRs) (*http.Client, error) {
+	pcrManager := internalAttestation.NewStaticPCRManager(pcrs)
 
 	client, err := c.createCagesClient(pcrManager, cageHostname)
 	if err != nil {
@@ -72,9 +72,9 @@ func (c *Client) CagesClient(cageHostname string, pcrs []types.PCRs) (*http.Clie
 }
 
 func (c *Client) CagesClientWithProvider(cageHostname string,
-	pcrsProvider func() ([]types.PCRs, error),
+	pcrsProvider func() ([]attestation.PCRs, error),
 ) (*http.Client, error) {
-	pcrManager := attestation.NewPollingPCRManager(c.Config.CagesPollingInterval, pcrsProvider)
+	pcrManager := internalAttestation.NewPollingPCRManager(c.Config.CagesPollingInterval, pcrsProvider)
 
 	cagesClient, err := c.createCagesClient(pcrManager, cageHostname)
 	if err != nil {
@@ -84,14 +84,16 @@ func (c *Client) CagesClientWithProvider(cageHostname string,
 	return cagesClient, nil
 }
 
-func (c *Client) createCagesClient(pcrManager attestation.PCRManager, cageHostname string) (*http.Client, error) {
+func (c *Client) createCagesClient(pcrManager internalAttestation.PCRManager,
+	cageHostname string,
+) (*http.Client, error) {
 	expectedPCRs := pcrManager.Get()
 
 	if len(filterEmptyPCRs(*expectedPCRs)) == 0 {
-		return nil, types.ErrNoPCRs
+		return nil, ErrNoPCRs
 	}
 
-	cache, err := attestation.NewAttestationCache(cageHostname, c.Config.CagesPollingInterval)
+	cache, err := internalAttestation.NewAttestationCache(cageHostname, c.Config.CagesPollingInterval)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +105,7 @@ func (c *Client) createCagesClient(pcrManager attestation.PCRManager, cageHostna
 
 // cagesClient returns an HTTP client for connecting to the cage.
 func (c *Client) cagesClient(cageHostname string,
-	cache *attestation.Cache, provider attestation.PCRManager,
+	cache *internalAttestation.Cache, provider internalAttestation.PCRManager,
 ) *http.Client {
 	tlsConfig := &tls.Config{
 		InsecureSkipVerify: false,
@@ -120,7 +122,7 @@ func (c *Client) cagesClient(cageHostname string,
 }
 
 // verifyPCRs verifies the expected PCRs against the attestation document.
-func verifyPCRs(expectedPCRs []types.PCRs, attestationDocument nitrite.Document) bool {
+func verifyPCRs(expectedPCRs []attestation.PCRs, attestationDocument nitrite.Document) bool {
 	attestationPCRs := mapAttestationPCRs(attestationDocument)
 	for _, expectedPCR := range expectedPCRs {
 		if expectedPCR.Equal(attestationPCRs) {
@@ -132,19 +134,19 @@ func verifyPCRs(expectedPCRs []types.PCRs, attestationDocument nitrite.Document)
 }
 
 // mapAttestationPCRs maps the attestation document's PCRs to a PCRs struct.
-func mapAttestationPCRs(attestationPCRs nitrite.Document) types.PCRs {
+func mapAttestationPCRs(attestationPCRs nitrite.Document) attestation.PCRs {
 	// We verify a subset of non zero PCRs
 	PCR0 := hex.EncodeToString(attestationPCRs.PCRs[0])
 	PCR1 := hex.EncodeToString(attestationPCRs.PCRs[1])
 	PCR2 := hex.EncodeToString(attestationPCRs.PCRs[2])
 	PCR8 := hex.EncodeToString(attestationPCRs.PCRs[8])
 
-	return types.PCRs{PCR0: PCR0, PCR1: PCR1, PCR2: PCR2, PCR8: PCR8}
+	return attestation.PCRs{PCR0: PCR0, PCR1: PCR1, PCR2: PCR2, PCR8: PCR8}
 }
 
 // createDial returns a custom dial function that performs attestation on the connection.
-func (c *Client) createDial(tlsConfig *tls.Config, cache *attestation.Cache,
-	pcrManager attestation.PCRManager) func(ctx context.Context,
+func (c *Client) createDial(tlsConfig *tls.Config, cache *internalAttestation.Cache,
+	pcrManager internalAttestation.PCRManager) func(ctx context.Context,
 	network, addr string) (net.Conn, error) {
 	return func(ctx context.Context, network, addr string) (net.Conn, error) {
 		// Create a TCP connection
@@ -178,7 +180,7 @@ func (c *Client) createDial(tlsConfig *tls.Config, cache *attestation.Cache,
 		}
 
 		if !attestationDoc {
-			return nil, types.ErrAttestionFailure
+			return nil, ErrAttestionFailure
 		}
 
 		return tlsConn, nil
@@ -186,14 +188,14 @@ func (c *Client) createDial(tlsConfig *tls.Config, cache *attestation.Cache,
 }
 
 // attestCert attests the certificate against the expected PCRs.
-func attestCert(certificate *x509.Certificate, expectedPCRs []types.PCRs, attestationDoc []byte) (bool, error) {
+func attestCert(certificate *x509.Certificate, expectedPCRs []attestation.PCRs, attestationDoc []byte) (bool, error) {
 	res, err := nitrite.Verify(attestationDoc, nitrite.VerifyOptions{CurrentTime: time.Now()})
 	if err != nil {
 		return false, fmt.Errorf("unable to verify certificate %w", err)
 	}
 
 	if !res.SignatureOK {
-		return false, types.ErrUnVerifiedSignature
+		return false, ErrUnVerifiedSignature
 	}
 
 	if verified := verifyPCRs(expectedPCRs, *res.Document); !verified {

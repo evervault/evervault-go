@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-
-	"github.com/evervault/evervault-go/types"
 )
 
 // Will return a http.Client that is configured to use the Evervault Relay as a proxy,
@@ -25,7 +23,7 @@ func (c *Client) OutboundRelayClient() (*http.Client, error) {
 	response, err := c.makeRequest(c.Config.EvervaultCaURL, http.MethodGet, nil, false)
 
 	if response.statusCode != http.StatusOK {
-		return nil, types.APIError{Message: "Error making HTTP request"}
+		return nil, APIError{Message: "Error making HTTP request"}
 	}
 
 	if err != nil {
