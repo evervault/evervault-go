@@ -23,7 +23,6 @@ type Client struct {
 	apiKey                    string
 	p256PublicKeyUncompressed []byte
 	p256PublicKeyCompressed   []byte
-	expectedPCRs              []PCRs
 }
 
 type KeysResponse struct {
@@ -72,7 +71,6 @@ func (c *Client) initClient() error {
 
 	c.p256PublicKeyUncompressed = decodedPublicKeyUncompressed
 	c.p256PublicKeyCompressed = decodedPublicKeyCompressed
-	c.expectedPCRs = []PCRs{}
 
 	return nil
 }
@@ -83,7 +81,7 @@ func (c *Client) getPublicKey() (KeysResponse, error) {
 	response, err := c.makeRequest(publicKeyURL, http.MethodGet, nil, false)
 
 	if response.statusCode != http.StatusOK {
-		return KeysResponse{}, APIError{Message: "Error making HTTP request"}
+		return KeysResponse{}, APIError{Message: "error making HTTP request"}
 	}
 
 	if err != nil {
@@ -92,7 +90,7 @@ func (c *Client) getPublicKey() (KeysResponse, error) {
 
 	res := KeysResponse{}
 	if err := json.Unmarshal(response.body, &res); err != nil {
-		return KeysResponse{}, fmt.Errorf("Error parsing JSON response %w", err)
+		return KeysResponse{}, fmt.Errorf("error parsing JSON response %w", err)
 	}
 
 	return res, nil
@@ -101,7 +99,7 @@ func (c *Client) getPublicKey() (KeysResponse, error) {
 func (c *Client) decrypt(encryptedData string) (any, error) {
 	pBytes, err := json.Marshal(encryptedData)
 	if err != nil {
-		return nil, fmt.Errorf("Error marshalling payload to json %w", err)
+		return nil, fmt.Errorf("error marshalling payload to json %w", err)
 	}
 
 	decryptURL := fmt.Sprintf("%s/decrypt", c.Config.EvAPIURL)
@@ -109,7 +107,7 @@ func (c *Client) decrypt(encryptedData string) (any, error) {
 	response, err := c.makeRequest(decryptURL, http.MethodPost, pBytes, true)
 
 	if response.statusCode != http.StatusOK {
-		return TokenResponse{}, extractAPIError(response.body)
+		return TokenResponse{}, ExtractAPIError(response.body)
 	}
 
 	if err != nil {
@@ -119,7 +117,7 @@ func (c *Client) decrypt(encryptedData string) (any, error) {
 	var res any
 	if response.contentType == "application/json" {
 		if err := json.Unmarshal(response.body, &res); err != nil {
-			return nil, fmt.Errorf("Error parsing JSON response %w", err)
+			return nil, fmt.Errorf("error parsing JSON response %w", err)
 		}
 
 		return res, nil
@@ -139,7 +137,7 @@ func (c *Client) createToken(action string, payload any, expiry int64) (TokenRes
 
 	bodyBytes, err := json.Marshal(body)
 	if err != nil {
-		return TokenResponse{}, fmt.Errorf("Error marshalling payload to json %w", err)
+		return TokenResponse{}, fmt.Errorf("error marshalling payload to json %w", err)
 	}
 
 	tokenURL := fmt.Sprintf("%s/client-side-tokens", c.Config.EvAPIURL)
@@ -147,7 +145,7 @@ func (c *Client) createToken(action string, payload any, expiry int64) (TokenRes
 	response, err := c.makeRequest(tokenURL, http.MethodPost, bodyBytes, false)
 
 	if response.statusCode != http.StatusOK {
-		return TokenResponse{}, extractAPIError(response.body)
+		return TokenResponse{}, ExtractAPIError(response.body)
 	}
 
 	if err != nil {
@@ -156,7 +154,7 @@ func (c *Client) createToken(action string, payload any, expiry int64) (TokenRes
 
 	res := TokenResponse{}
 	if err := json.Unmarshal(response.body, &res); err != nil {
-		return TokenResponse{}, fmt.Errorf("Error parsing JSON response %w", err)
+		return TokenResponse{}, fmt.Errorf("error parsing JSON response %w", err)
 	}
 
 	return res, nil
@@ -172,14 +170,14 @@ func (c *Client) makeRequest(url, method string, body []byte, useBasicAuth bool)
 		useBasicAuth: useBasicAuth,
 	})
 	if err != nil {
-		return clientResponse{}, fmt.Errorf("Error creating request %w", err)
+		return clientResponse{}, fmt.Errorf("error creating request %w", err)
 	}
 
 	client := &http.Client{}
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return clientResponse{}, fmt.Errorf("Error making request %w", err)
+		return clientResponse{}, fmt.Errorf("error making request %w", err)
 	}
 
 	defer resp.Body.Close()
@@ -188,7 +186,7 @@ func (c *Client) makeRequest(url, method string, body []byte, useBasicAuth bool)
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return clientResponse{}, fmt.Errorf("Error serialising body %w", err)
+		return clientResponse{}, fmt.Errorf("error serialising body %w", err)
 	}
 
 	contentType := resp.Header.Get("Content-Type")
@@ -201,7 +199,7 @@ func (c *Client) buildRequestContext(clientRequest clientRequest) (*http.Request
 	if clientRequest.method == http.MethodGet {
 		req, err := http.NewRequestWithContext(ctx, clientRequest.method, clientRequest.url, nil)
 		if err != nil {
-			return nil, fmt.Errorf("Error creating request %w", err)
+			return nil, fmt.Errorf("error creating request %w", err)
 		}
 
 		setRequestHeaders(req, clientRequest.appUUID, clientRequest.apiKey, clientRequest.useBasicAuth)
@@ -213,7 +211,7 @@ func (c *Client) buildRequestContext(clientRequest clientRequest) (*http.Request
 
 	req, err := http.NewRequestWithContext(ctx, clientRequest.method, clientRequest.url, bodyReader)
 	if err != nil {
-		return nil, fmt.Errorf("Error creating request %w", err)
+		return nil, fmt.Errorf("error creating request %w", err)
 	}
 
 	setRequestHeaders(req, clientRequest.appUUID, clientRequest.apiKey, clientRequest.useBasicAuth)

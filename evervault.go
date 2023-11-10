@@ -70,7 +70,7 @@ func (c *Client) getAesKeyAndCompressedEphemeralPublicKey() ([]byte, []byte, err
 
 	shared, err := ephemeralECDHKey.ECDH(appPubKey)
 	if err != nil {
-		return nil, nil, fmt.Errorf("Error generating ephermeral key %w", err)
+		return nil, nil, fmt.Errorf("error generating ephermeral key %w", err)
 	}
 
 	ephemeralPublicECDHKeyBytes := ephemeralECDHKey.PublicKey().Bytes()
@@ -319,7 +319,7 @@ func (c *Client) DecryptByteArray(encryptedData string) ([]byte, error) {
 func (c *Client) decryptToString(encryptedData string) (string, error) {
 	decryptResponse, err := c.decrypt(encryptedData)
 	if err != nil {
-		if strings.Contains(err.Error(), "Error parsing JSON response") {
+		if strings.Contains(err.Error(), "error parsing JSON response") {
 			return "", ErrInvalidDataType
 		}
 

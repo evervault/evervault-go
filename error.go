@@ -12,6 +12,9 @@ var ErrUnVerifiedSignature = errors.New("unable to verify certificate signature"
 // ErrNoPCRs is returned when a PCRs is created without any PCR in it to attest with.
 var ErrNoPCRs = errors.New("Error: no PCRs where provided to attest with")
 
+// ErrInvalidPCRProvider is returned when an invalid PCR provider type is passed to CagesClient.
+var ErrInvalidPCRProvider = errors.New("unsupported type, must be array or callback: func() ([]types.PCRs, error)")
+
 // ErrAttestionFailure is retuned when a connection to a cage cannot be attested.
 var ErrAttestionFailure = errors.New("attestation failed")
 
@@ -30,7 +33,7 @@ var ErrCryptoUnableToPerformEncryption = errors.New("unable to perform encryptio
 // ErrInvalidDataType is returned when an unsupported data type was specified for encryption.
 var ErrInvalidDataType = errors.New("Error: Invalid datatype")
 
-func extractAPIError(resp []byte) error {
+func ExtractAPIError(resp []byte) error {
 	evervaultError := APIError{}
 	if err := json.Unmarshal(resp, &evervaultError); err != nil {
 		return fmt.Errorf("Error parsing JSON response %w", err)

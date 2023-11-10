@@ -49,7 +49,7 @@ func (c *Client) RunFunction(functionName string, payload map[string]any) (Funct
 func (c *Client) createRunToken(functionName string, payload any) (RunTokenResponse, error) {
 	pBytes, err := json.Marshal(payload)
 	if err != nil {
-		return RunTokenResponse{}, fmt.Errorf("Error parsing payload as json %w", err)
+		return RunTokenResponse{}, fmt.Errorf("error parsing payload as json %w", err)
 	}
 
 	runTokenURL := fmt.Sprintf("%s/v2/functions/%s/run-token", c.Config.EvAPIURL, functionName)
@@ -66,7 +66,7 @@ func (c *Client) createRunToken(functionName string, payload any) (RunTokenRespo
 
 	res := RunTokenResponse{}
 	if err := json.Unmarshal(response.body, &res); err != nil {
-		return RunTokenResponse{}, fmt.Errorf("Error parsing JSON response %w", err)
+		return RunTokenResponse{}, fmt.Errorf("error parsing JSON response %w", err)
 	}
 
 	return res, nil
@@ -77,7 +77,7 @@ func (c *Client) runFunction(functionName string, payload map[string]any) (Funct
 
 	pBytes, err := json.Marshal(wrappedPayload)
 	if err != nil {
-		return FunctionRunResponse{}, fmt.Errorf("Error parsing payload as json %w", err)
+		return FunctionRunResponse{}, fmt.Errorf("error parsing payload as json %w", err)
 	}
 
 	apiURL := fmt.Sprintf("%s/functions/%s/runs", c.Config.EvAPIURL, functionName)
@@ -100,5 +100,5 @@ func (c *Client) runFunction(functionName string, payload map[string]any) (Funct
 		}
 	}
 
-	return FunctionRunResponse{}, extractAPIError(response.body)
+	return FunctionRunResponse{}, ExtractAPIError(response.body)
 }
