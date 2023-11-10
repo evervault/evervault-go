@@ -8,8 +8,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-
-	"github.com/evervault/evervault-go/attestation"
 )
 
 // Evervault Client.
@@ -25,7 +23,6 @@ type Client struct {
 	apiKey                    string
 	p256PublicKeyUncompressed []byte
 	p256PublicKeyCompressed   []byte
-	expectedPCRs              []attestation.PCRs
 }
 
 type KeysResponse struct {
@@ -74,7 +71,6 @@ func (c *Client) initClient() error {
 
 	c.p256PublicKeyUncompressed = decodedPublicKeyUncompressed
 	c.p256PublicKeyCompressed = decodedPublicKeyCompressed
-	c.expectedPCRs = []attestation.PCRs{}
 
 	return nil
 }

@@ -7,7 +7,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/evervault/evervault-go/types"
+	"github.com/evervault/evervault-go"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -81,7 +81,7 @@ func TestE2EFunctionRunWithError(t *testing.T) {
 	payload := map[string]any{"shouldError": true}
 
 	_, err := client.RunFunction(functionName, payload)
-	if runtimeError, ok := err.(types.FunctionRuntimeError); !ok {
+	if runtimeError, ok := err.(evervault.FunctionRuntimeError); !ok {
 		t.Error("Expected FunctionRuntimeError, got", err)
 	} else {
 		assert.Equal(t, runtimeError.ErrorBody.Message, "User threw an error")
@@ -96,7 +96,7 @@ func TestE2EFunctionRunWithInitializationError(t *testing.T) {
 	payload := map[string]any{}
 
 	_, err := client.RunFunction(initializationErrorFunctionName, payload)
-	if runtimeError, ok := err.(types.FunctionRuntimeError); !ok {
+	if runtimeError, ok := err.(evervault.FunctionRuntimeError); !ok {
 		t.Error("Expected FunctionRuntimeError, got", err)
 	} else {
 		assert.Equal(t, runtimeError.ErrorBody.Message, "The function failed to initialize. This error is commonly encountered when there are problems with the function code (e.g. a syntax error) or when a required import is missing.")

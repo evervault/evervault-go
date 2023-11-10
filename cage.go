@@ -71,6 +71,34 @@ func (c *Client) CagesClient(cageHostname string, pcrs []attestation.PCRs) (*htt
 	return client, nil
 }
 
+// Will return a http.Client that is connected to a specified cage hostname with a fully attested client.
+// Specify a callback to be polled periodically to pick up the latest PCRs to attest with.
+// The Client will attest the connection every time it makes a HTTP request and will return an error on request if it
+// fails attestation
+//
+//	cageURL = "<CAGE_NAME>.<APP_UUID>.cages.evervault.com"
+//	func GetPCRs() ([]attestation.PCRs, error) {
+//		// logic to get PCRs
+//		return pcrs, nil
+//	}
+//
+//
+//	cageClient, err := evClient.CagesClientWithProvider(cageURL, GetPCRs)
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//
+//	payload, err := json.Marshal(fmt.Sprintf(`{"encrypted": "%s"}`, encrypted))
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//
+//	req, _ := http.NewRequest(http.MethodPost, fmt.Sprintf("https://%s/", cageURL), bytes.NewBuffer(payload))
+//	req.Close = true
+//	req.Header.Set("API-KEY", "<API_KEY>")
+//	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
+//
+//	resp, err := cageClient.Do(req)
 func (c *Client) CagesClientWithProvider(cageHostname string,
 	pcrsProvider func() ([]attestation.PCRs, error),
 ) (*http.Client, error) {
