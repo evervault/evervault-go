@@ -18,7 +18,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const enclave = "synthetic-cage.app-f5f084041a7e.enclave.evervault.com"
+const enclave = "synthetic-cage.app-f5f084041a7e.cage.evervault.com"
 
 type Echo struct {
 	ReqID string `json:"reqId"`
