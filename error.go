@@ -33,6 +33,10 @@ var ErrCryptoUnableToPerformEncryption = errors.New("unable to perform encryptio
 // ErrInvalidDataType is returned when an unsupported data type was specified for encryption.
 var ErrInvalidDataType = errors.New("Error: Invalid datatype")
 
+// ErrUnsupportedNetworkType is returned when an unsupported network type was supplied.
+// Only TCP is supported for Enclaves.
+var ErrUnsupportedNetworkType = errors.New("error: unsupported network type")
+
 func ExtractAPIError(resp []byte) error {
 	evervaultError := APIError{}
 	if err := json.Unmarshal(resp, &evervaultError); err != nil {
