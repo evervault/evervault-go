@@ -25,47 +25,6 @@ type Echo struct {
 	Body  Body   `json:"body"`
 }
 
-type Body struct {
-	Test    bool   `json:"test"`
-	Message string `json:"message,omitempty"`
-}
-
-func makeTestClient(t *testing.T) (*evervault.Client, error) {
-	t.Helper()
-
-	appUUID := os.Getenv("EV_APP_UUID")
-	if appUUID == "" {
-		t.Skip("Skipping testing when no app uuid provided")
-	}
-
-	apiKey := os.Getenv("EV_ENCLAVE_API_KEY")
-	if apiKey == "" {
-		t.Skip("Skipping testing when no API key provided")
-	}
-
-	return evervault.MakeClient(appUUID, apiKey)
-}
-
-func GetPCRData() ([]attestation.PCRs, error) {
-	var pcrs []attestation.PCRs
-	expectedPCRs := attestation.PCRs{
-		PCR0: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-		PCR8: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-	}
-	pcrs = append(pcrs, expectedPCRs)
-	return pcrs, nil
-}
-
-func GetInvalidPCRData() ([]attestation.PCRs, error) {
-	var pcrs []attestation.PCRs
-	expectedPCRs := attestation.PCRs{
-		PCR0: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-		PCR8: "INVALID00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-	}
-	pcrs = append(pcrs, expectedPCRs)
-	return pcrs, nil
-}
-
 func buildEnclaveRequest(t *testing.T, testEnclave string) *http.Request {
 	t.Helper()
 
