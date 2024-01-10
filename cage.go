@@ -82,7 +82,7 @@ func (c *Client) CagesClient(cageHostname string, pcrs []attestation.PCRs) (*htt
 func (c *Client) CagesClientWithProvider(cageHostname string,
 	pcrsProvider func() ([]attestation.PCRs, error),
 ) (*http.Client, error) {
-	pcrManager := internalAttestation.NewPollingPCRManager(c.Config.AttestationPollingInterval, pcrsProvider)
+	pcrManager := internalAttestation.NewPollingPCRManager(c.Config.CagesPollingInterval, pcrsProvider)
 
 	cagesClient, err := c.createCagesClient(pcrManager, cageHostname)
 	if err != nil {
@@ -101,7 +101,7 @@ func (c *Client) createCagesClient(pcrManager internalAttestation.PCRManager,
 		return nil, ErrNoPCRs
 	}
 
-	cache, err := internalAttestation.NewAttestationCache(cageHostname, c.Config.AttestationPollingInterval)
+	cache, err := internalAttestation.NewAttestationCache(cageHostname, c.Config.CagesPollingInterval)
 	if err != nil {
 		return nil, err
 	}

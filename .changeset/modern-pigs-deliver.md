@@ -2,7 +2,7 @@
 "evervault-go": minor
 ---
 
-Introduce enclave functions to GoSDK and add a deprecation notice to the existing Cage functions. Users of the Cages Client are encouraged to migrate to the new Enclave Client.
+Introduce enclave functions to the Go SDK and add a deprecation notice to the existing Cage functions. Users of the Cages Client are encouraged to migrate to the new Enclave Client.
 
 Users of the `CagesClient` should be able to directly replace with the `EnclaveClient` as follows:
 
