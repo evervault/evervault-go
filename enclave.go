@@ -54,7 +54,7 @@ func (c *Client) EnclaveClient(enclaveHostname string, pcrs []attestation.PCRs) 
 // The Client will attest the connection every time it makes a HTTP request and will return an error on request if it
 // fails attestation
 //
-//	enclaveURL = "<ENCLAVE_NAME>.<APP_UUID>.cages.evervault.com"
+//	enclaveURL = "<ENCLAVE_NAME>.<APP_UUID>.enclave.evervault.com"
 //	func GetPCRs() ([]attestation.PCRs, error) {
 //		// logic to get PCRs
 //		return pcrs, nil
@@ -132,7 +132,7 @@ func (c *Client) EnclaveTCPConnectionWithProvider(
 	enclaveHostname string,
 	pcrsProvider func() ([]attestation.PCRs, error),
 ) (func(ctx context.Context, network, addr string) (net.Conn, error), error) {
-	pcrManager := internalAttestation.NewPollingPCRManager(c.Config.CagesPollingInterval, pcrsProvider)
+	pcrManager := internalAttestation.NewPollingPCRManager(c.Config.AttestationPollingInterval, pcrsProvider)
 
 	expectedPcrs := pcrManager.Get()
 
@@ -140,7 +140,7 @@ func (c *Client) EnclaveTCPConnectionWithProvider(
 		return nil, ErrNoPCRs
 	}
 
-	cache, err := internalAttestation.NewAttestationCache(enclaveHostname, c.Config.CagesPollingInterval)
+	cache, err := internalAttestation.NewAttestationCache(enclaveHostname, c.Config.AttestationPollingInterval)
 	if err != nil {
 		return nil, err
 	}

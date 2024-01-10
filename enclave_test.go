@@ -18,11 +18,52 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const enclave = "synthetic-cage.app-f5f084041a7e.cage.evervault.com"
+const enclave = "synthetic-cage.app-f5f084041a7e.enclave.evervault.com"
 
 type Echo struct {
 	ReqID string `json:"reqId"`
 	Body  Body   `json:"body"`
+}
+
+type Body struct {
+	Test    bool   `json:"test"`
+	Message string `json:"message,omitempty"`
+}
+
+func makeTestClient(t *testing.T) (*evervault.Client, error) {
+	t.Helper()
+
+	appUUID := os.Getenv("EV_APP_UUID")
+	if appUUID == "" {
+		t.Skip("Skipping testing when no app uuid provided")
+	}
+
+	apiKey := os.Getenv("EV_API_KEY")
+	if apiKey == "" {
+		t.Skip("Skipping testing when no API key provided")
+	}
+
+	return evervault.MakeClient(appUUID, apiKey)
+}
+
+func GetPCRData() ([]attestation.PCRs, error) {
+	var pcrs []attestation.PCRs
+	expectedPCRs := attestation.PCRs{
+		PCR0: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+		PCR8: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+	}
+	pcrs = append(pcrs, expectedPCRs)
+	return pcrs, nil
+}
+
+func GetInvalidPCRData() ([]attestation.PCRs, error) {
+	var pcrs []attestation.PCRs
+	expectedPCRs := attestation.PCRs{
+		PCR0: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+		PCR8: "INVALID00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+	}
+	pcrs = append(pcrs, expectedPCRs)
+	return pcrs, nil
 }
 
 func buildEnclaveRequest(t *testing.T, testEnclave string) *http.Request {
@@ -62,15 +103,15 @@ func TestEnclaveClient(t *testing.T) {
 		PCR8: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
 	}
 
-	client, err := testClient.EnclaveClient(cage, []attestation.PCRs{expectedPCRs})
+	client, err := testClient.EnclaveClient(enclave, []attestation.PCRs{expectedPCRs})
 	if err != nil {
 		t.Errorf("Error creating enclave client: %s", err)
 		return
 	}
 
-	req := buildEnclaveRequest(t, cage)
+	req := buildEnclaveRequest(t, enclave)
 
-	t.Log("making request", cage)
+	t.Log("making request", enclave)
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -113,15 +154,15 @@ func TestEnclavePartialPCR(t *testing.T) {
 		PCR8: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
 	}
 
-	enclaveClient, err := testClient.EnclaveClient(cage, []attestation.PCRs{expectedPCRs})
+	enclaveClient, err := testClient.EnclaveClient(enclave, []attestation.PCRs{expectedPCRs})
 	if err != nil {
 		t.Errorf("Error creating enclave client: %s", err)
 		return
 	}
 
-	req := buildEnclaveRequest(t, cage)
+	req := buildEnclaveRequest(t, enclave)
 
-	t.Log("making request", cage)
+	t.Log("making request", enclave)
 
 	resp, err := enclaveClient.Do(req)
 	if err != nil {
@@ -270,6 +311,6 @@ func TestEnclaveRequiresPCR(t *testing.T) {
 		return
 	}
 
-	_, err = testClient.EnclaveClient(cage, []attestation.PCRs{})
+	_, err = testClient.EnclaveClient(enclave, []attestation.PCRs{})
 	assert.ErrorIs(err, evervault.ErrNoPCRs)
 }
