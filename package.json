@@ -1,7 +1,7 @@
 {
   "name": "evervault-go",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "scripts": {
     "version": "changeset version && PACKAGE_VERSION=$(node -p \"require('./package.json').version\") && echo \"package evervault\n\n// Current version of the evervault SDK.\nconst ClientVersion = \\\"$PACKAGE_VERSION\\\"\" > version.go"
   },
