@@ -42,7 +42,7 @@ func makeTestClient(t *testing.T) (*evervault.Client, error) {
 		t.Skip("Skipping testing when no app uuid provided")
 	}
 
-	apiKey := os.Getenv("EV_API_KEY")
+	apiKey := os.Getenv("EV_ENCLAVE_API_KEY")
 	if apiKey == "" {
 		t.Skip("Skipping testing when no API key provided")
 	}
@@ -63,7 +63,7 @@ func buildCageRequest(t *testing.T, testCage string) *http.Request {
 	}
 
 	req.Close = true
-	req.Header.Set("API-KEY", os.Getenv("EV_API_KEY"))
+	req.Header.Set("API-KEY", os.Getenv("EV_ENCLAVE_API_KEY"))
 	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
 
 	return req
