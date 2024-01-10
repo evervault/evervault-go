@@ -35,3 +35,9 @@ func (p *PCRs) Equal(pcrs PCRs) bool {
 func (p *PCRs) IsEmpty() bool {
 	return p.PCR0 == "" && p.PCR1 == "" && p.PCR2 == "" && p.PCR8 == ""
 }
+
+func BuildStaticPcrProvider(pcrs []PCRs) func() ([]PCRs, error) {
+	return func() ([]PCRs, error) {
+		return pcrs, nil
+	}
+}

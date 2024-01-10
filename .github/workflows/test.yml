@@ -34,4 +34,5 @@ jobs:
         env:
           EV_APP_UUID: ${{ secrets.EV_APP_UUID }}
           EV_API_KEY: ${{ secrets.EV_API_KEY }}
+          EV_ENCLAVE_API_KEY: ${{ secrets.EV_ENCLAVE_API_KEY }}
         run: go test -v -count=1 -race --tags=unit_test ./... 
