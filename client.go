@@ -76,7 +76,7 @@ func (c *Client) initClient() error {
 }
 
 func (c *Client) getPublicKey() (KeysResponse, error) {
-	publicKeyURL := fmt.Sprintf("%s/cages/key", c.Config.EvAPIURL)
+	publicKeyURL := c.Config.EvAPIURL + "/cages/key"
 
 	response, err := c.makeRequest(publicKeyURL, http.MethodGet, nil, false)
 
@@ -102,7 +102,7 @@ func (c *Client) decrypt(encryptedData string) (any, error) {
 		return nil, fmt.Errorf("error marshalling payload to json %w", err)
 	}
 
-	decryptURL := fmt.Sprintf("%s/decrypt", c.Config.EvAPIURL)
+	decryptURL := c.Config.EvAPIURL + "/decrypt"
 
 	response, err := c.makeRequest(decryptURL, http.MethodPost, pBytes, true)
 
@@ -140,7 +140,7 @@ func (c *Client) createToken(action string, payload any, expiry int64) (TokenRes
 		return TokenResponse{}, fmt.Errorf("error marshalling payload to json %w", err)
 	}
 
-	tokenURL := fmt.Sprintf("%s/client-side-tokens", c.Config.EvAPIURL)
+	tokenURL := c.Config.EvAPIURL + "/client-side-tokens"
 
 	response, err := c.makeRequest(tokenURL, http.MethodPost, bodyBytes, false)
 
@@ -224,15 +224,15 @@ func setRequestHeaders(req *http.Request, appUUID, apiKey string, useBasicAuth b
 		stringBytes := []byte(fmt.Sprintf("%s:%s", appUUID, apiKey))
 		base64EncodedHeaderValue := base64.StdEncoding.EncodeToString(stringBytes)
 		req.Header = http.Header{
-			"Authorization": {fmt.Sprintf("Basic %s", base64EncodedHeaderValue)},
+			"Authorization": {"Basic " + base64EncodedHeaderValue},
 			"Content-Type":  {"application/json"},
-			"user-agent":    {fmt.Sprintf("evervault-go/%s", ClientVersion)},
+			"user-agent":    {"evervault-go/" + ClientVersion},
 		}
 	} else {
 		req.Header = http.Header{
 			"API-KEY":      {apiKey},
 			"Content-Type": {"application/json"},
-			"user-agent":   {fmt.Sprintf("evervault-go/%s", ClientVersion)},
+			"user-agent":   {"evervault-go/" + ClientVersion},
 		}
 	}
 }

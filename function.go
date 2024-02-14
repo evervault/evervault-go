@@ -94,8 +94,7 @@ func (c *Client) runFunction(functionName string, payload map[string]any) (Funct
 		return functionRunResponse, nil
 	} else if err == nil && functionRunResponse.Status == "failure" {
 		functionRuntimeError := FunctionRuntimeError{}
-		err = json.Unmarshal(response.body, &functionRuntimeError)
-		if err == nil {
+		if err = json.Unmarshal(response.body, &functionRuntimeError); err == nil {
 			return FunctionRunResponse{}, functionRuntimeError
 		}
 	}
