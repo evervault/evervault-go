@@ -106,7 +106,7 @@ func TestCageClient(t *testing.T) {
 	defer resp.Body.Close()
 
 	assert.Equal("200 OK", resp.Status)
-	assert.Contains(resp.Header, "X-Evervault-Cage-Ctx")
+	assert.Contains(resp.Header, "X-Evervault-Ctx")
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -157,7 +157,7 @@ func TestCagePartialPCR(t *testing.T) {
 	defer resp.Body.Close()
 
 	assert.Equal("200 OK", resp.Status)
-	assert.Contains(resp.Header, "X-Evervault-Cage-Ctx")
+	assert.Contains(resp.Header, "X-Evervault-Ctx")
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -224,7 +224,7 @@ func TestCagePartialPCRProvider(t *testing.T) {
 	defer resp.Body.Close()
 
 	assert.Equal("200 OK", resp.Status)
-	assert.Contains(resp.Header, "X-Evervault-Cage-Ctx")
+	assert.Contains(resp.Header, "X-Evervault-Ctx")
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
