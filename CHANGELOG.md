@@ -1,5 +1,11 @@
 # evervault-go
 
+## 1.2.0
+
+### Minor Changes
+
+- ffa079e: deprecate byte array encryption
+
 ## 1.1.0
 
 ### Minor Changes
