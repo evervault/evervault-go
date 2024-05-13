@@ -212,7 +212,9 @@ func (c *Client) EncryptBoolWithDataRole(value bool, role string) (string, error
 //	encrypted := evClient.EncryptByteArray([]byte("Hello, world!"));
 //
 // If an error occurs then nil is returned. If the error is due a problem with Key creation then
-// ErrCryptoKeyImportError is returned. For anyother error ErrCryptoUnableToPerformEncryption is returned.
+// ErrCryptoKeyImportError is returned. For any other error ErrCryptoUnableToPerformEncryption is returned.
+//
+// Deprecated: Use EncryptString for utf-8 encoded byte arrays.
 func (c *Client) EncryptByteArray(value []byte) (string, error) {
 	return c.EncryptByteArrayWithDataRole(value, "")
 }
@@ -224,7 +226,9 @@ func (c *Client) EncryptByteArray(value []byte) (string, error) {
 //	encrypted := evClient.EncryptByteArray([]byte("Hello, world!"));
 //
 // If an error occurs then nil is returned. If the error is due a problem with Key creation then
-// ErrCryptoKeyImportError is returned. For anyother error ErrCryptoUnableToPerformEncryption is returned.
+// ErrCryptoKeyImportError is returned. For any other error ErrCryptoUnableToPerformEncryption is returned.
+//
+// Deprecated: Use EncryptString for utf-8 encoded byte arrays.
 func (c *Client) EncryptByteArrayWithDataRole(value []byte, role string) (string, error) {
 	aesKey, compressedEphemeralPublicKey, err := c.getAesKeyAndCompressedEphemeralPublicKey()
 	if err != nil {
@@ -305,6 +309,8 @@ func (c *Client) DecryptBool(encryptedData string) (bool, error) {
 // DecryptByteArray decrypts data previously encrypted with Encrypt or through Relay
 //
 //	decrypted := evClient.DecryptByteArray(encrypted);
+//
+// Deprecated: Use DecryptString for utf-8 encoded encrypted byte arrays.
 func (c *Client) DecryptByteArray(encryptedData string) ([]byte, error) {
 	decryptResponse, err := c.decryptToString(encryptedData)
 	if err != nil {

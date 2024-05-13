@@ -86,9 +86,8 @@ func (c *Cache) getDoc(ctx context.Context) ([]byte, error) {
 	defer resp.Body.Close()
 
 	var response CageDocResponse
-	err = json.NewDecoder(resp.Body).Decode(&response)
 
-	if err != nil {
+	if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, fmt.Errorf("error decoding attestation doc json %w", err)
 	}
 

@@ -64,6 +64,35 @@ func CompressPublicKey(keyToCompress []byte) []byte {
 	return append([]byte{prefix}, keyToCompress[1:33]...)
 }
 
+func CreateV2Aad(datatype datatypes.Datatype, ephemeralPublicKey, appPublicKey []byte) (bytes.Buffer, error) {
+	const (
+		shiftAmount = 4
+	)
+
+	dataTypeNumber := 0
+	if datatype == datatypes.Number {
+		dataTypeNumber = 1
+	} else if datatype == datatypes.Boolean {
+		dataTypeNumber = 2
+	}
+
+	versionNumber := 1
+
+	var buffer bytes.Buffer
+
+	b := byte(0x00 | (dataTypeNumber << shiftAmount) | versionNumber)
+
+	err := binary.Write(&buffer, binary.LittleEndian, b)
+	if err != nil {
+		return buffer, fmt.Errorf("error writing buffer %w", err)
+	}
+
+	buffer.Write(ephemeralPublicKey)
+	buffer.Write(appPublicKey)
+
+	return buffer, nil
+}
+
 // EncryptValue encrypts the given value using AES encryption.
 func EncryptValue(
 	aesKey, ephemeralPublicKey, appPublicKey []byte, value, role string, datatype datatypes.Datatype,
@@ -99,7 +128,12 @@ func EncryptValue(
 	buffer.WriteString(value)
 	valueWithMetadata := buffer.Bytes()
 
-	ciphertext := aesgcm.Seal(nil, nonce, valueWithMetadata, appPublicKey)
+	v2Aad, err := CreateV2Aad(datatype, ephemeralPublicKey, appPublicKey)
+	if err != nil {
+		return "", fmt.Errorf("unable to create v2 aad %w", err)
+	}
+
+	ciphertext := aesgcm.Seal(nil, nonce, valueWithMetadata, v2Aad.Bytes())
 
 	return evFormat(ciphertext, nonce, ephemeralPublicKey, datatype), nil
 }
@@ -219,7 +253,7 @@ func encodeRole(buffer *bytes.Buffer, role string) error {
 
 // evFormat formats the cipher text, IV, public key, and datatype into an "ev" formatted string.
 func evFormat(cipherText, iv, publicKey []byte, datatype datatypes.Datatype) string {
-	formattedString := fmt.Sprintf("ev:%s:", base64EncodeStripped([]byte("LCY")))
+	formattedString := "ev:QkTC:"
 
 	if datatype != datatypes.String {
 		if datatype == datatypes.Number {
