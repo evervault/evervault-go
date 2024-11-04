@@ -22,7 +22,7 @@ type Cache struct {
 }
 
 const (
-	pollTimeout    = 10 * time.Second
+	pollTimeout    = 5 * time.Second
 	maxRetries     = 3
 	initialBackoff = 1 * time.Second
 	maxBackoff     = 5 * time.Second
@@ -38,7 +38,7 @@ func NewAttestationCache(cageDomain string, pollingInterval time.Duration) (*Cac
 		cageURL:  cageURL,
 		doc:      make([]byte, 0),
 		mutex:    sync.RWMutex{},
-		client:   http.Client{Timeout: pollTimeout},
+		client:   http.Client{Timeout: 10 * time.Second},
 		ticker:   time.NewTicker(pollingInterval),
 		stopPoll: make(chan bool),
 	}
