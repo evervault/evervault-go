@@ -21,7 +21,7 @@ type Cache struct {
 	stopPoll chan bool
 }
 
-const pollTimeout = 5 * time.Second
+const pollTimeout = 6 * time.Second
 
 func NewAttestationCache(cageDomain string, pollingInterval time.Duration) (*Cache, error) {
 	cageURL, err := url.Parse(fmt.Sprintf("https://%s/.well-known/attestation", cageDomain))
