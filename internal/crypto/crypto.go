@@ -9,6 +9,7 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -32,6 +33,12 @@ const (
 	encryptionOrigin                              = 0x09
 	defaultRoleNameLength                         = 0xa0
 	binaryRepresentationOfFourByteUnsignedInteger = 0xce
+	maxUint16                                     = 6553
+)
+
+var (
+	ErrMetadataLengthExceedsMaxUint16 = errors.New("metadata length exceeds maximum uint16 value")
+	ErrUnixTimestampOutOfRange        = errors.New("unix timestamp outside valid uint32 range")
 )
 
 // DeriveKDFAESKey derives an AES key using the given public key and shared ECDH secret.
@@ -117,12 +124,13 @@ func EncryptValue(
 		return "", fmt.Errorf("unable to build metadata %w", err)
 	}
 
-	if len(metadata) > int(^uint16(0)) {
-		return "", fmt.Errorf("metadata length %d exceeds maximum uint16 value", len(metadata))
+	if len(metadata) > maxUint16 {
+		return "", ErrMetadataLengthExceedsMaxUint16
 	}
 
 	// Get the concatenated result as a byte slice
 	metadataOffset := make([]byte, metadataOffsetLength)
+	//nolint:gosec // checked len(metadata) is within uint16 range
 	binary.LittleEndian.PutUint16(metadataOffset, uint16(len(metadata)))
 
 	var buffer bytes.Buffer
@@ -197,15 +205,13 @@ func encodeEncryptionTimestamp(buffer *bytes.Buffer) error {
 
 	unixTime := time.Now().Unix()
 	if unixTime < 0 || unixTime > int64(^uint32(0)) {
-		return fmt.Errorf("unix timestamp %d outside valid uint32 range", unixTime)
+		return ErrUnixTimestampOutOfRange
 	}
 
-	// Get the current time and convert it to Unix timestamp (seconds since Jan 1, 1970)
 	currentTime := uint32(unixTime)
-
 	err = binary.Write(buffer, binary.BigEndian, currentTime)
 	if err != nil {
-		return fmt.Errorf("error building metadata %w", err)
+		return fmt.Errorf("error building metadata: %w", err)
 	}
 
 	return nil

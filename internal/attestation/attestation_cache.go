@@ -91,7 +91,7 @@ func (c *Cache) getDoc(ctx context.Context) ([]byte, error) {
 			}
 
 			lastErr = err
-			
+
 			if retry < maxRetries-1 {
 				log.Printf("Attempt %d failed, retrying in %v: %v", retry+1, backoff, err)
 
