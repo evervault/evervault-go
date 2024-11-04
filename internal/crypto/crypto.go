@@ -210,6 +210,7 @@ func encodeEncryptionTimestamp(buffer *bytes.Buffer) error {
 
 	currentTime := uint32(unixTime)
 	err = binary.Write(buffer, binary.BigEndian, currentTime)
+	
 	if err != nil {
 		return fmt.Errorf("error building metadata: %w", err)
 	}
