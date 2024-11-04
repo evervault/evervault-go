@@ -43,7 +43,7 @@ func Example() {
 	ctx := context.Background()
 	body := bytes.NewBuffer(payload)
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://example.com/", body)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://httpbin.org/post", body)
 	if err != nil {
 		log.Fatal(err)
 	}
