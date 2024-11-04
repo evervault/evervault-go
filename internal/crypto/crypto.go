@@ -117,6 +117,10 @@ func EncryptValue(
 		return "", fmt.Errorf("unable to build metadata %w", err)
 	}
 
+	if len(metadata) > int(^uint16(0)) {
+		return "", fmt.Errorf("metadata length %d exceeds maximum uint16 value", len(metadata))
+	}
+
 	// Get the concatenated result as a byte slice
 	metadataOffset := make([]byte, metadataOffsetLength)
 	binary.LittleEndian.PutUint16(metadataOffset, uint16(len(metadata)))
@@ -191,8 +195,13 @@ func encodeEncryptionTimestamp(buffer *bytes.Buffer) error {
 		return fmt.Errorf("error building metadata %w", err)
 	}
 
+	unixTime := time.Now().Unix()
+	if unixTime < 0 || unixTime > int64(^uint32(0)) {
+		return fmt.Errorf("unix timestamp %d outside valid uint32 range", unixTime)
+	}
+
 	// Get the current time and convert it to Unix timestamp (seconds since Jan 1, 1970)
-	currentTime := uint32(time.Now().Unix())
+	currentTime := uint32(unixTime)
 
 	err = binary.Write(buffer, binary.BigEndian, currentTime)
 	if err != nil {
