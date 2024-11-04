@@ -77,6 +77,7 @@ type CageDocResponse struct {
 
 func (c *Cache) getDoc(ctx context.Context) ([]byte, error) {
 	var lastErr error
+
 	backoff := initialBackoff
 
 	for retry := 0; retry < maxRetries; retry++ {
@@ -90,6 +91,7 @@ func (c *Cache) getDoc(ctx context.Context) ([]byte, error) {
 			}
 
 			lastErr = err
+			
 			if retry < maxRetries-1 {
 				log.Printf("Attempt %d failed, retrying in %v: %v", retry+1, backoff, err)
 
