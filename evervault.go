@@ -250,7 +250,7 @@ func (c *Client) DecryptString(encryptedData string) (string, error) {
 		return "", err
 	}
 
-	decryptResponse = decryptResponse[1 : len(decryptResponse)-1]
+	decryptResponse = decryptResponse[0:len(decryptResponse)]
 
 	return decryptResponse, nil
 }
