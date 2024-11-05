@@ -484,7 +484,7 @@ func hasSpecialPath(path string) bool {
 	return specialPaths[path]
 }
 
-func startMockHTTPServer(mockResponse string, contentType string) *httptest.Server {
+func startMockHTTPServer(mockResponse interface{}, contentType string) *httptest.Server {
 	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, reader *http.Request) {
 		if hasSpecialPath(reader.URL.Path) {
 			handleRoute(writer, reader, mockResponse, contentType)
