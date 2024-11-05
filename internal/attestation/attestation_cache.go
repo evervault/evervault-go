@@ -21,27 +21,24 @@ type Cache struct {
 	stopPoll chan bool
 }
 
-const pollTimeout = 5 * time.Second
+const pollTimeout = 10 * time.Second
 
 func NewAttestationCache(cageDomain string, pollingInterval time.Duration) (*Cache, error) {
 	cageURL, err := url.Parse(fmt.Sprintf("https://%s/.well-known/attestation", cageDomain))
 	if err != nil {
-		return nil, fmt.Errorf("cage url could not be parsed %w", err)
+		return nil, fmt.Errorf("cage URL could not be parsed: %w", err)
 	}
 
 	cache := &Cache{
 		cageURL:  cageURL,
 		doc:      make([]byte, 0),
 		mutex:    sync.RWMutex{},
-		client:   http.Client{},
+		client:   http.Client{Timeout: pollTimeout},
 		ticker:   time.NewTicker(pollingInterval),
 		stopPoll: make(chan bool),
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), pollTimeout)
-	defer cancel()
-
-	cache.LoadDoc(ctx)
+	cache.LoadDoc(context.Background())
 
 	go cache.pollAPI()
 
@@ -71,29 +68,25 @@ type CageDocResponse struct {
 }
 
 func (c *Cache) getDoc(ctx context.Context) ([]byte, error) {
-	req, err := http.NewRequest(http.MethodGet, c.cageURL.String(), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.cageURL.String(), nil)
 	if err != nil {
-		return nil, fmt.Errorf("could not generate attestation doc request %w", err)
+		return nil, fmt.Errorf("could not generate attestation doc request: %w", err)
 	}
-
-	req = req.WithContext(ctx)
 
 	resp, err := c.client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("could not get attestation doc %w", err)
+		return nil, fmt.Errorf("could not get attestation doc: %w", err)
 	}
-
 	defer resp.Body.Close()
 
 	var response CageDocResponse
-
 	if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return nil, fmt.Errorf("error decoding attestation doc json %w", err)
+		return nil, fmt.Errorf("error decoding attestation doc JSON: %w", err)
 	}
 
 	docBytes, err := base64.StdEncoding.DecodeString(response.AttestationDoc)
 	if err != nil {
-		return nil, fmt.Errorf("error decoding attestation doc %w", err)
+		return nil, fmt.Errorf("error decoding attestation doc: %w", err)
 	}
 
 	return docBytes, nil
@@ -109,12 +102,13 @@ func (c *Cache) LoadDoc(ctx context.Context) {
 }
 
 func (c *Cache) pollAPI() {
-	ctx, cancel := context.WithTimeout(context.Background(), pollTimeout)
-	defer cancel()
-
 	for {
 		select {
 		case <-c.ticker.C:
+			// Use a fresh context with each poll to avoid long-term blocking.
+			ctx, cancel := context.WithTimeout(context.Background(), pollTimeout)
+			defer cancel()
+
 			docBytes, err := c.getDoc(ctx)
 			if err != nil {
 				log.Printf("couldn't get attestation doc: %v", err)
