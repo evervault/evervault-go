@@ -35,7 +35,7 @@ func Example() {
 
 	ctx := context.Background()
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://example.com")
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://example.com", nil)
 	if err != nil {
 		log.Fatal(err)
 	}
