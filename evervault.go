@@ -259,30 +259,30 @@ func (c *Client) DecryptString(encryptedData string) (string, error) {
 //
 //	decrypted := evClient.DecryptInt(encrypted);
 func (c *Client) DecryptInt(encryptedData string) (int, error) {
-	decryptResponse, err := c.decryptToString(encryptedData)
+	decryptResponse, err := c.decrypt(encryptedData)
 	if err != nil {
 		return 0, err
 	}
 
-	decryptedToFloat, err := strconv.ParseFloat(decryptResponse, 64)
-	if err != nil {
+	decryptedFloat, ok := decryptResponse.(float64)
+	if !ok {
 		return 0, ErrInvalidDataType
 	}
 
-	return int(decryptedToFloat), nil
+	return int(decryptedFloat), nil
 }
 
 // DecryptFloat64 decrypts data previously encrypted with Encrypt or through Relay
 //
 //	decrypted := evClient.DecryptInt(encrypted);
 func (c *Client) DecryptFloat64(encryptedData string) (float64, error) {
-	decryptResponse, err := c.decryptToString(encryptedData)
+	decryptResponse, err := c.decrypt(encryptedData)
 	if err != nil {
 		return 0, err
 	}
 
-	parsedFloat, err := strconv.ParseFloat(decryptResponse, 64)
-	if err != nil {
+	parsedFloat, ok := decryptResponse.(float64)
+	if !ok {
 		return 0, ErrInvalidDataType
 	}
 
@@ -293,17 +293,16 @@ func (c *Client) DecryptFloat64(encryptedData string) (float64, error) {
 //
 //	decrypted := evClient.DecryptBool(encrypted);
 func (c *Client) DecryptBool(encryptedData string) (bool, error) {
-	decryptResponse, err := c.decryptToString(encryptedData)
+	decryptResponse, err := c.decrypt(encryptedData)
 	if err != nil {
 		return false, err
 	}
 
-	parsedBool, err := strconv.ParseBool(decryptResponse)
-	if err != nil {
+	decryptedBool, ok := decryptResponse.(bool)
+	if !ok {
 		return false, ErrInvalidDataType
 	}
-
-	return parsedBool, nil
+	return decryptedBool, nil
 }
 
 // DecryptByteArray decrypts data previously encrypted with Encrypt or through Relay
@@ -333,8 +332,8 @@ func (c *Client) decryptToString(encryptedData string) (string, error) {
 	}
 
 	decryptedString, ok := decryptResponse.(string)
-	if !ok {
-		return "", ErrInvalidDataType
+	if ok {
+		return decryptedString, nil
 	}
 
 	return decryptedString, nil
