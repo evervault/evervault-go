@@ -302,6 +302,7 @@ func (c *Client) DecryptBool(encryptedData string) (bool, error) {
 	if !ok {
 		return false, ErrInvalidDataType
 	}
+
 	return decryptedBool, nil
 }
 
