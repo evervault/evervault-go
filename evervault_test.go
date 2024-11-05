@@ -46,7 +46,7 @@ func TestDecryptString(t *testing.T) {
 func TestDecryptInt(t *testing.T) {
 	t.Parallel()
 
-	server := startMockHTTPServer("123", "")
+	server := startMockHTTPServer(123, "")
 	defer server.Close()
 
 	testClient := mockedClient(t, server)
@@ -67,7 +67,7 @@ func TestDecryptInt(t *testing.T) {
 func TestDecryptFloat64(t *testing.T) {
 	t.Parallel()
 
-	server := startMockHTTPServer("1.1", "")
+	server := startMockHTTPServer(1.1, "")
 	defer server.Close()
 
 	testClient := mockedClient(t, server)
@@ -88,7 +88,7 @@ func TestDecryptFloat64(t *testing.T) {
 func TestDecryptBoolean(t *testing.T) {
 	t.Parallel()
 
-	server := startMockHTTPServer("true", "")
+	server := startMockHTTPServer(true, "")
 	defer server.Close()
 
 	testClient := mockedClient(t, server)
