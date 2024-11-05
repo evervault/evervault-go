@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math"
 	"net/http"
 	"net/url"
 	"sync"
@@ -23,8 +24,9 @@ type Cache struct {
 
 const (
 	pollTimeout   = 30 * time.Second
-	maxRetries    = 3               // Maximum retry attempts
-	retryInterval = 1 * time.Second // Interval between retries
+	maxRetries    = 3
+	retryInterval = 1 * time.Second
+	backoffFactor = 2
 )
 
 func NewAttestationCache(cageDomain string, pollingInterval time.Duration) (*Cache, error) {
@@ -92,38 +94,37 @@ func (c *Cache) getDoc(ctx context.Context) ([]byte, error) {
 			}
 
 			resp, respErr := c.client.Do(req)
-
 			if respErr != nil {
-				log.Printf("Attempt %d error: %v", attempt, respErr)
-				lastErr = fmt.Errorf("could not get attestation doc: %w", respErr)
-
+				lastErr = c.handleError("could not get attestation doc", respErr, attempt)
 				continue
 			}
-
 			defer resp.Body.Close()
 
 			var response CageDocResponse
 			if decodeErr := json.NewDecoder(resp.Body).Decode(&response); decodeErr != nil {
-				log.Printf("Attempt %d JSON decode error: %v", attempt, decodeErr)
-				lastErr = fmt.Errorf("error decoding attestation doc JSON: %w", decodeErr)
-
+				lastErr = c.handleError("error decoding attestation doc JSON", decodeErr, attempt)
 				continue
 			}
 
 			docBytes, err := base64.StdEncoding.DecodeString(response.AttestationDoc)
-
 			if err == nil {
 				return docBytes, nil
 			}
 
-			log.Printf("Attempt %d base64 decode error: %v", attempt, err)
-			lastErr = fmt.Errorf("error decoding attestation doc: %w", err)
-
-			time.Sleep(retryInterval)
+			lastErr = c.handleError("error decoding attestation doc", err, attempt)
 		}
 	}
 
 	return nil, fmt.Errorf("failed to get attestation doc after %d attempts: %w", maxRetries, lastErr)
+}
+
+func (c *Cache) handleError(message string, err error, attempt int) error {
+	log.Printf("Attempt %d %s: %v", attempt, message, err)
+
+	backoffDuration := time.Duration(math.Pow(backoffFactor, float64(attempt))) * time.Second
+	time.Sleep(backoffDuration)
+
+	return fmt.Errorf("%s: %w", message, err)
 }
 
 func (c *Cache) LoadDoc(ctx context.Context) {
