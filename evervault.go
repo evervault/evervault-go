@@ -245,14 +245,17 @@ func (c *Client) EncryptByteArrayWithDataRole(value []byte, role string) (string
 //
 //	decrypted := evClient.Decrypt(encrypted);
 func (c *Client) DecryptString(encryptedData string) (string, error) {
-	decryptResponse, err := c.decryptToString(encryptedData)
+	decryptResponse, err := c.decrypt(encryptedData)
 	if err != nil {
 		return "", err
 	}
 
-	decryptResponse = decryptResponse[0:]
+	decryptedString, ok := decryptResponse.(string)
+	if !ok {
+		return "", ErrInvalidDataType
+	}
 
-	return decryptResponse, nil
+	return decryptedString, nil
 }
 
 // DecryptInt decrypts data previously encrypted with Encrypt or through Relay
@@ -316,8 +319,6 @@ func (c *Client) DecryptByteArray(encryptedData string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	decryptResponse = decryptResponse[1 : len(decryptResponse)-1]
 
 	return []byte(decryptResponse), nil
 }

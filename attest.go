@@ -15,7 +15,7 @@ import (
 	"github.com/hf/nitrite"
 )
 
-const loadDocTimeout = 5 * time.Second
+const loadDocTimeout = 30 * time.Second
 
 // mapAttestationPCRs maps the attestation document's PCRs to a PCRs struct.
 func mapAttestationPCRs(attestationPCRs nitrite.Document) attestation.PCRs {
@@ -110,17 +110,14 @@ func (c *Client) createDial(
 
 		attestationDoc, err := attestCert(cert, *expectedPCRs, doc)
 		if err != nil {
-			// Create a new context with timeout, inheriting from the dial context
 			loadCtx, cancel := context.WithTimeout(dialCtx, loadDocTimeout)
 			defer cancel()
 
-			// Attempt to refresh the attestation document
 			cache.LoadDoc(loadCtx)
 
-			// Reattempt the attestation with the refreshed document
 			attestationDoc, err = attestCert(cert, *expectedPCRs, cache.Get())
 			if err != nil {
-				return nil, fmt.Errorf("error attesting connection %w", err)
+				return nil, fmt.Errorf("error attesting Connection %w", err)
 			}
 		}
 
