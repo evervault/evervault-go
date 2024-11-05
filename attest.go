@@ -114,7 +114,6 @@ func (c *Client) createDial(
 			loadCtx, cancel := context.WithTimeout(dialCtx, loadDocTimeout)
 			defer cancel()
 
-			fmt.Println("Error attesting connection, refreshing attestation document")
 			// Attempt to refresh the attestation document
 			cache.LoadDoc(loadCtx)
 
