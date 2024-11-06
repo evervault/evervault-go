@@ -405,16 +405,14 @@ func testFuncHandler(writer http.ResponseWriter, reader *http.Request, mockRespo
 	case []byte:
 		writer.Write(v)
 	case string:
-		var parsedResponse map[string]interface{}
+		var parsedResponse map[string]any
 		if err := json.Unmarshal([]byte(v), &parsedResponse); err != nil {
 			log.Printf("error parsing string to JSON: %s", err)
 			writer.Write([]byte(v))
 			return
 		}
 
-		if err := json.NewEncoder(writer).Encode(parsedResponse); err != nil {
-			log.Printf("error encoding json: %s", err)
-		}
+		json.NewEncoder(writer).Encode(parsedResponse)
 	default:
 		if err := json.NewEncoder(writer).Encode(mockResponse); err != nil {
 			log.Printf("error encoding json: %s", err)
