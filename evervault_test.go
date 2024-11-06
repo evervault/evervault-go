@@ -476,7 +476,7 @@ func handleRoute(writer http.ResponseWriter, reader *http.Request, mockResponse 
 		writer.Header().Set("Content-Type", contentType)
 		writer.WriteHeader(http.StatusOK)
 
-		var body map[string]interface{}
+		var body map[string]any
 
 		err := json.NewDecoder(reader.Body).Decode(&body)
 		if err != nil {
