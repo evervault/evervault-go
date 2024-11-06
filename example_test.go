@@ -4,9 +4,7 @@
 package evervault_test
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -35,15 +33,9 @@ func Example() {
 		log.Fatal(err)
 	}
 
-	payload, err := json.Marshal(fmt.Sprintf(`{"encrypted": "%s"}`, encrypted))
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	ctx := context.Background()
-	body := bytes.NewBuffer(payload)
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://example.com/", body)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://example.com", nil)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -8,18 +8,19 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"time"
+
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/evervault/evervault-go"
 	"github.com/evervault/evervault-go/internal/crypto"
 	"github.com/evervault/evervault-go/internal/datatypes"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestDecryptString(t *testing.T) {
@@ -46,7 +47,7 @@ func TestDecryptString(t *testing.T) {
 func TestDecryptInt(t *testing.T) {
 	t.Parallel()
 
-	server := startMockHTTPServer("123", "")
+	server := startMockHTTPServer(123, "")
 	defer server.Close()
 
 	testClient := mockedClient(t, server)
@@ -67,7 +68,7 @@ func TestDecryptInt(t *testing.T) {
 func TestDecryptFloat64(t *testing.T) {
 	t.Parallel()
 
-	server := startMockHTTPServer("1.1", "")
+	server := startMockHTTPServer(1.1, "")
 	defer server.Close()
 
 	testClient := mockedClient(t, server)
@@ -88,7 +89,7 @@ func TestDecryptFloat64(t *testing.T) {
 func TestDecryptBoolean(t *testing.T) {
 	t.Parallel()
 
-	server := startMockHTTPServer("true", "")
+	server := startMockHTTPServer(true, "")
 	defer server.Close()
 
 	testClient := mockedClient(t, server)
@@ -135,8 +136,17 @@ func TestDecryptJsonResponse(t *testing.T) {
 
 	testClient := mockedClient(t, server)
 
-	_, err := testClient.DecryptByteArray("ev:abc123")
-	assert.ErrorIs(t, err, evervault.ErrInvalidDataType)
+	byteArrayType := reflect.TypeOf([]byte("Hello World!"))
+
+	res, err := testClient.DecryptByteArray("ev:abc123")
+	if err != nil {
+		t.Errorf("error decrypting data %s", err)
+		return
+	}
+
+	if reflect.TypeOf(res) != byteArrayType {
+		t.Errorf("Expected decrypted byte array, got %s", reflect.TypeOf(res))
+	}
 }
 
 func TestCreateClientSideDecryptToken(t *testing.T) {
@@ -379,7 +389,7 @@ func TestClientInitClientErrorWithoutApiKey(t *testing.T) {
 	}
 }
 
-func testFuncHandler(writer http.ResponseWriter, reader *http.Request, mockResponse string) {
+func testFuncHandler(writer http.ResponseWriter, reader *http.Request, mockResponse any) {
 	apiKey := reader.Header.Get("API-KEY")
 	authHeader := reader.Header.Get("Authorization")
 
@@ -391,34 +401,26 @@ func testFuncHandler(writer http.ResponseWriter, reader *http.Request, mockRespo
 	writer.WriteHeader(http.StatusOK)
 	writer.Header().Set("Content-Type", "application/json")
 
-	// statusResponse, statusOk := mockResponse["status"].(string)
-	// if !statusOk {
-	// 	statusResponse = ""
-	// }
+	switch v := mockResponse.(type) {
+	case []byte:
+		writer.Write(v)
+	case string:
+		var parsedResponse map[string]any
+		if err := json.Unmarshal([]byte(v), &parsedResponse); err != nil {
+			log.Printf("error parsing string to JSON: %s", err)
+			writer.Write([]byte(v))
+			return
+		}
 
-	// idResponse, ok := mockResponse["id"].(string)
-	// if !ok {
-	// 	idResponse = ""
-	// }
-
-	// resultResponse, ok := mockResponse["result"].(map[string]any)
-	// if !ok {
-	// 	resultResponse = map[string]any{}
-	// }
-
-	// responseBody := evervault.FunctionRunResponse{
-	// 	Status: statusResponse,
-	// 	Id: idResponse,
-	// 	Result: resultResponse,
-	// }
-	// if err := json.NewEncoder(writer).Encode(responseBody); err != nil {
-	// 	log.Printf("error encoding json: %s", err)
-	// }
-
-	writer.Write([]byte(mockResponse))
+		json.NewEncoder(writer).Encode(parsedResponse)
+	default:
+		if err := json.NewEncoder(writer).Encode(mockResponse); err != nil {
+			log.Printf("error encoding json: %s", err)
+		}
+	}
 }
 
-func handleRoute(writer http.ResponseWriter, reader *http.Request, mockResponse string, contentType string) {
+func handleRoute(writer http.ResponseWriter, reader *http.Request, mockResponse any, contentType string) {
 	if reader.URL.Path == "/functions/test_function/runs" {
 		testFuncHandler(writer, reader, mockResponse)
 		return
@@ -438,13 +440,32 @@ func handleRoute(writer http.ResponseWriter, reader *http.Request, mockResponse 
 	}
 
 	if reader.URL.Path == "/decrypt" {
+		// Set default content type if not specified
 		if contentType == "" {
-			contentType = "text/plain"
+			contentType = "application/json"
 		}
-
 		writer.Header().Set("Content-Type", contentType)
 		writer.WriteHeader(http.StatusOK)
-		writer.Write([]byte(mockResponse))
+
+		// Handle the response based on type
+		switch v := mockResponse.(type) {
+		case string:
+			writer.Write([]byte(fmt.Sprintf("\"%s\"", v)))
+		case int, int32, int64:
+			writer.Write([]byte(fmt.Sprintf("%d", v)))
+		case float32, float64:
+			writer.Write([]byte(fmt.Sprintf("%f", v)))
+		case bool:
+			writer.Write([]byte(fmt.Sprintf("%t", v)))
+		default:
+			if contentType == "application/json" {
+				if err := json.NewEncoder(writer).Encode(mockResponse); err != nil {
+					log.Printf("error encoding json: %s", err)
+				}
+			} else {
+				writer.Write([]byte(fmt.Sprintf("%v", v)))
+			}
+		}
 		return
 	}
 
@@ -484,7 +505,7 @@ func hasSpecialPath(path string) bool {
 	return specialPaths[path]
 }
 
-func startMockHTTPServer(mockResponse string, contentType string) *httptest.Server {
+func startMockHTTPServer(mockResponse any, contentType string) *httptest.Server {
 	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, reader *http.Request) {
 		if hasSpecialPath(reader.URL.Path) {
 			handleRoute(writer, reader, mockResponse, contentType)

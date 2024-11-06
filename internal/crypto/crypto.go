@@ -119,6 +119,7 @@ func EncryptValue(
 
 	// Get the concatenated result as a byte slice
 	metadataOffset := make([]byte, metadataOffsetLength)
+	//nolint:gosec
 	binary.LittleEndian.PutUint16(metadataOffset, uint16(len(metadata)))
 
 	var buffer bytes.Buffer
@@ -192,6 +193,7 @@ func encodeEncryptionTimestamp(buffer *bytes.Buffer) error {
 	}
 
 	// Get the current time and convert it to Unix timestamp (seconds since Jan 1, 1970)
+	//nolint:gosec
 	currentTime := uint32(time.Now().Unix())
 
 	err = binary.Write(buffer, binary.BigEndian, currentTime)

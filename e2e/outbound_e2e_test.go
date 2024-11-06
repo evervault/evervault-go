@@ -43,6 +43,7 @@ func TestE2EOutboundRelay(t *testing.T) {
 	}
 
 	data := map[string]string{"string": encryptedString, "number": encryptedNumber, "boolean": encryptedBool}
+
 	payload, err := json.Marshal(data)
 	if err != nil {
 		t.Errorf("error Marshalling payload %s", err)

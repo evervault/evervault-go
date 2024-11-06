@@ -15,6 +15,8 @@ import (
 	"github.com/hf/nitrite"
 )
 
+const loadDocTimeout = 30 * time.Second
+
 // mapAttestationPCRs maps the attestation document's PCRs to a PCRs struct.
 func mapAttestationPCRs(attestationPCRs nitrite.Document) attestation.PCRs {
 	// We verify a subset of non zero PCRs
@@ -84,10 +86,11 @@ func (c *Client) createDial(
 	cache *internalAttestation.Cache,
 	pcrManager internalAttestation.PCRManager,
 ) func(ctx context.Context, network, addr string) (net.Conn, error) {
-	return func(ctx context.Context, network, addr string) (net.Conn, error) {
+	return func(dialCtx context.Context, network, addr string) (net.Conn, error) {
 		if network != "tcp" {
 			return nil, ErrUnsupportedNetworkType
 		}
+
 		// Create a TCP connection
 		conn, err := net.DialTimeout(network, addr, dialTimeout)
 		if err != nil {
@@ -98,9 +101,7 @@ func (c *Client) createDial(
 
 		// Perform TLS handshake with custom configuration
 		tlsConn := tls.Client(conn, tlsConfig)
-
-		err = tlsConn.Handshake()
-		if err != nil {
+		if err = tlsConn.Handshake(); err != nil {
 			return nil, fmt.Errorf("error connecting to cage %w", err)
 		}
 
@@ -109,10 +110,12 @@ func (c *Client) createDial(
 
 		attestationDoc, err := attestCert(cert, *expectedPCRs, doc)
 		if err != nil {
-			// Get new attestation doc in case of Cage deployment
-			cache.LoadDoc(ctx)
+			loadCtx, cancel := context.WithTimeout(dialCtx, loadDocTimeout)
+			defer cancel()
 
-			_, err := attestCert(cert, *expectedPCRs, doc)
+			cache.LoadDoc(loadCtx)
+
+			attestationDoc, err = attestCert(cert, *expectedPCRs, cache.Get())
 			if err != nil {
 				return nil, fmt.Errorf("error attesting Connection %w", err)
 			}

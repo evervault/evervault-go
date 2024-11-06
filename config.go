@@ -30,12 +30,12 @@ func MakeConfig() Config {
 }
 
 func getAttestationPollingInterval() time.Duration {
-	const defaultPollingInterval = 2700
+	const defaultPollingInterval = 120
 
 	intervalStr := os.Getenv("EV_ATTESTATION_POLLING_INTERVAL")
 
 	if intervalStr == "" {
-		intervalStr = getEnvOrDefault("EV_CAGES_POLLING_INTERVAL", "7200")
+		intervalStr = getEnvOrDefault("EV_CAGES_POLLING_INTERVAL", "120")
 	}
 
 	interval, err := strconv.ParseInt(intervalStr, 10, 64)

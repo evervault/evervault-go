@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math"
 	"net/http"
 	"net/url"
 	"sync"
@@ -21,12 +22,17 @@ type Cache struct {
 	stopPoll chan bool
 }
 
-const pollTimeout = 5 * time.Second
+const (
+	pollTimeout   = 30 * time.Second
+	maxRetries    = 3
+	retryInterval = 1 * time.Second
+	backoffFactor = 2
+)
 
 func NewAttestationCache(cageDomain string, pollingInterval time.Duration) (*Cache, error) {
 	cageURL, err := url.Parse(fmt.Sprintf("https://%s/.well-known/attestation", cageDomain))
 	if err != nil {
-		return nil, fmt.Errorf("cage url could not be parsed %w", err)
+		return nil, fmt.Errorf("enclave attestation URL could not be parsed: %w", err)
 	}
 
 	cache := &Cache{
@@ -71,56 +77,75 @@ type CageDocResponse struct {
 }
 
 func (c *Cache) getDoc(ctx context.Context) ([]byte, error) {
-	req, err := http.NewRequest(http.MethodGet, c.cageURL.String(), nil)
-	if err != nil {
-		return nil, fmt.Errorf("could not generate attestation doc request %w", err)
+	var lastErr error
+
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		select {
+		case <-ctx.Done():
+			return nil, fmt.Errorf("context canceled or timed out: %w", ctx.Err())
+		default:
+			if attempt > 1 {
+				log.Printf("Attestation Document Cache: Attempt %d: Retrying in %v\n", attempt, retryInterval)
+			}
+
+			req, reqErr := http.NewRequestWithContext(ctx, http.MethodGet, c.cageURL.String(), nil)
+			if reqErr != nil {
+				return nil, fmt.Errorf("could not create request: %w", reqErr)
+			}
+
+			resp, respErr := c.client.Do(req)
+			if respErr != nil {
+				lastErr = c.handleError("could not get attestation doc", respErr, attempt)
+				continue
+			}
+			defer resp.Body.Close()
+
+			var response CageDocResponse
+			if decodeErr := json.NewDecoder(resp.Body).Decode(&response); decodeErr != nil {
+				lastErr = c.handleError("error decoding attestation doc JSON", decodeErr, attempt)
+				continue
+			}
+
+			docBytes, err := base64.StdEncoding.DecodeString(response.AttestationDoc)
+			if err == nil {
+				return docBytes, nil
+			}
+
+			lastErr = c.handleError("error decoding attestation doc", err, attempt)
+		}
 	}
 
-	req = req.WithContext(ctx)
+	return nil, fmt.Errorf("failed to get attestation doc after %d attempts: %w", maxRetries, lastErr)
+}
 
-	resp, err := c.client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("could not get attestation doc %w", err)
-	}
+func (c *Cache) handleError(message string, err error, attempt int) error {
+	log.Printf("Attempt %d %s: %v", attempt, message, err)
 
-	defer resp.Body.Close()
+	backoffDuration := time.Duration(math.Pow(backoffFactor, float64(attempt))) * time.Second
+	time.Sleep(backoffDuration)
 
-	var response CageDocResponse
-
-	if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return nil, fmt.Errorf("error decoding attestation doc json %w", err)
-	}
-
-	docBytes, err := base64.StdEncoding.DecodeString(response.AttestationDoc)
-	if err != nil {
-		return nil, fmt.Errorf("error decoding attestation doc %w", err)
-	}
-
-	return docBytes, nil
+	return fmt.Errorf("%s: %w", message, err)
 }
 
 func (c *Cache) LoadDoc(ctx context.Context) {
 	docBytes, err := c.getDoc(ctx)
 	if err != nil {
-		log.Printf("could not get attestation doc: %v", err)
+		log.Printf("Could not get attestation doc: %v", err)
+		return
 	}
 
+	log.Println("Evervault Attestation Document Cache: Document loaded")
 	c.Set(docBytes)
 }
 
 func (c *Cache) pollAPI() {
-	ctx, cancel := context.WithTimeout(context.Background(), pollTimeout)
-	defer cancel()
-
 	for {
 		select {
 		case <-c.ticker.C:
-			docBytes, err := c.getDoc(ctx)
-			if err != nil {
-				log.Printf("couldn't get attestation doc: %v", err)
-			}
+			ctx, cancel := context.WithTimeout(context.Background(), pollTimeout)
+			defer cancel()
 
-			c.Set(docBytes)
+			c.LoadDoc(ctx)
 		case <-c.stopPoll:
 			c.ticker.Stop()
 			return

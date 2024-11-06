@@ -15,7 +15,6 @@ import (
 	"crypto/rand"
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/evervault/evervault-go/internal/crypto"
@@ -245,44 +244,47 @@ func (c *Client) EncryptByteArrayWithDataRole(value []byte, role string) (string
 //
 //	decrypted := evClient.Decrypt(encrypted);
 func (c *Client) DecryptString(encryptedData string) (string, error) {
-	decryptResponse, err := c.decryptToString(encryptedData)
+	decryptResponse, err := c.decrypt(encryptedData)
 	if err != nil {
 		return "", err
 	}
 
-	decryptResponse = decryptResponse[1 : len(decryptResponse)-1]
+	decryptedString, ok := decryptResponse.(string)
+	if !ok {
+		return "", ErrInvalidDataType
+	}
 
-	return decryptResponse, nil
+	return decryptedString, nil
 }
 
 // DecryptInt decrypts data previously encrypted with Encrypt or through Relay
 //
 //	decrypted := evClient.DecryptInt(encrypted);
 func (c *Client) DecryptInt(encryptedData string) (int, error) {
-	decryptResponse, err := c.decryptToString(encryptedData)
+	decryptResponse, err := c.decrypt(encryptedData)
 	if err != nil {
 		return 0, err
 	}
 
-	decryptedToFloat, err := strconv.ParseFloat(decryptResponse, 64)
-	if err != nil {
+	decryptedFloat, ok := decryptResponse.(float64)
+	if !ok {
 		return 0, ErrInvalidDataType
 	}
 
-	return int(decryptedToFloat), nil
+	return int(decryptedFloat), nil
 }
 
 // DecryptFloat64 decrypts data previously encrypted with Encrypt or through Relay
 //
 //	decrypted := evClient.DecryptInt(encrypted);
 func (c *Client) DecryptFloat64(encryptedData string) (float64, error) {
-	decryptResponse, err := c.decryptToString(encryptedData)
+	decryptResponse, err := c.decrypt(encryptedData)
 	if err != nil {
 		return 0, err
 	}
 
-	parsedFloat, err := strconv.ParseFloat(decryptResponse, 64)
-	if err != nil {
+	parsedFloat, ok := decryptResponse.(float64)
+	if !ok {
 		return 0, ErrInvalidDataType
 	}
 
@@ -293,17 +295,17 @@ func (c *Client) DecryptFloat64(encryptedData string) (float64, error) {
 //
 //	decrypted := evClient.DecryptBool(encrypted);
 func (c *Client) DecryptBool(encryptedData string) (bool, error) {
-	decryptResponse, err := c.decryptToString(encryptedData)
+	decryptResponse, err := c.decrypt(encryptedData)
 	if err != nil {
 		return false, err
 	}
 
-	parsedBool, err := strconv.ParseBool(decryptResponse)
-	if err != nil {
+	decryptedBool, ok := decryptResponse.(bool)
+	if !ok {
 		return false, ErrInvalidDataType
 	}
 
-	return parsedBool, nil
+	return decryptedBool, nil
 }
 
 // DecryptByteArray decrypts data previously encrypted with Encrypt or through Relay
@@ -312,32 +314,17 @@ func (c *Client) DecryptBool(encryptedData string) (bool, error) {
 //
 // Deprecated: Use DecryptString for utf-8 encoded encrypted byte arrays.
 func (c *Client) DecryptByteArray(encryptedData string) ([]byte, error) {
-	decryptResponse, err := c.decryptToString(encryptedData)
+	decryptResponse, err := c.decrypt(encryptedData)
 	if err != nil {
 		return nil, err
 	}
 
-	decryptResponse = decryptResponse[1 : len(decryptResponse)-1]
-
-	return []byte(decryptResponse), nil
-}
-
-func (c *Client) decryptToString(encryptedData string) (string, error) {
-	decryptResponse, err := c.decrypt(encryptedData)
-	if err != nil {
-		if strings.Contains(err.Error(), "error parsing JSON response") {
-			return "", ErrInvalidDataType
-		}
-
-		return "", err
-	}
-
 	decryptedString, ok := decryptResponse.(string)
 	if !ok {
-		return "", ErrInvalidDataType
+		return nil, ErrInvalidDataType
 	}
 
-	return decryptedString, nil
+	return []byte(decryptedString), nil
 }
 
 // CreateClientSideDecryptToken creates a time bound token that can be used to perform decrypts.
