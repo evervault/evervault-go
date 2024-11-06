@@ -1,5 +1,11 @@
 # evervault-go
 
+## 1.3.0
+
+### Minor Changes
+
+- 1255ba5: Patch Decrypt calls and Enclave Attestation Document fetching
+
 ## 1.2.0
 
 ### Minor Changes
