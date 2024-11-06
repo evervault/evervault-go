@@ -368,7 +368,7 @@ func TestClientInitClientErrorWithoutApiKey(t *testing.T) {
 	}
 }
 
-func testFuncHandler(writer http.ResponseWriter, reader *http.Request, mockResponse interface{}) {
+func testFuncHandler(writer http.ResponseWriter, reader *http.Request, mockResponse any) {
 	apiKey := reader.Header.Get("API-KEY")
 	authHeader := reader.Header.Get("Authorization")
 
@@ -380,23 +380,29 @@ func testFuncHandler(writer http.ResponseWriter, reader *http.Request, mockRespo
 	writer.WriteHeader(http.StatusOK)
 	writer.Header().Set("Content-Type", "application/json")
 
-	// Handle mockResponse based on its type
 	switch v := mockResponse.(type) {
 	case []byte:
-		writer.Write(v) // mockResponse is already []byte
+		writer.Write(v)
 	case string:
-		writer.Write([]byte(v)) // Convert string to []byte
+		var parsedResponse map[string]interface{}
+		if err := json.Unmarshal([]byte(v), &parsedResponse); err != nil {
+			log.Printf("error parsing string to JSON: %s", err)
+			writer.Write([]byte(v))
+			return
+		}
+
+		if err := json.NewEncoder(writer).Encode(parsedResponse); err != nil {
+			log.Printf("error encoding json: %s", err)
+		}
 	default:
-		// For other types, use JSON encoding
 		if err := json.NewEncoder(writer).Encode(mockResponse); err != nil {
 			log.Printf("error encoding json: %s", err)
 		}
 	}
 }
 
-func handleRoute(writer http.ResponseWriter, reader *http.Request, mockResponse interface{}, contentType string) {
+func handleRoute(writer http.ResponseWriter, reader *http.Request, mockResponse any, contentType string) {
 	if reader.URL.Path == "/functions/test_function/runs" {
-		// Pass mockResponse directly to testFuncHandler if it uses mockResponse
 		testFuncHandler(writer, reader, mockResponse)
 		return
 	}
@@ -481,7 +487,7 @@ func hasSpecialPath(path string) bool {
 	return specialPaths[path]
 }
 
-func startMockHTTPServer(mockResponse interface{}, contentType string) *httptest.Server {
+func startMockHTTPServer(mockResponse any, contentType string) *httptest.Server {
 	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, reader *http.Request) {
 		if hasSpecialPath(reader.URL.Path) {
 			handleRoute(writer, reader, mockResponse, contentType)
