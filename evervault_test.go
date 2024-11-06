@@ -128,6 +128,27 @@ func TestDecryptByteArray(t *testing.T) {
 	}
 }
 
+func TestDecryptJsonResponse(t *testing.T) {
+	t.Parallel()
+
+	server := startMockHTTPServer("Hello World!", "application/json")
+	defer server.Close()
+
+	testClient := mockedClient(t, server)
+
+	byteArrayType := reflect.TypeOf([]byte("Hello World!"))
+
+	res, err := testClient.DecryptByteArray("ev:abc123")
+	if err != nil {
+		t.Errorf("error decrypting data %s", err)
+		return
+	}
+
+	if reflect.TypeOf(res) != byteArrayType {
+		t.Errorf("Expected decrypted byte array, got %s", reflect.TypeOf(res))
+	}
+}
+
 func TestCreateClientSideDecryptToken(t *testing.T) {
 	t.Parallel()
 
@@ -433,19 +454,18 @@ func handleRoute(writer http.ResponseWriter, reader *http.Request, mockResponse 
 		case string:
 			writer.Write([]byte(fmt.Sprintf("\"%s\"", v)))
 		case int, int32, int64:
-			writer.Write([]byte(fmt.Sprintf("%d", v))) // Write integers as numbers
+			writer.Write([]byte(fmt.Sprintf("%d", v)))
 		case float32, float64:
-			writer.Write([]byte(fmt.Sprintf("%f", v))) // Write floats as numbers
+			writer.Write([]byte(fmt.Sprintf("%f", v)))
 		case bool:
-			writer.Write([]byte(fmt.Sprintf("%t", v))) // Write booleans as true/false
+			writer.Write([]byte(fmt.Sprintf("%t", v)))
 		default:
-			// Fallback to JSON encoding if none of the above types match
 			if contentType == "application/json" {
 				if err := json.NewEncoder(writer).Encode(mockResponse); err != nil {
 					log.Printf("error encoding json: %s", err)
 				}
 			} else {
-				writer.Write([]byte(fmt.Sprintf("%v", v))) // Write as string for unknown types
+				writer.Write([]byte(fmt.Sprintf("%v", v)))
 			}
 		}
 		return

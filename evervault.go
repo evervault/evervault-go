@@ -15,7 +15,6 @@ import (
 	"crypto/rand"
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/evervault/evervault-go/internal/crypto"
@@ -315,30 +314,17 @@ func (c *Client) DecryptBool(encryptedData string) (bool, error) {
 //
 // Deprecated: Use DecryptString for utf-8 encoded encrypted byte arrays.
 func (c *Client) DecryptByteArray(encryptedData string) ([]byte, error) {
-	decryptResponse, err := c.decryptToString(encryptedData)
+	decryptResponse, err := c.decrypt(encryptedData)
 	if err != nil {
 		return nil, err
 	}
 
-	return []byte(decryptResponse), nil
-}
-
-func (c *Client) decryptToString(encryptedData string) (string, error) {
-	decryptResponse, err := c.decrypt(encryptedData)
-	if err != nil {
-		if strings.Contains(err.Error(), "error parsing JSON response") {
-			return "", ErrInvalidDataType
-		}
-
-		return "", err
-	}
-
 	decryptedString, ok := decryptResponse.(string)
-	if ok {
-		return decryptedString, nil
+	if !ok {
+		return nil, ErrInvalidDataType
 	}
 
-	return decryptedString, nil
+	return []byte(decryptedString), nil
 }
 
 // CreateClientSideDecryptToken creates a time bound token that can be used to perform decrypts.
