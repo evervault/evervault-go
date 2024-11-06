@@ -32,7 +32,7 @@ const (
 func NewAttestationCache(cageDomain string, pollingInterval time.Duration) (*Cache, error) {
 	cageURL, err := url.Parse(fmt.Sprintf("https://%s/.well-known/attestation", cageDomain))
 	if err != nil {
-		return nil, fmt.Errorf("Enclave Attestation URL could not be parsed: %w", err)
+		return nil, fmt.Errorf("enclave attestation URL could not be parsed: %w", err)
 	}
 
 	cache := &Cache{
