@@ -134,7 +134,6 @@ func (c *Cache) LoadDoc(ctx context.Context) {
 		return
 	}
 
-	log.Println("Evervault Attestation Document Cache: Document loaded")
 	c.Set(docBytes)
 }
 
