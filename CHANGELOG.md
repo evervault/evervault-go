@@ -1,5 +1,11 @@
 # evervault-go
 
+## 1.3.1
+
+### Patch Changes
+
+- da4248e: Remove log line from Attestation Document caching
+
 ## 1.3.0
 
 ### Minor Changes
