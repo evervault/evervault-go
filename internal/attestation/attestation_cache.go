@@ -99,6 +99,7 @@ func (c *Cache) getDoc(ctx context.Context) ([]byte, error) {
 				lastErr = c.handleError("could not get attestation doc", respErr, attempt)
 				continue
 			}
+			//nolint:errcheck
 			defer resp.Body.Close()
 
 			var response CageDocResponse
