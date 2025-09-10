@@ -138,11 +138,11 @@ func (c *Cache) handleError(message string, err error, attempt int) error {
 func validateAttestationDoc(doc []byte) (nitrite.Document, error) {
 	validatedDoc, err := nitrite.Verify(doc, nitrite.VerifyOptions{CurrentTime: time.Now()})
 	if err != nil {
-		return nitrite.Document{}, fmt.Errorf("Failed to verify loaded attestation doc: %v", err)
+		return nitrite.Document{}, fmt.Errorf("failed to verify loaded attestation doc: %v", err)
 	}
 
 	if !validatedDoc.SignatureOK {
-		return nitrite.Document{}, fmt.Errorf("Signature validation failed on attestation document")
+		return nitrite.Document{}, fmt.Errorf("signature validation failed on attestation document")
 	}
 
 	if _, ok := validatedDoc.Document.PCRs[0]; !ok {
