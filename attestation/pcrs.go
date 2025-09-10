@@ -31,6 +31,34 @@ func (p *PCRs) Equal(pcrs PCRs) bool {
 	return true
 }
 
+// Check if the receivedPCRs meet the expectations of the provided PCRs. 
+// The PCRs given as a parameter are expected to be the PCRs received from the remote enclave.
+// 
+// The `receivedPCRs` are compared against the current PCR object which is assumed to be a
+// partial set of expected PCR values. Any set PCR values are expected to be equal to the
+// corresponding `receivedPCRs` value.
+// 
+// If any expected PCR value is not equal, this function returns false.
+func (p *PCRs) SatisfiedBy(receivedPCRs PCRs) bool {
+	if p.PCR0 != "" && p.PCR0 != receivedPCRs.PCR0 {
+		return false
+	}
+
+	if p.PCR1 != "" && p.PCR1 != receivedPCRs.PCR1 {
+		return false
+	}
+
+	if p.PCR2 != "" && p.PCR2 != receivedPCRs.PCR2 {
+		return false
+	}
+
+	if p.PCR8 != "" && p.PCR8 != receivedPCRs.PCR8 {
+		return false
+	}
+
+	return true
+}
+
 // IsEmpty checks if all PCRs in the struct are empty.
 func (p *PCRs) IsEmpty() bool {
 	return p.PCR0 == "" && p.PCR1 == "" && p.PCR2 == "" && p.PCR8 == ""

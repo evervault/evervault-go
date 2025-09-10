@@ -18,28 +18,35 @@ import (
 const loadDocTimeout = 30 * time.Second
 
 // mapAttestationPCRs maps the attestation document's PCRs to a PCRs struct.
-func mapAttestationPCRs(attestationPCRs nitrite.Document) attestation.PCRs {
+// If PCR 0, 1 or 2 are empty, then this function returns an error.
+func mapAttestationPCRs(attestationPCRs nitrite.Document) (attestation.PCRs, error) {
 	// We verify a subset of non zero PCRs
-	PCR0 := hex.EncodeToString(attestationPCRs.PCRs[0])
-	PCR1 := hex.EncodeToString(attestationPCRs.PCRs[1])
-	PCR2 := hex.EncodeToString(attestationPCRs.PCRs[2])
-	PCR8 := hex.EncodeToString(attestationPCRs.PCRs[8])
+	PCR0, ok := attestationPCRs.PCRs[0]
+	if !ok {
+		return attestation.PCRs{}, fmt.Errorf("missing PCR0 in returned attestation document")
+	}
+	PCR1, ok := attestationPCRs.PCRs[1]
+	if !ok {
+		return attestation.PCRs{}, fmt.Errorf("missing PCR1 in returned attestation document")
+	}
+	PCR2, ok := attestationPCRs.PCRs[2]
+	if !ok {
+		return attestation.PCRs{}, fmt.Errorf("missing PCR2 in returned attestation document")
+	}
 
-	return attestation.PCRs{PCR0: PCR0, PCR1: PCR1, PCR2: PCR2, PCR8: PCR8}
+	PCR8 := attestationPCRs.PCRs[8]
+
+	return attestation.PCRs{
+		PCR0: hex.EncodeToString(PCR0),
+		PCR1: hex.EncodeToString(PCR1),
+		PCR2: hex.EncodeToString(PCR2),
+		PCR8: hex.EncodeToString(PCR8),
+	}, nil
 }
 
 // attestCert attests the certificate against the expected PCRs.
-func attestCert(certificate *x509.Certificate, expectedPCRs []attestation.PCRs, attestationDoc []byte) (bool, error) {
-	res, err := nitrite.Verify(attestationDoc, nitrite.VerifyOptions{CurrentTime: time.Now()})
-	if err != nil {
-		return false, fmt.Errorf("unable to verify certificate %w", err)
-	}
-
-	if !res.SignatureOK {
-		return false, ErrUnVerifiedSignature
-	}
-
-	if verified := verifyPCRs(expectedPCRs, *res.Document); !verified {
+func attestCert(certificate *x509.Certificate, expectedPCRs []attestation.PCRs, remoteAttestationDoc nitrite.Document) (bool, error) {
+	if verified := verifyPCRs(expectedPCRs, remoteAttestationDoc); !verified {
 		return verified, nil
 	}
 
@@ -49,14 +56,17 @@ func attestCert(certificate *x509.Certificate, expectedPCRs []attestation.PCRs, 
 		return false, fmt.Errorf("failed to marshal publicKey to bytes %w", err)
 	}
 
-	return bytes.Equal(pubKeyBytes, res.Document.UserData), nil
+	return bytes.Equal(pubKeyBytes, remoteAttestationDoc.UserData), nil
 }
 
 // verifyPCRs verifies the expected PCRs against the attestation document.
-func verifyPCRs(expectedPCRs []attestation.PCRs, attestationDocument nitrite.Document) bool {
-	attestationPCRs := mapAttestationPCRs(attestationDocument)
+func verifyPCRs(expectedPCRs []attestation.PCRs, remoteAttestationDoc nitrite.Document) bool {
+	attestationPCRs, err := mapAttestationPCRs(remoteAttestationDoc)
+	if err != nil {
+		return false
+	}
 	for _, expectedPCR := range expectedPCRs {
-		if expectedPCR.Equal(attestationPCRs) {
+		if expectedPCR.SatisfiedBy(attestationPCRs) {
 			return true
 		}
 	}
