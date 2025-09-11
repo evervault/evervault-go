@@ -5,6 +5,7 @@ import (
 
 	"github.com/evervault/evervault-go"
 	"github.com/evervault/evervault-go/internal/testhelper"
+	"github.com/stretchr/testify/require"
 )
 
 
@@ -20,9 +21,7 @@ func GetClient(t *testing.T) *evervault.Client {
 	apiKey := testhelper.LoadRequiredEnvVar("EV_API_KEY", t)
 
 	client, err := evervault.MakeClient(appUUID, apiKey)
-	if err != nil {
-		t.Fail()
-	}
+	require.NoError(t,err)
 
 	return client
 }

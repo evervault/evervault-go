@@ -6,6 +6,7 @@ import (
 
 	"github.com/evervault/evervault-go"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGetFunctionRunToken(t *testing.T) {
@@ -16,10 +17,7 @@ func TestGetFunctionRunToken(t *testing.T) {
 	testClient := mockedClient(t, server)
 
 	res, err := testClient.CreateFunctionRunToken("test_function", "test_payload")
-	if err != nil {
-		t.Errorf("Failed to create run token, got %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	if res.Token != "test_token" {
 		t.Errorf("Expected encrypted string, got %s", res)
@@ -45,10 +43,7 @@ func TestRunFunctionSuccess(t *testing.T) {
 	payload := map[string]any{"name": "john", "age": 30}
 
 	res, err := testClient.RunFunction("test_function", payload)
-	if err != nil {
-		t.Errorf("Failed to run Function, got %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	assert.Equal(t, "success", res.Status)
 	assert.Equal(t, id, res.ID)

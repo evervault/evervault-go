@@ -6,6 +6,7 @@ import (
 	"github.com/evervault/evervault-go"
 	"github.com/evervault/evervault-go/internal/testhelper"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestE2EFunctionRun(t *testing.T) {
@@ -13,53 +14,36 @@ func TestE2EFunctionRun(t *testing.T) {
 
 	client := GetClient(t)
 	functionName := testhelper.LoadRequiredEnvVar("EV_FUNCTION_NAME", t)
-	
-	if t.Failed() {
-		return
-	}
 
 	encryptedPayload := map[string]any{}
 
 	encrypted, err := client.EncryptString("hello")
-	if err != nil {
-		t.Errorf("error encrypting string %s", err)
-		return
-	}
+	require.NoError(t, err)
+	
 	encryptedPayload["String"] = encrypted
 
 	encrypted, err = client.EncryptInt(1)
-	if err != nil {
-		t.Errorf("error encrypting integer %s", err)
-		return
-	}
+	require.NoError(t, err)
+
 	encryptedPayload["Integer"] = encrypted
 
 	encrypted, err = client.EncryptFloat64(1.5)
-	if err != nil {
-		t.Errorf("error encrypting float %s", err)
-		return
-	}
+	require.NoError(t, err)
+
 	encryptedPayload["Float"] = encrypted
 
 	encrypted, err = client.EncryptBool(true)
-	if err != nil {
-		t.Errorf("error encrypting true %s", err)
-		return
-	}
+	require.NoError(t, err)
+
 	encryptedPayload["True"] = encrypted
 
 	encrypted, err = client.EncryptBool(false)
-	if err != nil {
-		t.Errorf("error encrypting false %s", err)
-		return
-	}
+	require.NoError(t, err)
+
 	encryptedPayload["False"] = encrypted
 
 	runResult, err := client.RunFunction(functionName, encryptedPayload)
-	if err != nil {
-		t.Errorf("error running function %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	if runResult.Status != "success" {
 		t.Errorf("Expected success, got %s", runResult.Status)
@@ -77,11 +61,6 @@ func TestE2EFunctionRunWithError(t *testing.T) {
 
 	client := GetClient(t)
 	functionName := testhelper.LoadRequiredEnvVar("EV_FUNCTION_NAME", t)
-	
-	if t.Failed() {
-		return
-	}
-
 
 	payload := map[string]any{"shouldError": true}
 
@@ -98,11 +77,6 @@ func TestE2EFunctionRunWithInitializationError(t *testing.T) {
 
 	client := GetClient(t)
 	initializationErrorFunctionName := testhelper.LoadRequiredEnvVar("EV_INITIALIZATION_ERROR_FUNCTION_NAME", t)
-
-	if t.Failed() {
-		return
-	}
-
 
 	payload := map[string]any{}
 

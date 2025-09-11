@@ -18,6 +18,7 @@ import (
 	"github.com/evervault/evervault-go"
 	"github.com/evervault/evervault-go/internal/crypto"
 	"github.com/evervault/evervault-go/internal/datatypes"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDecryptString(t *testing.T) {
@@ -31,10 +32,7 @@ func TestDecryptString(t *testing.T) {
 	stringType := reflect.TypeOf("")
 
 	res, err := testClient.DecryptString("ev:abc123")
-	if err != nil {
-		t.Errorf("error decrypting data %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	if reflect.TypeOf(res) != stringType {
 		t.Errorf("Expected decrypted string, got %s", reflect.TypeOf(res))
@@ -52,10 +50,7 @@ func TestDecryptInt(t *testing.T) {
 	intType := reflect.TypeOf(1)
 
 	res, err := testClient.DecryptInt("ev:abc123")
-	if err != nil {
-		t.Errorf("error decrypting data %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	if reflect.TypeOf(res) != intType {
 		t.Errorf("Expected decrypted int, got %s", reflect.TypeOf(res))
@@ -73,10 +68,7 @@ func TestDecryptFloat64(t *testing.T) {
 	float64Type := reflect.TypeOf(1.1)
 
 	res, err := testClient.DecryptFloat64("ev:abc123")
-	if err != nil {
-		t.Errorf("error decrypting data %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	if reflect.TypeOf(res) != float64Type {
 		t.Errorf("Expected decrypted float64, got %s", reflect.TypeOf(res))
@@ -94,10 +86,7 @@ func TestDecryptBoolean(t *testing.T) {
 	booleanType := reflect.TypeOf(true)
 
 	res, err := testClient.DecryptBool("ev:abc123")
-	if err != nil {
-		t.Errorf("error decrypting data %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	if reflect.TypeOf(res) != booleanType {
 		t.Errorf("Expected decrypted bool, got %s", reflect.TypeOf(res))
@@ -115,10 +104,7 @@ func TestDecryptByteArray(t *testing.T) {
 	byteArrayType := reflect.TypeOf([]byte("Hello World!"))
 
 	res, err := testClient.DecryptByteArray("ev:abc123")
-	if err != nil {
-		t.Errorf("error decrypting data %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	if reflect.TypeOf(res) != byteArrayType {
 		t.Errorf("Expected decrypted byte array, got %s", reflect.TypeOf(res))
@@ -136,10 +122,7 @@ func TestDecryptJsonResponse(t *testing.T) {
 	byteArrayType := reflect.TypeOf([]byte("Hello World!"))
 
 	res, err := testClient.DecryptByteArray("ev:abc123")
-	if err != nil {
-		t.Errorf("error decrypting data %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	if reflect.TypeOf(res) != byteArrayType {
 		t.Errorf("Expected decrypted byte array, got %s", reflect.TypeOf(res))
@@ -163,10 +146,7 @@ func TestCreateClientSideDecryptToken(t *testing.T) {
 	expiry := time.Now()
 
 	res, err := testClient.CreateClientSideDecryptToken(EncryptedCardData{"4242", "111", "01/23"}, expiry)
-	if err != nil {
-		t.Errorf("error creating decrypt token %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	if res.Token != "abcdefghij1234567890" {
 		t.Errorf("Expected token, got %s", res.Token)
@@ -186,10 +166,7 @@ func TestEncryptString(t *testing.T) {
 	testClient := mockedClient(t, server)
 
 	res, err := testClient.EncryptString("plaintext")
-	if err != nil {
-		t.Errorf("error encrypting data %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	if !isValidEncryptedString(res, datatypes.String) {
 		t.Errorf("Expected encrypted string, got %s", res)
@@ -205,10 +182,7 @@ func TestEncryptStringWithRole(t *testing.T) {
 	testClient := mockedClient(t, server)
 
 	res, err := testClient.EncryptStringWithDataRole("plaintext", "role")
-	if err != nil {
-		t.Errorf("error encrypting data %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	if !isValidEncryptedString(res, datatypes.String) {
 		t.Errorf("Expected encrypted string, got %s", res)
@@ -224,10 +198,7 @@ func TestEncryptInt(t *testing.T) {
 	testClient := mockedClient(t, server)
 
 	res, err := testClient.EncryptInt(123)
-	if err != nil {
-		t.Errorf("error encrypting data %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	if !isValidEncryptedString(res, datatypes.Number) {
 		t.Errorf("Expected encrypted string, got %s", res)
@@ -243,10 +214,7 @@ func TestEncryptIntWithRole(t *testing.T) {
 	testClient := mockedClient(t, server)
 
 	res, err := testClient.EncryptIntWithDataRole(123, "role")
-	if err != nil {
-		t.Errorf("error encrypting data %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	if !isValidEncryptedString(res, datatypes.Number) {
 		t.Errorf("Expected encrypted string, got %s", res)
@@ -262,10 +230,7 @@ func TestEncryptFloat64(t *testing.T) {
 	testClient := mockedClient(t, server)
 
 	res, err := testClient.EncryptFloat64(1.1)
-	if err != nil {
-		t.Errorf("error encrypting data %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	if !isValidEncryptedString(res, datatypes.Number) {
 		t.Errorf("Expected encrypted string, got %s", res)
@@ -281,10 +246,7 @@ func TestEncryptFloat64WithRole(t *testing.T) {
 	testClient := mockedClient(t, server)
 
 	res, err := testClient.EncryptFloat64WithDataRole(1.1, "role")
-	if err != nil {
-		t.Errorf("error encrypting data %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	if !isValidEncryptedString(res, datatypes.Number) {
 		t.Errorf("Expected encrypted string, got %s", res)
@@ -300,10 +262,7 @@ func TestEncryptBoolean(t *testing.T) {
 	testClient := mockedClient(t, server)
 
 	res, err := testClient.EncryptBool(true)
-	if err != nil {
-		t.Errorf("error encrypting data %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	if !isValidEncryptedString(res, datatypes.Boolean) {
 		t.Errorf("Expected encrypted string, got %s", res)
@@ -319,10 +278,7 @@ func TestEncryptBooleanWithRole(t *testing.T) {
 	testClient := mockedClient(t, server)
 
 	res, err := testClient.EncryptBoolWithDataRole(true, "role")
-	if err != nil {
-		t.Errorf("error encrypting data %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	if !isValidEncryptedString(res, datatypes.Boolean) {
 		t.Errorf("Expected encrypted string, got %s", res)
@@ -338,10 +294,7 @@ func TestEncryptByte(t *testing.T) {
 	testClient := mockedClient(t, server)
 
 	res, err := testClient.EncryptByteArray([]byte("plaintext"))
-	if err != nil {
-		t.Errorf("error encrypting data %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	if !isValidEncryptedString(res, datatypes.String) {
 		t.Errorf("Expected encrypted string, got %s", res)
@@ -357,10 +310,7 @@ func TestEncryptByteWithRole(t *testing.T) {
 	testClient := mockedClient(t, server)
 
 	res, err := testClient.EncryptByteArrayWithDataRole([]byte("plaintext"), "role")
-	if err != nil {
-		t.Errorf("error encrypting data %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	if !isValidEncryptedString(res, datatypes.String) {
 		t.Errorf("Expected encrypted string, got %s", res)
@@ -546,9 +496,7 @@ func mockedClient(t *testing.T, server *httptest.Server) *evervault.Client {
 	}
 
 	client, err := evervault.MakeCustomClient("test_api_key", "test_app_uuid", config)
-	if err != nil {
-		t.Fail()
-	}
+	require.NoError(t, err)
 
 	return client
 }

@@ -7,6 +7,8 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestOutboundClientRoutesToOutboundRelay(t *testing.T) {
@@ -31,22 +33,15 @@ func TestOutboundClientRoutesToOutboundRelay(t *testing.T) {
 	testClient := mockedClient(t, server)
 
 	relayClient, err := testClient.OutboundRelayClient()
-	if err != nil {
-		t.Errorf("Fialed to build oubound client, got %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	ctx := context.Background()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, targetURL, nil)
-	if err != nil {
-		t.Fatal("failed to build get request: %w", err)
-	}
+	require.NoError(t, err)
 
 	resp, err := relayClient.Do(req)
-	if err != nil {
-		t.Errorf("Expected status code 200, got %s", err)
-	}
+	require.NoError(t, err)
 
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("Expected status code 200, got %d", resp.StatusCode)
