@@ -30,4 +30,6 @@ jobs:
           EV_FUNCTION_NAME: ${{ secrets.EV_FUNCTION_NAME_V1 }}
           EV_INITIALIZATION_ERROR_FUNCTION_NAME: ${{ secrets.EV_INITIALIZATION_ERROR_FUNCTION_NAME }}
           EV_RELAY_TARGET: ${{ secrets.EV_SYNTHETIC_ENDPOINT_URL }}
-        run: GOEXPERIMENT=synctest go test -v -count=1 -race ./...
+          GOEXPERIMENT: synctest
+        run: |
+          go test -v -count=1 -race ./...
