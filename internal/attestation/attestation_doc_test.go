@@ -1,5 +1,5 @@
-//go:build unit_test
-// +build unit_test
+//go:build unit_test && goexperiment.synctest
+// +build unit_test,goexperiment.synctest
 
 package attestation_test
 
