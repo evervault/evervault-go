@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/evervault/evervault-go/internal/attestation"
+	"github.com/evervault/evervault-go/internal/testhelper"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
 )
@@ -38,7 +39,7 @@ func NewFixture(prefix string) Fixture {
 
 
 func TestAttestationDocCacheInit(t *testing.T) {
-	synctest.Test(t, func (t *testing.T) {
+	testhelper.SyncTest(t, func (t *testing.T) {
 		format := "Jan 2 15:04:05 2006 MST"
 		fixedTime, _ := time.Parse(format, "Sep 10 13:36:26 2025 UTC") // pinned time for fixture
 		time.Sleep(time.Until(fixedTime))
@@ -65,7 +66,7 @@ func TestAttestationDocCacheInit(t *testing.T) {
 }
 
 func TestAttestationDocCachePoll(t *testing.T) {
-	synctest.Test(t, func (t *testing.T) {
+	testhelper.SyncTest(t, func (t *testing.T) {
 		format := "Jan 2 15:04:05 2006 MST"
 		fixedTime, _ := time.Parse(format, "Sep 10 13:36:26 2025 UTC") // pinned time for fixture
 		time.Sleep(time.Until(fixedTime))
