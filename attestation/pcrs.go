@@ -31,6 +31,10 @@ func (p *PCRs) Equal(pcrs PCRs) bool {
 	return true
 }
 
+func (p *PCRs) isMinimalPCRSet() bool {
+	return p.PCR0 != "" && p.PCR1 != "" && p.PCR2 != ""
+}
+
 // Check if the receivedPCRs meet the expectations of the provided PCRs. 
 // The PCRs given as a parameter are expected to be the PCRs received from the remote enclave.
 // 
@@ -40,6 +44,11 @@ func (p *PCRs) Equal(pcrs PCRs) bool {
 // 
 // If any expected PCR value is not equal, this function returns false.
 func (p *PCRs) SatisfiedBy(receivedPCRs PCRs) bool {
+	// If the set of receivedPCRs has zero values for any of the minimally expected PCRs, short circuit
+	if !receivedPCRs.isMinimalPCRSet() {
+		return false
+	}
+
 	if p.PCR0 != "" && p.PCR0 != receivedPCRs.PCR0 {
 		return false
 	}
