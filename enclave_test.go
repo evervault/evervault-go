@@ -1,6 +1,3 @@
-//go:build unit_test
-// +build unit_test
-
 package evervault_test
 
 import (
@@ -10,11 +7,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"testing"
 
 	"github.com/evervault/evervault-go"
 	"github.com/evervault/evervault-go/attestation"
+	"github.com/evervault/evervault-go/internal/testhelper"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -38,7 +35,7 @@ func buildEnclaveRequest(t *testing.T, testEnclave string) *http.Request {
 	}
 
 	req.Close = true
-	req.Header.Set("API-KEY", os.Getenv("EV_ENCLAVE_API_KEY"))
+	req.Header.Set("API-KEY", testhelper.LoadRequiredEnvVar("EV_ENCLAVE_API_KEY", t))
 	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
 
 	return req

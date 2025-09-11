@@ -1,19 +1,16 @@
-//go:build e2e
-// +build e2e
-
 package e2e_test
 
 import (
-	"os"
 	"testing"
-
-	"github.com/evervault/evervault-go"
 )
 
 func TestE2EEncryptString(t *testing.T) {
 	t.Parallel()
 
 	client := GetClient(t)
+	if t.Failed() {
+		return
+	}
 
 	payload := "hello world"
 
@@ -39,6 +36,9 @@ func TestE2EEncryptStringWithPermittedRole(t *testing.T) {
 	t.Parallel()
 
 	client := GetClient(t)
+	if t.Failed() {
+		return
+	}
 
 	payload := "hello world"
 
@@ -64,6 +64,9 @@ func TestE2EEncryptStringWithDeniedRole(t *testing.T) {
 	t.Parallel()
 
 	client := GetClient(t)
+	if t.Failed() {
+		return
+	}
 
 	payload := "hello world"
 
@@ -84,6 +87,9 @@ func TestE2EEncryptBoolTrue(t *testing.T) {
 	t.Parallel()
 
 	client := GetClient(t)
+	if t.Failed() {
+		return
+	}
 
 	payload := true
 
@@ -109,6 +115,9 @@ func TestE2EEncryptBoolTrueWithPermittedRole(t *testing.T) {
 	t.Parallel()
 
 	client := GetClient(t)
+	if t.Failed() {
+		return
+	}
 
 	payload := true
 
@@ -134,6 +143,9 @@ func TestE2EEncryptBoolTrueWithDeniedRole(t *testing.T) {
 	t.Parallel()
 
 	client := GetClient(t)
+	if t.Failed() {
+		return
+	}
 
 	payload := true
 
@@ -154,6 +166,9 @@ func TestE2EEncryptBoolFalse(t *testing.T) {
 	t.Parallel()
 
 	client := GetClient(t)
+	if t.Failed() {
+		return
+	}
 
 	payload := false
 
@@ -179,6 +194,9 @@ func TestE2EEncryptBoolFalseWithPermittedRole(t *testing.T) {
 	t.Parallel()
 
 	client := GetClient(t)
+	if t.Failed() {
+		return
+	}
 
 	payload := false
 
@@ -204,6 +222,9 @@ func TestE2EEncryptBoolFalseWithDeniedRole(t *testing.T) {
 	t.Parallel()
 
 	client := GetClient(t)
+	if t.Failed() {
+		return
+	}
 
 	payload := false
 
@@ -224,6 +245,9 @@ func TestE2EEncryptInt(t *testing.T) {
 	t.Parallel()
 
 	client := GetClient(t)
+	if t.Failed() {
+		return
+	}
 
 	payload := 1
 
@@ -249,6 +273,9 @@ func TestE2EEncryptIntWithPermittedRole(t *testing.T) {
 	t.Parallel()
 
 	client := GetClient(t)
+	if t.Failed() {
+		return
+	}
 
 	payload := 1
 
@@ -274,6 +301,9 @@ func TestE2EEncryptIntWithDeniedRole(t *testing.T) {
 	t.Parallel()
 
 	client := GetClient(t)
+	if t.Failed() {
+		return
+	}
 
 	payload := 1
 
@@ -294,6 +324,9 @@ func TestE2EEncryptFloat(t *testing.T) {
 	t.Parallel()
 
 	client := GetClient(t)
+	if t.Failed() {
+		return
+	}
 
 	payload := 1.5
 
@@ -319,6 +352,9 @@ func TestE2EEncryptFloatWithPermittedRole(t *testing.T) {
 	t.Parallel()
 
 	client := GetClient(t)
+	if t.Failed() {
+		return
+	}
 
 	payload := 1.5
 
@@ -343,6 +379,9 @@ func TestE2EEncryptFloatWithDeniedRole(t *testing.T) {
 	t.Parallel()
 
 	client := GetClient(t)
+	if t.Failed() {
+		return
+	}
 
 	payload := 1.5
 
@@ -363,6 +402,9 @@ func TestE2EEncryptBytes(t *testing.T) {
 	t.Parallel()
 
 	client := GetClient(t)
+	if t.Failed() {
+		return
+	}
 
 	payload := []byte{97, 98, 99, 100, 101, 102}
 
@@ -388,6 +430,9 @@ func TestE2EEncryptBytesWithPermittedRole(t *testing.T) {
 	t.Parallel()
 
 	client := GetClient(t)
+	if t.Failed() {
+		return
+	}
 
 	payload := []byte{97, 98, 99, 100, 101, 102}
 
@@ -413,6 +458,9 @@ func TestE2EEncryptBytesWithDeniedRole(t *testing.T) {
 	t.Parallel()
 
 	client := GetClient(t)
+	if t.Failed() {
+		return
+	}
 
 	payload := []byte{97, 98, 99, 100, 101, 102}
 
@@ -427,27 +475,4 @@ func TestE2EEncryptBytesWithDeniedRole(t *testing.T) {
 		t.Errorf("expected error decrypting data")
 		return
 	}
-}
-
-type MyStruct struct {
-	String string  `json:"string"`
-	Int    int     `json:"int"`
-	Float  float64 `json:"float"`
-	True   bool    `json:"true"`
-	False  bool    `json:"false"`
-}
-
-func GetClient(t *testing.T) *evervault.Client {
-	t.Helper()
-
-	appUUID := os.Getenv("EV_APP_UUID")
-
-	apiKey := os.Getenv("EV_API_KEY")
-
-	client, err := evervault.MakeClient(appUUID, apiKey)
-	if err != nil {
-		t.Fail()
-	}
-
-	return client
 }

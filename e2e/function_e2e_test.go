@@ -1,23 +1,22 @@
-//go:build e2e
-// +build e2e
-
 package e2e_test
 
 import (
-	"os"
 	"testing"
 
 	"github.com/evervault/evervault-go"
+	"github.com/evervault/evervault-go/internal/testhelper"
 	"github.com/stretchr/testify/assert"
 )
-
-var functionName string = os.Getenv("EV_FUNCTION_NAME")
-var initializationErrorFunctionName string = os.Getenv("EV_INITIALIZATION_ERROR_FUNCTION_NAME")
 
 func TestE2EFunctionRun(t *testing.T) {
 	t.Parallel()
 
 	client := GetClient(t)
+	functionName := testhelper.LoadRequiredEnvVar("EV_FUNCTION_NAME", t)
+	
+	if t.Failed() {
+		return
+	}
 
 	encryptedPayload := map[string]any{}
 
@@ -77,6 +76,12 @@ func TestE2EFunctionRunWithError(t *testing.T) {
 	t.Parallel()
 
 	client := GetClient(t)
+	functionName := testhelper.LoadRequiredEnvVar("EV_FUNCTION_NAME", t)
+	
+	if t.Failed() {
+		return
+	}
+
 
 	payload := map[string]any{"shouldError": true}
 
@@ -92,6 +97,12 @@ func TestE2EFunctionRunWithInitializationError(t *testing.T) {
 	t.Parallel()
 
 	client := GetClient(t)
+	initializationErrorFunctionName := testhelper.LoadRequiredEnvVar("EV_INITIALIZATION_ERROR_FUNCTION_NAME", t)
+
+	if t.Failed() {
+		return
+	}
+
 
 	payload := map[string]any{}
 

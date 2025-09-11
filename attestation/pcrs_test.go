@@ -1,6 +1,3 @@
-//go:build unit_test
-// +build unit_test
-
 package attestation_test
 
 import (

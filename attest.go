@@ -23,15 +23,15 @@ func mapAttestationPCRs(attestationPCRs nitrite.Document) (attestation.PCRs, err
 	// We verify a subset of non zero PCRs
 	PCR0, ok := attestationPCRs.PCRs[0]
 	if !ok {
-		return attestation.PCRs{}, fmt.Errorf("missing PCR0 in returned attestation document")
+		return attestation.PCRs{}, fmt.Errorf("%w: expected PCR0 to be set", ErrMissingPCR)
 	}
 	PCR1, ok := attestationPCRs.PCRs[1]
 	if !ok {
-		return attestation.PCRs{}, fmt.Errorf("missing PCR1 in returned attestation document")
+		return attestation.PCRs{}, fmt.Errorf("%w: expected PCR1 to be set", ErrMissingPCR)
 	}
 	PCR2, ok := attestationPCRs.PCRs[2]
 	if !ok {
-		return attestation.PCRs{}, fmt.Errorf("missing PCR2 in returned attestation document")
+		return attestation.PCRs{}, fmt.Errorf("%w: expected PCR2 to be set", ErrMissingPCR)
 	}
 
 	PCR8 := attestationPCRs.PCRs[8]

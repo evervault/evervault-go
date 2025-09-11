@@ -1,22 +1,23 @@
-//go:build e2e
-// +build e2e
-
 package e2e_test
 
 import (
 	"bytes"
 	"encoding/json"
 	"io/ioutil"
-	"os"
 	"testing"
-)
 
-var syntheticEndpointUrl string = os.Getenv("EV_SYNTHETIC_ENDPOINT_URL")
+	"github.com/evervault/evervault-go/internal/testhelper"
+)
 
 func TestE2EOutboundRelay(t *testing.T) {
 	t.Parallel()
 
 	client := GetClient(t)
+	syntheticEndpointUrl := testhelper.LoadRequiredEnvVar("EV_RELAY_TARGET", t)
+
+	if t.Failed() {
+		return
+	}
 
 	encryptedString, err := client.EncryptString("some_string")
 	if err != nil {

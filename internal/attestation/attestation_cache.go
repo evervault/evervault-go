@@ -147,13 +147,13 @@ func validateAttestationDoc(doc []byte) (nitrite.Document, error) {
 	}
 
 	if _, ok := validatedDoc.Document.PCRs[0]; !ok {
-		return nitrite.Document{}, fmt.Errorf("PCR 0 is required, but not set in received attestation document")
+		return nitrite.Document{}, fmt.Errorf("PCR0 is required, but not set in received attestation document")
 	}
 	if _, ok := validatedDoc.Document.PCRs[1]; !ok {
-		return nitrite.Document{}, fmt.Errorf("PCR 1 is required, but not set in received attestation document")
+		return nitrite.Document{}, fmt.Errorf("PCR1 is required, but not set in received attestation document")
 	}
 	if _, ok := validatedDoc.Document.PCRs[2]; !ok {
-		return nitrite.Document{}, fmt.Errorf("PCR 2 is required, but not set in received attestation document")
+		return nitrite.Document{}, fmt.Errorf("PCR2 is required, but not set in received attestation document")
 	}
 
 	return *validatedDoc.Document, nil

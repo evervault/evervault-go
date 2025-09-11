@@ -1,10 +1,9 @@
-//go:build unit_test
-// +build unit_test
-
 package evervault_test
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -35,7 +34,16 @@ func Example() {
 
 	ctx := context.Background()
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://example.com", nil)
+	relayTarget := os.Getenv("EV_RELAY_TARGET")
+
+	data := map[string]string{"foo": "bar"}
+	payload, err := json.Marshal(data)
+
+	if err != nil {
+		log.Fatal("Failed to serialize example payload") 
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, relayTarget, bytes.NewReader(payload))
 	if err != nil {
 		log.Fatal(err)
 	}

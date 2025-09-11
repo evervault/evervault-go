@@ -11,13 +11,33 @@ For up to date usage docs please refer to
 
 ## Testing
 
-To Test the sdk run
+### Required Env
+
+Currently, a significant number of the tests rely on credentials or resource identifiers that are not included in this repo.
+
+The list of required env vars is:
+- `EV_APP_UUID` - a valid Evervault app uuid
+- `EV_API_KEY` - an Evervault API Key with `function:invoke` and relay authenticate
+- `EV_ENCLAVE_API_KEY` - an Evervault Enclave API Key with `enclave:invoke`
+- `EV_RELAY_TARGET` - an existing Relay destination for the given app
+- `EV_INITIALIZATION_ERROR_FUNCTION_NAME` - the name of a function which will fail when invoked
+- `EV_FUNCTION_NAME` - the name of a function which will run when invoked
+
+### Running the Tests
+
+To run all tests in the sdk:
 
 ```bash
 go test -v -count=1 -race ./...
 ```
 
-### Linting
+To run unit tests only:
+
+```bash
+go test -v -count=1 --short -race ./...
+```
+
+## Linting
 
 Linting is run on all PR with `golangci-lint`.
 
