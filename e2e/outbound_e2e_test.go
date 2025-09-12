@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/evervault/evervault-go/internal/testhelper"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -51,18 +52,7 @@ func TestE2EOutboundRelay(t *testing.T) {
 	//nolint:errcheck
 	_ = json.Unmarshal(body, &responseData)
 
-	if responseData["request"]["string"] != false {
-		t.Errorf("Expected false as response %t", responseData["request"]["string"])
-		return
-	}
-
-	if responseData["request"]["number"] != false {
-		t.Errorf("Expected false as response %t", responseData["request"]["number"])
-		return
-	}
-
-	if responseData["request"]["boolean"] != false {
-		t.Errorf("Expected false as response %t", responseData["request"]["boolean"])
-		return
-	}
+	assert.False(t, responseData["request"]["string"])
+	assert.False(t, responseData["request"]["number"])
+	assert.False(t, responseData["request"]["boolean"])
 }

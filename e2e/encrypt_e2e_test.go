@@ -19,10 +19,7 @@ func TestE2EEncryptString(t *testing.T) {
 	decrypted, err := client.DecryptString(encrypted)
 	require.NoError(t, err)
 
-	if payload != decrypted {
-		t.Errorf("decrypted data does not match the original %s %s", payload, decrypted)
-		return
-	}
+	require.Equal(t, payload, decrypted)
 }
 
 func TestE2EEncryptStringWithPermittedRole(t *testing.T) {
@@ -33,18 +30,12 @@ func TestE2EEncryptStringWithPermittedRole(t *testing.T) {
 	payload := "hello world"
 
 	encrypted, err := client.EncryptStringWithDataRole(payload, "permit-all")
-	if err != nil {
-		t.Errorf("error encrypting data %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	decrypted, err := client.DecryptString(encrypted)
 	require.NoError(t, err)
 
-	if payload != decrypted {
-		t.Errorf("decrypted data does not match the original %s %s", payload, decrypted)
-		return
-	}
+	require.Equal(t, payload, decrypted)
 }
 
 func TestE2EEncryptStringWithDeniedRole(t *testing.T) {
@@ -74,10 +65,7 @@ func TestE2EEncryptBoolTrue(t *testing.T) {
 	decrypted, err := client.DecryptBool(encrypted)
 	require.NoError(t, err)
 
-	if payload != decrypted {
-		t.Errorf("decrypted data does not match the original %t %t", payload, decrypted)
-		return
-	}
+	require.Equal(t, payload, decrypted)
 }
 
 func TestE2EEncryptBoolTrueWithPermittedRole(t *testing.T) {
@@ -93,10 +81,7 @@ func TestE2EEncryptBoolTrueWithPermittedRole(t *testing.T) {
 	decrypted, err := client.DecryptBool(encrypted)
 	require.NoError(t, err)
 
-	if payload != decrypted {
-		t.Errorf("decrypted data does not match the original %t %t", payload, decrypted)
-		return
-	}
+	require.Equal(t, payload, decrypted)
 }
 
 func TestE2EEncryptBoolTrueWithDeniedRole(t *testing.T) {
@@ -126,10 +111,7 @@ func TestE2EEncryptBoolFalse(t *testing.T) {
 	decrypted, err := client.DecryptBool(encrypted)
 	require.NoError(t, err)
 
-	if payload != decrypted {
-		t.Errorf("decrypted data does not match the original %t %t", payload, decrypted)
-		return
-	}
+	require.Equal(t, payload, decrypted)
 }
 
 func TestE2EEncryptBoolFalseWithPermittedRole(t *testing.T) {
@@ -145,10 +127,7 @@ func TestE2EEncryptBoolFalseWithPermittedRole(t *testing.T) {
 	decrypted, err := client.DecryptBool(encrypted)
 	require.NoError(t, err)
 
-	if payload != decrypted {
-		t.Errorf("decrypted data does not match the original %t %t", payload, decrypted)
-		return
-	}
+	require.Equal(t, payload, decrypted)
 }
 
 func TestE2EEncryptBoolFalseWithDeniedRole(t *testing.T) {
@@ -178,10 +157,7 @@ func TestE2EEncryptInt(t *testing.T) {
 	decrypted, err := client.DecryptInt(encrypted)
 	require.NoError(t, err)
 
-	if payload != decrypted {
-		t.Errorf("decrypted data does not match the original %d %d", payload, decrypted)
-		return
-	}
+	require.Equal(t, payload, decrypted)
 }
 
 func TestE2EEncryptIntWithPermittedRole(t *testing.T) {
@@ -197,10 +173,7 @@ func TestE2EEncryptIntWithPermittedRole(t *testing.T) {
 	decrypted, err := client.DecryptInt(encrypted)
 	require.NoError(t, err)
 
-	if payload != decrypted {
-		t.Errorf("decrypted data does not match the original %d %d", payload, decrypted)
-		return
-	}
+	require.Equal(t, payload, decrypted)
 }
 
 func TestE2EEncryptIntWithDeniedRole(t *testing.T) {
@@ -230,10 +203,7 @@ func TestE2EEncryptFloat(t *testing.T) {
 	decrypted, err := client.DecryptFloat64(encrypted)
 	require.NoError(t, err)
 
-	if payload != decrypted {
-		t.Errorf("decrypted data does not match the original %f %f", payload, decrypted)
-		return
-	}
+	require.Equal(t, payload, decrypted)
 }
 
 func TestE2EEncryptFloatWithPermittedRole(t *testing.T) {
@@ -244,18 +214,12 @@ func TestE2EEncryptFloatWithPermittedRole(t *testing.T) {
 	payload := 1.5
 
 	encrypted, err := client.EncryptFloat64WithDataRole(payload, "permit-all")
-	if err != nil {
-		t.Errorf("error encrypting data %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	decrypted, err := client.DecryptFloat64(encrypted)
 	require.NoError(t, err)
 
-	if payload != decrypted {
-		t.Errorf("decrypted data does not match the original %f %f", payload, decrypted)
-		return
-	}
+	require.Equal(t, payload, decrypted)
 }
 func TestE2EEncryptFloatWithDeniedRole(t *testing.T) {
 	t.Parallel()
@@ -286,10 +250,7 @@ func TestE2EEncryptBytes(t *testing.T) {
 	decrypted, err := client.DecryptByteArray(encrypted)
 	require.NoError(t, err)
 
-	if string(payload) != string(decrypted) {
-		t.Errorf("decrypted data does not match the original %s %s", string(payload), string(decrypted))
-		return
-	}
+	require.Equal(t, string(payload), string(decrypted))
 }
 
 func TestE2EEncryptBytesWithPermittedRole(t *testing.T) {
@@ -307,10 +268,7 @@ func TestE2EEncryptBytesWithPermittedRole(t *testing.T) {
 	decrypted, err := client.DecryptByteArray(encrypted)
 	require.NoError(t, err)
 
-	if string(payload) != string(decrypted) {
-		t.Errorf("decrypted data does not match the original %s %s", string(payload), string(decrypted))
-		return
-	}
+	require.Equal(t, string(payload), string(decrypted))
 }
 
 func TestE2EEncryptBytesWithDeniedRole(t *testing.T) {

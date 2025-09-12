@@ -33,10 +33,8 @@ func TestE2EFunctionRun(t *testing.T) {
 	encryptedPayload["Float"] = encrypted
 
 	encrypted, err = client.EncryptBool(true)
-	if err != nil {
-		t.Errorf("error encrypting true %s", err)
-		return
-	}
+	require.NoError(t, err)
+
 	encryptedPayload["True"] = encrypted
 
 	encrypted, err = client.EncryptBool(false)
@@ -47,10 +45,7 @@ func TestE2EFunctionRun(t *testing.T) {
 	runResult, err := client.RunFunction(functionName, encryptedPayload)
 	require.NoError(t, err)
 
-	if runResult.Status != "success" {
-		t.Errorf("Expected success, got %s", runResult.Status)
-	}
-
+	assert.Equal(t, runResult.Status, "success")
 	assert.Equal(t, "string", runResult.Result["String"])
 	assert.Equal(t, "number", runResult.Result["Integer"])
 	assert.Equal(t, "number", runResult.Result["Float"])
