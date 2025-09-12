@@ -44,7 +44,12 @@ func Example() {
 		log.Fatal(err)
 	}
 
-	defer resp.Body.Close()
+	defer func () {
+		bodyCloseErr := resp.Body.Close()
+		if bodyCloseErr != nil {
+			log.Printf("Failed to close response body: %s", bodyCloseErr)
+		}
+	}()
 	fmt.Println(resp.Status)
 	// Output: ev:
 	// 200 OK

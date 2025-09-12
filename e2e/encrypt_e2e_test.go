@@ -278,9 +278,11 @@ func TestE2EEncryptBytes(t *testing.T) {
 
 	payload := []byte{97, 98, 99, 100, 101, 102}
 
+	//nolint:staticcheck
 	encrypted, err := client.EncryptByteArray(payload)
 	require.NoError(t, err)
 
+	//nolint:staticcheck
 	decrypted, err := client.DecryptByteArray(encrypted)
 	require.NoError(t, err)
 
@@ -297,9 +299,11 @@ func TestE2EEncryptBytesWithPermittedRole(t *testing.T) {
 
 	payload := []byte{97, 98, 99, 100, 101, 102}
 
+	//nolint:staticcheck
 	encrypted, err := client.EncryptByteArrayWithDataRole(payload, "permit-all")
 	require.NoError(t, err)
 
+	//nolint:staticcheck
 	decrypted, err := client.DecryptByteArray(encrypted)
 	require.NoError(t, err)
 
@@ -316,9 +320,11 @@ func TestE2EEncryptBytesWithDeniedRole(t *testing.T) {
 
 	payload := []byte{97, 98, 99, 100, 101, 102}
 
+	//nolint:staticcheck
 	encrypted, err := client.EncryptByteArrayWithDataRole(payload, "deny-all")
 	require.NoError(t, err)
 
+	//nolint:staticcheck
 	_, err = client.DecryptByteArray(encrypted)
 	require.Error(t, err)
 }

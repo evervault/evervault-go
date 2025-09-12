@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"testing"
@@ -64,7 +65,12 @@ func TestEnclaveClient(t *testing.T) {
 	resp, err := client.Do(req)
 	require.NoError(t, err)
 
-	defer resp.Body.Close()
+	defer func () {
+		bodyCloseErr := resp.Body.Close()
+		if bodyCloseErr != nil {
+			log.Printf("Failed to close response body: %s", bodyCloseErr)
+		}
+	}()
 
 	assert.Equal("200 OK", resp.Status)
 	assert.Contains(resp.Header, "X-Evervault-Ctx")
@@ -101,7 +107,12 @@ func TestEnclavePartialPCR(t *testing.T) {
 	resp, err := enclaveClient.Do(req)
 	require.NoError(t, err)
 
-	defer resp.Body.Close()
+	defer func () {
+		bodyCloseErr := resp.Body.Close()
+		if bodyCloseErr != nil {
+			log.Printf("Failed to close response body: %s", bodyCloseErr)
+		}
+	}()
 
 	assert.Equal("200 OK", resp.Status)
 	assert.Contains(resp.Header, "X-Evervault-Ctx")
@@ -134,7 +145,12 @@ func TestEnclavePartialPCRProvider(t *testing.T) {
 	resp, err := enclaveClient.Do(req)
 	require.NoError(t, err)
 
-	defer resp.Body.Close()
+	defer func () {
+		bodyCloseErr := resp.Body.Close()
+		if bodyCloseErr != nil {
+			log.Printf("Failed to close response body: %s", bodyCloseErr)
+		}
+	}()
 
 	assert.Equal("200 OK", resp.Status)
 	assert.Contains(resp.Header, "X-Evervault-Ctx")
@@ -166,7 +182,10 @@ func TestEnclaveFailsOnPartialIncorrectPCRProvider(t *testing.T) {
 
 	resp, err := enclaveClient.Do(req)
 	if resp != nil {
-		resp.Body.Close()
+		bodyCloseErr := resp.Body.Close()
+		if bodyCloseErr != nil {
+			log.Printf("Failed to close response body: %s", bodyCloseErr)
+		}
 	}
 
 	assert.ErrorIs(err, evervault.ErrAttestionFailure)
@@ -194,7 +213,10 @@ func TestEnclaveFailsOnPartialIncorrectPCR(t *testing.T) {
 
 	resp, err := enclaveClient.Do(req)
 	if resp != nil {
-		resp.Body.Close()
+		bodyCloseErr := resp.Body.Close()
+		if bodyCloseErr != nil {
+			log.Printf("Failed to close response body: %s", bodyCloseErr)
+		}
 	}
 
 	assert.ErrorIs(err, evervault.ErrAttestionFailure)

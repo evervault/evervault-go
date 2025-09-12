@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"testing"
@@ -89,7 +90,12 @@ func TestCageClient(t *testing.T) {
 	resp, err := cageClient.Do(req)
 	require.NoError(t, err)
 
-	defer resp.Body.Close()
+	defer func () {
+		bodyCloseErr := resp.Body.Close()
+		if bodyCloseErr != nil {
+			log.Printf("Failed to close response body: %s", bodyCloseErr)
+		}
+	}()
 
 	assert.Equal("200 OK", resp.Status)
 	assert.Contains(resp.Header, "X-Evervault-Ctx")
@@ -128,7 +134,12 @@ func TestCagePartialPCR(t *testing.T) {
 	resp, err := cageClient.Do(req)
 	require.NoError(t, err)
 
-	defer resp.Body.Close()
+	defer func () {
+		bodyCloseErr := resp.Body.Close()
+		if bodyCloseErr != nil {
+			log.Printf("Failed to close response body: %s", bodyCloseErr)
+		}
+	}()
 
 	assert.Equal("200 OK", resp.Status)
 	assert.Contains(resp.Header, "X-Evervault-Ctx")
@@ -181,7 +192,12 @@ func TestCagePartialPCRProvider(t *testing.T) {
 	resp, err := cageClient.Do(req)
 	require.NoError(t, err)
 
-	defer resp.Body.Close()
+	defer func () {
+		bodyCloseErr := resp.Body.Close()
+		if bodyCloseErr != nil {
+			log.Printf("Failed to close response body: %s", bodyCloseErr)
+		}
+	}()
 
 	assert.Equal("200 OK", resp.Status)
 	assert.Contains(resp.Header, "X-Evervault-Ctx")
@@ -213,7 +229,10 @@ func TestCageFailsOnPartialIncorrectPCRProvider(t *testing.T) {
 
 	resp, err := cageClient.Do(req)
 	if resp != nil {
-		resp.Body.Close()
+		bodyCloseErr := resp.Body.Close()
+		if bodyCloseErr != nil {
+			log.Printf("Failed to close response body: %s", bodyCloseErr)
+		}
 	}
 
 	assert.ErrorIs(err, evervault.ErrAttestionFailure)
@@ -241,7 +260,10 @@ func TestCageFailsOnPartialIncorrectPCR(t *testing.T) {
 
 	resp, err := cageClient.Do(req)
 	if resp != nil {
-		resp.Body.Close()
+		bodyCloseErr := resp.Body.Close()
+		if bodyCloseErr != nil {
+			log.Printf("Failed to close response body: %s", bodyCloseErr)
+		}
 	}
 
 	assert.ErrorIs(err, evervault.ErrAttestionFailure)

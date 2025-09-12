@@ -3,6 +3,7 @@ package evervault_test
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -45,5 +46,8 @@ func TestOutboundClientRoutesToOutboundRelay(t *testing.T) {
 
 	assert.Equal(t, resp.StatusCode, http.StatusOK)
 
-	resp.Body.Close()
+	err = resp.Body.Close()
+	if err != nil {
+		log.Printf("Failed to close response body: %s", err)
+	}
 }

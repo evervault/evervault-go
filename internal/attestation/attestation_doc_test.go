@@ -9,6 +9,7 @@ import (
 	"github.com/evervault/evervault-go/internal/attestation"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAttestationDocCacheInit(t *testing.T) {
@@ -20,10 +21,12 @@ func TestAttestationDocCacheInit(t *testing.T) {
 	httpmock.RegisterResponder("GET", "https://test.app-133.cage.evervault.com/.well-known/attestation",
 		httpmock.NewStringResponder(200, `{"attestation_doc": "1aGVsbG8gd29ybGQ"}`))
 
-	cache, _ := attestation.NewAttestationCache("test.app-133.cage.evervault.com", 2700)
+	cache, err := attestation.NewAttestationCache("test.app-133.cage.evervault.com", 2700)
+	require.NoError(t, err)
 	doc := cache.Get()
 
-	decodedDoc, _ := base64.StdEncoding.DecodeString("1aGVsbG8gd29ybGQ")
+	decodedDoc, err := base64.StdEncoding.DecodeString("1aGVsbG8gd29ybGQ")
+	require.NoError(t, err)
 	assert.Contains(string(doc), string(decodedDoc))
 	cache.StopPolling()
 }
@@ -47,16 +50,19 @@ func TestAttestationDocCachePoll(t *testing.T) {
 	httpmock.RegisterResponder("GET", "https://test.app-133.cage.evervault.com/.well-known/attestation", responder)
 
 	duration := 500 * time.Millisecond
-	cache, _ := attestation.NewAttestationCache("test.app-133.cage.evervault.com", duration)
+	cache, err := attestation.NewAttestationCache("test.app-133.cage.evervault.com", duration)
+	require.NoError(t, err)
 
 	doc := cache.Get()
-	decodedDoc, _ := base64.StdEncoding.DecodeString("ZnJpZGF5") 
+	decodedDoc, err := base64.StdEncoding.DecodeString("ZnJpZGF5")
+	require.NoError(t, err) 
 	assert.Contains(string(doc), string(decodedDoc))
 
 	time.Sleep(1 * time.Second)
 
 	newDoc := cache.Get()
-	newDecodedDoc, _ := base64.StdEncoding.DecodeString("bW9uZGF5")
+	newDecodedDoc, err := base64.StdEncoding.DecodeString("bW9uZGF5")
+	require.NoError(t, err)
 
 	assert.Contains(string(newDoc), string(newDecodedDoc))
 	cache.StopPolling()
