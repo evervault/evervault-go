@@ -1,7 +1,9 @@
 package evervault_test
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -12,6 +14,7 @@ import (
 
 // Full Example encrypting data and using outbound relay to talk to a third party.
 func Example() {
+	syntheticEndpointUrl := os.Getenv("EV_SYNTHETIC_ENDPOINT_URL")
 	evClient, err := evervault.MakeClient(os.Getenv("EV_APP_UUID"), os.Getenv("EV_API_KEY"))
 	if err != nil {
 		log.Fatal(err)
@@ -32,7 +35,14 @@ func Example() {
 
 	ctx := context.Background()
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://example.com", nil)
+	data := map[string]string{"string": "value"}
+
+	payload, err := json.Marshal(data)
+	if err != nil {
+		log.Fatalf("Encountered unexpected error: %s", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, syntheticEndpointUrl, bytes.NewReader(payload))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -44,7 +54,7 @@ func Example() {
 		log.Fatal(err)
 	}
 
-	defer func () {
+	defer func() {
 		bodyCloseErr := resp.Body.Close()
 		if bodyCloseErr != nil {
 			log.Printf("Failed to close response body: %s", bodyCloseErr)
