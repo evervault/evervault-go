@@ -1,8 +1,11 @@
-//go:build synctest && !go1.25
+//go:build goexperiment.synctest && !go1.25
 
 package testhelper
 
-import "testing"
+import (
+	"testing"
+	"testing/synctest"
+)
 
 func SyncTest(t *testing.T, fn func(*testing.T)) {
 	synctest.Run(func () {
