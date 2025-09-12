@@ -301,6 +301,16 @@ func TestEncryptByteWithRole(t *testing.T) {
 	assertIsValidEncryptedString(t, res, datatypes.String)
 }
 
+func TestCustomClientInitClientErrorWithoutApiKey(t *testing.T) {
+	t.Parallel()
+
+	server := startMockHTTPServer("", "")
+	defer server.Close()
+
+	_, err := evervault.MakeCustomClient("test_api_key", "", evervault.MakeConfig())
+	require.ErrorIs(t, err, evervault.ErrAppCredentialsRequired)
+}
+
 func TestClientInitClientErrorWithoutApiKey(t *testing.T) {
 	t.Parallel()
 
@@ -308,10 +318,7 @@ func TestClientInitClientErrorWithoutApiKey(t *testing.T) {
 	defer server.Close()
 
 	_, err := evervault.MakeClient("", "")
-	assert.ErrorIs(t, err, evervault.ErrAppCredentialsRequired)
-
-	_, err = evervault.MakeCustomClient("test_api_key", "", evervault.MakeConfig())
-	assert.ErrorIs(t, err, evervault.ErrAppCredentialsRequired)
+	require.ErrorIs(t, err, evervault.ErrAppCredentialsRequired)
 }
 
 func testFuncHandler(writer http.ResponseWriter, reader *http.Request, mockResponse any) {
