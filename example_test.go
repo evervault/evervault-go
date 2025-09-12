@@ -54,7 +54,7 @@ func Example() {
 }
 
 // Example encrypting data locally.
-func ExampleClient_Encrypt() {
+func ExampleClient_EncryptString() {
 	evClient, err := evervault.MakeClient(os.Getenv("EV_APP_UUID"), os.Getenv("EV_API_KEY"))
 	if err != nil {
 		log.Fatal(err)
