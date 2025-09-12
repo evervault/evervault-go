@@ -8,11 +8,11 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"os"
 	"testing"
 
 	"github.com/evervault/evervault-go"
 	"github.com/evervault/evervault-go/attestation"
+	"github.com/evervault/evervault-go/internal/testhelper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -36,12 +36,12 @@ func (b Body) String() string {
 func makeTestClient(t *testing.T) (*evervault.Client, error) {
 	t.Helper()
 
-	appUUID := os.Getenv("EV_APP_UUID")
+	appUUID := testhelper.LoadRequiredEnv(t, "EV_APP_UUID")
 	if appUUID == "" {
 		t.Skip("Skipping testing when no app uuid provided")
 	}
 
-	apiKey := os.Getenv("EV_ENCLAVE_API_KEY")
+	apiKey := testhelper.LoadRequiredEnv(t, "EV_ENCLAVE_API_KEY")
 	if apiKey == "" {
 		t.Skip("Skipping testing when no API key provided")
 	}
@@ -59,7 +59,7 @@ func buildCageRequest(t *testing.T, testCage string) *http.Request {
 	require.NoError(t, err)
 
 	req.Close = true
-	req.Header.Set("API-KEY", os.Getenv("EV_ENCLAVE_API_KEY"))
+	req.Header.Set("API-KEY", testhelper.LoadRequiredEnv(t, "EV_ENCLAVE_API_KEY"))
 	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
 
 	return req

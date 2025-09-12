@@ -5,18 +5,17 @@ import (
 	"encoding/json"
 	"io"
 	"log"
-	"os"
 	"testing"
 
+	"github.com/evervault/evervault-go/internal/testhelper"
 	"github.com/stretchr/testify/require"
 )
-
-var syntheticEndpointUrl string = os.Getenv("EV_SYNTHETIC_ENDPOINT_URL")
 
 func TestE2EOutboundRelay(t *testing.T) {
 	t.Parallel()
 
 	client := GetClient(t)
+	syntheticEndpointUrl := testhelper.LoadRequiredEnv(t, "EV_SYNTHETIC_ENDPOINT_URL")
 
 	encryptedString, err := client.EncryptString("some_string")
 	require.NoError(t, err)
