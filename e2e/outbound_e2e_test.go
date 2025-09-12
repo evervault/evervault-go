@@ -52,7 +52,7 @@ func TestE2EOutboundRelay(t *testing.T) {
 	//nolint:errcheck
 	_ = json.Unmarshal(body, &responseData)
 
-	assert.Falsef(t, responseData["request"]["string"], "Expected false as a response: %t", responseData["request"]["string"])
-	assert.Falsef(t, responseData["request"]["number"], "Expected false as a response: %t", responseData["request"]["number"])
-	assert.Falsef(t, responseData["request"]["boolean"], "Expected false as a response: %t", responseData["request"]["boolean"])
+	assert.False(t, responseData["request"]["string"])
+	assert.False(t, responseData["request"]["number"])
+	assert.False(t, responseData["request"]["boolean"])
 }

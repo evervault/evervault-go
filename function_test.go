@@ -19,7 +19,7 @@ func TestGetFunctionRunToken(t *testing.T) {
 	res, err := testClient.CreateFunctionRunToken("test_function", "test_payload")
 	require.NoError(t, err)
 
-	require.Equal(t, res.Token, "test_token")
+	require.Equal(t, "test_token", res.Token)
 }
 
 func TestRunFunctionSuccess(t *testing.T) {

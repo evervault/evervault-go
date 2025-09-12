@@ -35,7 +35,7 @@ func TestDecryptString(t *testing.T) {
 	res, err := testClient.DecryptString("ev:abc123")
 	require.NoError(t, err)
 
-	require.Equal(t, reflect.TypeOf(res), stringType)
+	require.Equal(t, stringType, reflect.TypeOf(res),)
 }
 
 func TestDecryptInt(t *testing.T) {
@@ -51,7 +51,7 @@ func TestDecryptInt(t *testing.T) {
 	res, err := testClient.DecryptInt("ev:abc123")
 	require.NoError(t, err)
 
-	require.Equal(t, reflect.TypeOf(res), intType)
+	require.Equal(t, intType, reflect.TypeOf(res))
 }
 
 func TestDecryptFloat64(t *testing.T) {
@@ -67,7 +67,7 @@ func TestDecryptFloat64(t *testing.T) {
 	res, err := testClient.DecryptFloat64("ev:abc123")
 	require.NoError(t, err)
 
-	require.Equal(t, reflect.TypeOf(res), float64Type)
+	require.Equal(t, float64Type, reflect.TypeOf(res))
 }
 
 func TestDecryptBoolean(t *testing.T) {
@@ -83,7 +83,7 @@ func TestDecryptBoolean(t *testing.T) {
 	res, err := testClient.DecryptBool("ev:abc123")
 	require.NoError(t, err)
 
-	require.Equal(t, reflect.TypeOf(res), booleanType)
+	require.Equal(t, booleanType, reflect.TypeOf(res))
 }
 
 func TestDecryptByteArray(t *testing.T) {
@@ -99,7 +99,7 @@ func TestDecryptByteArray(t *testing.T) {
 	res, err := testClient.DecryptByteArray("ev:abc123")
 	require.NoError(t, err)
 
-	require.Equal(t, reflect.TypeOf(res), byteArrayType)
+	require.Equal(t, byteArrayType, reflect.TypeOf(res))
 }
 
 func TestDecryptJsonResponse(t *testing.T) {
@@ -115,7 +115,7 @@ func TestDecryptJsonResponse(t *testing.T) {
 	res, err := testClient.DecryptByteArray("ev:abc123")
 	require.NoError(t, err)
 
-	require.Equal(t, reflect.TypeOf(res), byteArrayType)
+	require.Equal(t, byteArrayType, reflect.TypeOf(res))
 }
 
 func TestCreateClientSideDecryptToken(t *testing.T) {
@@ -137,8 +137,8 @@ func TestCreateClientSideDecryptToken(t *testing.T) {
 	res, err := testClient.CreateClientSideDecryptToken(EncryptedCardData{"4242", "111", "01/23"}, expiry)
 	require.NoError(t, err)
 
-	require.Equal(t, res.Token, "abcdefghij1234567890")
-	require.Equal(t, res.Expiry, expiry.UnixMilli())
+	require.Equal(t, "abcdefghij1234567890", res.Token)
+	require.Equal(t, expiry.UnixMilli(), res.Expiry)
 }
 
 func TestEncryptString(t *testing.T) {
