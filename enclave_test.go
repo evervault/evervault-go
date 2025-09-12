@@ -8,11 +8,11 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"os"
 	"testing"
 
 	"github.com/evervault/evervault-go"
 	"github.com/evervault/evervault-go/attestation"
+	"github.com/evervault/evervault-go/internal/testhelper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -34,7 +34,7 @@ func buildEnclaveRequest(t *testing.T, testEnclave string) *http.Request {
 	require.NoError(t, err)
 
 	req.Close = true
-	req.Header.Set("API-KEY", os.Getenv("EV_ENCLAVE_API_KEY"))
+	req.Header.Set("API-KEY", testhelper.LoadRequiredEnv(t, "EV_ENCLAVE_API_KEY"))
 	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
 
 	return req
