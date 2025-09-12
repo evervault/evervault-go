@@ -35,9 +35,7 @@ func TestDecryptString(t *testing.T) {
 	res, err := testClient.DecryptString("ev:abc123")
 	require.NoError(t, err)
 
-	if reflect.TypeOf(res) != stringType {
-		t.Errorf("Expected decrypted string, got %s", reflect.TypeOf(res))
-	}
+	require.Equal(t, reflect.TypeOf(res), stringType)
 }
 
 func TestDecryptInt(t *testing.T) {
@@ -53,9 +51,7 @@ func TestDecryptInt(t *testing.T) {
 	res, err := testClient.DecryptInt("ev:abc123")
 	require.NoError(t, err)
 
-	if reflect.TypeOf(res) != intType {
-		t.Errorf("Expected decrypted int, got %s", reflect.TypeOf(res))
-	}
+	require.Equal(t, reflect.TypeOf(res), intType)
 }
 
 func TestDecryptFloat64(t *testing.T) {
@@ -71,9 +67,7 @@ func TestDecryptFloat64(t *testing.T) {
 	res, err := testClient.DecryptFloat64("ev:abc123")
 	require.NoError(t, err)
 
-	if reflect.TypeOf(res) != float64Type {
-		t.Errorf("Expected decrypted float64, got %s", reflect.TypeOf(res))
-	}
+	require.Equal(t, reflect.TypeOf(res), float64Type)
 }
 
 func TestDecryptBoolean(t *testing.T) {
@@ -89,9 +83,7 @@ func TestDecryptBoolean(t *testing.T) {
 	res, err := testClient.DecryptBool("ev:abc123")
 	require.NoError(t, err)
 
-	if reflect.TypeOf(res) != booleanType {
-		t.Errorf("Expected decrypted bool, got %s", reflect.TypeOf(res))
-	}
+	require.Equal(t, reflect.TypeOf(res), booleanType)
 }
 
 func TestDecryptByteArray(t *testing.T) {
@@ -107,9 +99,7 @@ func TestDecryptByteArray(t *testing.T) {
 	res, err := testClient.DecryptByteArray("ev:abc123")
 	require.NoError(t, err)
 
-	if reflect.TypeOf(res) != byteArrayType {
-		t.Errorf("Expected decrypted byte array, got %s", reflect.TypeOf(res))
-	}
+	require.Equal(t, reflect.TypeOf(res), byteArrayType)
 }
 
 func TestDecryptJsonResponse(t *testing.T) {
@@ -125,9 +115,7 @@ func TestDecryptJsonResponse(t *testing.T) {
 	res, err := testClient.DecryptByteArray("ev:abc123")
 	require.NoError(t, err)
 
-	if reflect.TypeOf(res) != byteArrayType {
-		t.Errorf("Expected decrypted byte array, got %s", reflect.TypeOf(res))
-	}
+	require.Equal(t, reflect.TypeOf(res), byteArrayType)
 }
 
 func TestCreateClientSideDecryptToken(t *testing.T) {
@@ -149,13 +137,8 @@ func TestCreateClientSideDecryptToken(t *testing.T) {
 	res, err := testClient.CreateClientSideDecryptToken(EncryptedCardData{"4242", "111", "01/23"}, expiry)
 	require.NoError(t, err)
 
-	if res.Token != "abcdefghij1234567890" {
-		t.Errorf("Expected token, got %s", res.Token)
-	}
-
-	if res.Expiry != expiry.UnixMilli() {
-		t.Errorf("Expected expiry, got %d", res.Expiry)
-	}
+	require.Equal(t, res.Token, "abcdefghij1234567890")
+	require.Equal(t, res.Expiry, expiry.UnixMilli())
 }
 
 func TestEncryptString(t *testing.T) {

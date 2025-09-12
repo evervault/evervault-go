@@ -19,9 +19,7 @@ func TestGetFunctionRunToken(t *testing.T) {
 	res, err := testClient.CreateFunctionRunToken("test_function", "test_payload")
 	require.NoError(t, err)
 
-	if res.Token != "test_token" {
-		t.Errorf("Expected encrypted string, got %s", res)
-	}
+	require.Equal(t, res.Token, "test_token")
 }
 
 func TestRunFunctionSuccess(t *testing.T) {

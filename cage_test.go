@@ -104,10 +104,8 @@ func TestCageClient(t *testing.T) {
 	require.NoError(t, err)
 
 	var jsonResp CageEcho
-	if err = json.Unmarshal(respBody, &jsonResp); err != nil {
-		t.Errorf("failed to unmarshal response body: %s", err)
-		return
-	}
+	err = json.Unmarshal(respBody, &jsonResp)
+	require.NoError(t, err)
 
 	assert.Equal(jsonResp.Body.Test, true)
 }
