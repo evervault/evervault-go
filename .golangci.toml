@@ -1,22 +1,6 @@
-[output]
-# Sort results by: filepath, line and column.
-sort-results = true
+version = "2"
 
 [linters]
-presets = [
-  "bugs",
-  "comment",
-  "complexity",
-  "error",
-  "format",
-  "import",
-  "metalinter",
-  "module",
-  "performance",
-  "style",
-  "test",
-  "unused",
-]
 disable = [
   "exhaustruct",
   "gochecknoglobals",
@@ -25,47 +9,34 @@ disable = [
 [issues]
 fix = true
 
-[severity]
-case-sensitive = true
-
-[linters-settings.errcheck]
+[linters.settings.errcheck]
 # Report about not checking of errors in type assertions: `a := b.(MyStruct)`.
 check-type-assertions = true
 # report about assignment of errors to blank identifier: `num, _ := strconv.Atoi(numStr)`.
 check-blank = true
 
-[linters-settings.exhaustive]
+[linters.settings.exhaustive]
 check = ["switch", "map"]
 default-signifies-exhaustive = true
 
-[linters-settings.govet]
-check-shadowing = true
+[linters.settings.govet]
+enable = ["shadow"]
 
-[linters-settings.grouper]
+[linters.settings.grouper]
 const-require-single-const = true
 import-require-single-import = true
 
-[linters-settings.maligned]
-# Print struct with more effective memory layout
-suggest-new = true
-
-[linters-settings.varcheck]
-exported-fields = true
-
-[linters-settings.gofumpt]
-module-path = "github.com/evervault/evervault-go"
-
-[linters-settings.depguard.rules.main]
+[linters.settings.depguard.rules.main]
 allow = ["$gostd", "github.com/evervault/evervault-go", "github.com/hf/nitrite","github.com/stretchr/testify/assert"]
 
-[linters-settings.nlreturn]
+[linters.settings.nlreturn]
 block-size = 3
 
-[linter-settings.wsl]
+[linters.settings.wsl]
 force-err-cuddling = true
 
-[linters-settings.varnamelen]
+[linters.settings.varnamelen]
 ignore-names = ["ok", "err", "iv"]
 
-[linters-settings.wrapcheck]
-ignorePackageGlobs = ["github.com/evervault/*"]
+[linters.settings.wrapcheck]
+ignore-package-globs = ["github.com/evervault/*"]

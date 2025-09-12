@@ -16,6 +16,7 @@ import (
 	"github.com/evervault/evervault-go"
 	"github.com/evervault/evervault-go/attestation"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const cage = "synthetic-cage.app-f5f084041a7e.cage.evervault.com"
@@ -57,10 +58,7 @@ func buildCageRequest(t *testing.T, testCage string) *http.Request {
 	body := bytes.NewBufferString(`{"test": true}`)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("https://%s/echo", testCage), body)
-	if err != nil {
-		t.Fatal("Couldnt build cage request: %w", err)
-		return nil
-	}
+	require.NoError(t, err)
 
 	req.Close = true
 	req.Header.Set("API-KEY", os.Getenv("EV_ENCLAVE_API_KEY"))
@@ -75,10 +73,7 @@ func TestCageClient(t *testing.T) {
 	assert := assert.New(t)
 
 	testClient, err := makeTestClient(t)
-	if err != nil {
-		t.Errorf("Error creating evervault client: %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	expectedPCRs := attestation.PCRs{
 		PCR0: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
@@ -88,20 +83,14 @@ func TestCageClient(t *testing.T) {
 	}
 
 	cageClient, err := testClient.CagesClient(cage, []attestation.PCRs{expectedPCRs})
-	if err != nil {
-		t.Errorf("Error creating cage client: %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	req := buildCageRequest(t, cage)
 
 	t.Log("making request", cage)
 
 	resp, err := cageClient.Do(req)
-	if err != nil {
-		t.Errorf("Error making request: %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	defer resp.Body.Close()
 
@@ -109,10 +98,7 @@ func TestCageClient(t *testing.T) {
 	assert.Contains(resp.Header, "X-Evervault-Ctx")
 
 	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		t.Errorf("failed to read response body: %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	var jsonResp CageEcho
 	if err = json.Unmarshal(respBody, &jsonResp); err != nil {
@@ -129,30 +115,21 @@ func TestCagePartialPCR(t *testing.T) {
 	assert := assert.New(t)
 
 	testClient, err := makeTestClient(t)
-	if err != nil {
-		t.Errorf("Error creating evervault client: %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	expectedPCRs := attestation.PCRs{
 		PCR8: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
 	}
 
 	cageClient, err := testClient.CagesClient(cage, []attestation.PCRs{expectedPCRs})
-	if err != nil {
-		t.Errorf("Error creating cage client: %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	req := buildCageRequest(t, cage)
 
 	t.Log("making request", cage)
 
 	resp, err := cageClient.Do(req)
-	if err != nil {
-		t.Errorf("Error making request: %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	defer resp.Body.Close()
 
@@ -160,16 +137,11 @@ func TestCagePartialPCR(t *testing.T) {
 	assert.Contains(resp.Header, "X-Evervault-Ctx")
 
 	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		t.Errorf("failed to read response body: %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	var jsonResp CageEcho
-	if err = json.Unmarshal(respBody, &jsonResp); err != nil {
-		t.Errorf("failed to unmarshal response body: %s", err)
-		return
-	}
+	err = json.Unmarshal(respBody, &jsonResp)
+	require.NoError(t, err)
 
 	assert.Equal(jsonResp.Body.Test, true)
 }
@@ -200,26 +172,17 @@ func TestCagePartialPCRProvider(t *testing.T) {
 	assert := assert.New(t)
 
 	testClient, err := makeTestClient(t)
-	if err != nil {
-		t.Errorf("Error creating evervault client: %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	cageClient, err := testClient.CagesClientWithProvider(cage, GetPCRData)
-	if err != nil {
-		t.Errorf("Error creating cage client: %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	req := buildCageRequest(t, cage)
 
 	t.Log("making request", cage)
 
 	resp, err := cageClient.Do(req)
-	if err != nil {
-		t.Errorf("Error making request: %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	defer resp.Body.Close()
 
@@ -227,16 +190,11 @@ func TestCagePartialPCRProvider(t *testing.T) {
 	assert.Contains(resp.Header, "X-Evervault-Ctx")
 
 	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		t.Errorf("failed to read response body: %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	var jsonResp CageEcho
-	if err = json.Unmarshal(respBody, &jsonResp); err != nil {
-		t.Errorf("failed to unmarshal response body: %s", err)
-		return
-	}
+	err = json.Unmarshal(respBody, &jsonResp)
+	require.NoError(t, err)
 
 	assert.Equal(jsonResp.Body.Test, true)
 }
@@ -247,16 +205,10 @@ func TestCageFailsOnPartialIncorrectPCRProvider(t *testing.T) {
 	assert := assert.New(t)
 
 	testClient, err := makeTestClient(t)
-	if err != nil {
-		t.Errorf("Error creating evervault client: %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	cageClient, err := testClient.CagesClientWithProvider(cage, GetInvalidPCRData)
-	if err != nil {
-		t.Errorf("Error creating cage client: %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	req := buildCageRequest(t, cage)
 
@@ -276,10 +228,7 @@ func TestCageFailsOnPartialIncorrectPCR(t *testing.T) {
 	assert := assert.New(t)
 
 	testClient, err := makeTestClient(t)
-	if err != nil {
-		t.Errorf("Error creating evervault client: %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	expectedPCRs := attestation.PCRs{
 		PCR0: "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
@@ -287,10 +236,7 @@ func TestCageFailsOnPartialIncorrectPCR(t *testing.T) {
 	}
 
 	cageClient, err := testClient.CagesClient(cage, []attestation.PCRs{expectedPCRs})
-	if err != nil {
-		t.Errorf("Error creating cage client: %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	req := buildCageRequest(t, cage)
 
@@ -310,10 +256,7 @@ func TestCageRequiresPCR(t *testing.T) {
 	assert := assert.New(t)
 
 	testClient, err := makeTestClient(t)
-	if err != nil {
-		t.Errorf("Error creating evervault client: %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	_, err = testClient.CagesClient(cage, []attestation.PCRs{})
 	assert.ErrorIs(err, evervault.ErrNoPCRs)

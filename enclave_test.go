@@ -16,6 +16,7 @@ import (
 	"github.com/evervault/evervault-go"
 	"github.com/evervault/evervault-go/attestation"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const enclave = "synthetic-cage.app-f5f084041a7e.enclave.evervault.com"
@@ -32,10 +33,7 @@ func buildEnclaveRequest(t *testing.T, testEnclave string) *http.Request {
 	body := bytes.NewBufferString(`{"test": true}`)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("https://%s/echo", testEnclave), body)
-	if err != nil {
-		t.Fatal("Couldnt build enclave request: %w", err)
-		return nil
-	}
+	require.NoError(t, err)
 
 	req.Close = true
 	req.Header.Set("API-KEY", os.Getenv("EV_ENCLAVE_API_KEY"))
@@ -50,10 +48,7 @@ func TestEnclaveClient(t *testing.T) {
 	assert := assert.New(t)
 
 	testClient, err := makeTestClient(t)
-	if err != nil {
-		t.Errorf("Error creating evervault client: %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	expectedPCRs := attestation.PCRs{
 		PCR0: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
@@ -63,20 +58,14 @@ func TestEnclaveClient(t *testing.T) {
 	}
 
 	client, err := testClient.EnclaveClient(enclave, []attestation.PCRs{expectedPCRs})
-	if err != nil {
-		t.Errorf("Error creating enclave client: %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	req := buildEnclaveRequest(t, enclave)
 
 	t.Log("making request", enclave)
 
 	resp, err := client.Do(req)
-	if err != nil {
-		t.Errorf("Error making request: %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	defer resp.Body.Close()
 
@@ -84,16 +73,11 @@ func TestEnclaveClient(t *testing.T) {
 	assert.Contains(resp.Header, "X-Evervault-Ctx")
 
 	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		t.Errorf("failed to read response body: %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	var jsonResp Echo
-	if err = json.Unmarshal(respBody, &jsonResp); err != nil {
-		t.Errorf("failed to unmarshal response body: %s", err)
-		return
-	}
+	err = json.Unmarshal(respBody, &jsonResp)
+	require.NoError(t, err)
 
 	assert.Equal(jsonResp.Body.Test, true)
 }
@@ -104,30 +88,21 @@ func TestEnclavePartialPCR(t *testing.T) {
 	assert := assert.New(t)
 
 	testClient, err := makeTestClient(t)
-	if err != nil {
-		t.Errorf("Error creating evervault client: %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	expectedPCRs := attestation.PCRs{
 		PCR8: "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
 	}
 
 	enclaveClient, err := testClient.EnclaveClient(enclave, []attestation.PCRs{expectedPCRs})
-	if err != nil {
-		t.Errorf("Error creating enclave client: %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	req := buildEnclaveRequest(t, enclave)
 
 	t.Log("making request", enclave)
 
 	resp, err := enclaveClient.Do(req)
-	if err != nil {
-		t.Errorf("Error making request: %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	defer resp.Body.Close()
 
@@ -135,16 +110,11 @@ func TestEnclavePartialPCR(t *testing.T) {
 	assert.Contains(resp.Header, "X-Evervault-Ctx")
 
 	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		t.Errorf("failed to read response body: %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	var jsonResp Echo
-	if err = json.Unmarshal(respBody, &jsonResp); err != nil {
-		t.Errorf("failed to unmarshal response body: %s", err)
-		return
-	}
+	err = json.Unmarshal(respBody, &jsonResp)
+	require.NoError(t, err)
 
 	assert.Equal(jsonResp.Body.Test, true)
 }
@@ -155,26 +125,17 @@ func TestEnclavePartialPCRProvider(t *testing.T) {
 	assert := assert.New(t)
 
 	testClient, err := makeTestClient(t)
-	if err != nil {
-		t.Errorf("Error creating evervault client: %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	enclaveClient, err := testClient.EnclaveClientWithProvider(enclave, GetPCRData)
-	if err != nil {
-		t.Errorf("Error creating enclave client: %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	req := buildEnclaveRequest(t, enclave)
 
 	t.Log("making request", enclave)
 
 	resp, err := enclaveClient.Do(req)
-	if err != nil {
-		t.Errorf("Error making request: %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	defer resp.Body.Close()
 
@@ -182,16 +143,11 @@ func TestEnclavePartialPCRProvider(t *testing.T) {
 	assert.Contains(resp.Header, "X-Evervault-Ctx")
 
 	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		t.Errorf("failed to read response body: %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	var jsonResp Echo
-	if err = json.Unmarshal(respBody, &jsonResp); err != nil {
-		t.Errorf("failed to unmarshal response body: %s", err)
-		return
-	}
+	err = json.Unmarshal(respBody, &jsonResp)
+	require.NoError(t, err)
 
 	assert.Equal(jsonResp.Body.Test, true)
 }
@@ -202,16 +158,10 @@ func TestEnclaveFailsOnPartialIncorrectPCRProvider(t *testing.T) {
 	assert := assert.New(t)
 
 	testClient, err := makeTestClient(t)
-	if err != nil {
-		t.Errorf("Error creating evervault client: %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	enclaveClient, err := testClient.EnclaveClientWithProvider(enclave, GetInvalidPCRData)
-	if err != nil {
-		t.Errorf("Error creating enclave client: %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	req := buildEnclaveRequest(t, enclave)
 
@@ -231,10 +181,7 @@ func TestEnclaveFailsOnPartialIncorrectPCR(t *testing.T) {
 	assert := assert.New(t)
 
 	testClient, err := makeTestClient(t)
-	if err != nil {
-		t.Errorf("Error creating evervault client: %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	expectedPCRs := attestation.PCRs{
 		PCR0: "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
@@ -242,10 +189,7 @@ func TestEnclaveFailsOnPartialIncorrectPCR(t *testing.T) {
 	}
 
 	enclaveClient, err := testClient.EnclaveClient(enclave, []attestation.PCRs{expectedPCRs})
-	if err != nil {
-		t.Errorf("Error creating enclave client: %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	req := buildEnclaveRequest(t, enclave)
 
@@ -265,10 +209,7 @@ func TestEnclaveRequiresPCR(t *testing.T) {
 	assert := assert.New(t)
 
 	testClient, err := makeTestClient(t)
-	if err != nil {
-		t.Errorf("Error creating evervault client: %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	_, err = testClient.EnclaveClient(enclave, []attestation.PCRs{})
 	assert.ErrorIs(err, evervault.ErrNoPCRs)
