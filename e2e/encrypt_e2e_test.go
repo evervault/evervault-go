@@ -1,13 +1,8 @@
-//go:build e2e
-// +build e2e
-
 package e2e_test
 
 import (
-	"os"
 	"testing"
 
-	"github.com/evervault/evervault-go"
 	"github.com/stretchr/testify/require"
 )
 
@@ -283,9 +278,11 @@ func TestE2EEncryptBytes(t *testing.T) {
 
 	payload := []byte{97, 98, 99, 100, 101, 102}
 
+	//nolint:staticcheck
 	encrypted, err := client.EncryptByteArray(payload)
 	require.NoError(t, err)
 
+	//nolint:staticcheck
 	decrypted, err := client.DecryptByteArray(encrypted)
 	require.NoError(t, err)
 
@@ -302,9 +299,11 @@ func TestE2EEncryptBytesWithPermittedRole(t *testing.T) {
 
 	payload := []byte{97, 98, 99, 100, 101, 102}
 
+	//nolint:staticcheck
 	encrypted, err := client.EncryptByteArrayWithDataRole(payload, "permit-all")
 	require.NoError(t, err)
 
+	//nolint:staticcheck
 	decrypted, err := client.DecryptByteArray(encrypted)
 	require.NoError(t, err)
 
@@ -321,30 +320,11 @@ func TestE2EEncryptBytesWithDeniedRole(t *testing.T) {
 
 	payload := []byte{97, 98, 99, 100, 101, 102}
 
+	//nolint:staticcheck
 	encrypted, err := client.EncryptByteArrayWithDataRole(payload, "deny-all")
 	require.NoError(t, err)
 
+	//nolint:staticcheck
 	_, err = client.DecryptByteArray(encrypted)
 	require.Error(t, err)
-}
-
-type MyStruct struct {
-	String string  `json:"string"`
-	Int    int     `json:"int"`
-	Float  float64 `json:"float"`
-	True   bool    `json:"true"`
-	False  bool    `json:"false"`
-}
-
-func GetClient(t *testing.T) *evervault.Client {
-	t.Helper()
-
-	appUUID := os.Getenv("EV_APP_UUID")
-
-	apiKey := os.Getenv("EV_API_KEY")
-
-	client, err := evervault.MakeClient(appUUID, apiKey)
-	require.NoError(t, err)
-
-	return client
 }
