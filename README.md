@@ -22,6 +22,7 @@ The list of required env vars is:
 - `EV_RELAY_TARGET` - an existing Relay destination for the given app
 - `EV_INITIALIZATION_ERROR_FUNCTION_NAME` - the name of a function which will fail when invoked
 - `EV_FUNCTION_NAME` - the name of a function which will run when invoked
+- `GOEXPERIMENT=synctest` - enable synctest api
 
 ### Running the Tests
 
@@ -36,8 +37,6 @@ To run unit tests only:
 ```bash
 go test -v -count=1 --short -race ./...
 ```
-
-**Note:** If using Go1.24, you will need to enable the synctest experiment: `GOEXPERIMENT=synctest`
 
 ## Linting
 
