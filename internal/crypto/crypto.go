@@ -70,9 +70,10 @@ func CreateV2Aad(datatype datatypes.Datatype, ephemeralPublicKey, appPublicKey [
 	)
 
 	dataTypeNumber := 0
-	if datatype == datatypes.Number {
+	switch datatype {
+	case datatypes.Number:
 		dataTypeNumber = 1
-	} else if datatype == datatypes.Boolean {
+	case datatypes.Boolean:
 		dataTypeNumber = 2
 	}
 

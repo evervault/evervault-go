@@ -379,20 +379,20 @@ func handleRoute(writer http.ResponseWriter, reader *http.Request, mockResponse 
 		// Handle the response based on type
 		switch v := mockResponse.(type) {
 		case string:
-			writer.Write([]byte(fmt.Sprintf("\"%s\"", v)))
+			fmt.Fprintf(writer, "\"%s\"", v)
 		case int, int32, int64:
-			writer.Write([]byte(fmt.Sprintf("%d", v)))
+			fmt.Fprintf(writer, "%d", v)
 		case float32, float64:
-			writer.Write([]byte(fmt.Sprintf("%f", v)))
+			fmt.Fprintf(writer, "%f", v)
 		case bool:
-			writer.Write([]byte(fmt.Sprintf("%t", v)))
+			fmt.Fprintf(writer, "%t", v)
 		default:
 			if contentType == "application/json" {
 				if err := json.NewEncoder(writer).Encode(mockResponse); err != nil {
 					log.Printf("error encoding json: %s", err)
 				}
 			} else {
-				writer.Write([]byte(fmt.Sprintf("%v", v)))
+				fmt.Fprintf(writer, "%v", v)
 			}
 		}
 		return
