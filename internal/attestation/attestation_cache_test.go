@@ -42,11 +42,11 @@ func NewFixture(t *testing.T, prefix string) Fixture {
 	return loadedFixture
 }
 
-
 func TestAttestationDocCacheInit(t *testing.T) {
 	synctest.Run(func () {
 		format := "Jan 2 15:04:05 2006 MST"
-		fixedTime, _ := time.Parse(format, "Sep 10 13:36:26 2025 UTC") // pinned time for fixture
+		fixedTime, err := time.Parse(format, "Sep 10 13:36:26 2025 UTC") // pinned time for fixture
+		require.NoError(t, err)
 		time.Sleep(time.Until(fixedTime))
 		synctest.Wait()
 
@@ -59,7 +59,9 @@ func TestAttestationDocCacheInit(t *testing.T) {
 		httpmock.RegisterResponder("GET", "https://test.app-133.cage.evervault.com/.well-known/attestation",
 			httpmock.NewStringResponder(200, fmt.Sprintf(`{"attestation_doc": "%s"}`, firstFixture.Doc)))
 
-		cache, _ := attestation.NewAttestationCache("test.app-133.cage.evervault.com", 2700)
+		cache, err := attestation.NewAttestationCache("test.app-133.cage.evervault.com", 2700)
+		require.NoError(t, err)
+
 		doc := cache.Get()
 
 		assert.Equal(doc.Digest, firstFixture.Digest)
@@ -73,7 +75,8 @@ func TestAttestationDocCacheInit(t *testing.T) {
 func TestAttestationDocCachePoll(t *testing.T) {
 	synctest.Run(func () {
 		format := "Jan 2 15:04:05 2006 MST"
-		fixedTime, _ := time.Parse(format, "Sep 10 13:36:26 2025 UTC") // pinned time for fixture
+		fixedTime, err := time.Parse(format, "Sep 10 13:36:26 2025 UTC") // pinned time for fixture
+		require.NoError(t, err)
 		time.Sleep(time.Until(fixedTime))
 		synctest.Wait()
 
@@ -98,7 +101,8 @@ func TestAttestationDocCachePoll(t *testing.T) {
 		httpmock.RegisterResponder("GET", "https://test.app-133.cage.evervault.com/.well-known/attestation", responder)
 	
 		duration := 60 * time.Second
-		cache, _ := attestation.NewAttestationCache("test.app-133.cage.evervault.com", duration)
+		cache, err := attestation.NewAttestationCache("test.app-133.cage.evervault.com", duration)
+		require.NoError(t, err)
 	
 		doc := cache.Get()
 		assert.Equal(doc.Digest, firstFixture.Digest)
@@ -106,7 +110,9 @@ func TestAttestationDocCachePoll(t *testing.T) {
 		assert.Equal(encodedCertificate, firstFixture.Cert)
 		assert.Equal(fmt.Sprintf("%d",doc.Timestamp), firstFixture.Timestamp)
 	
-		secondFixtureFixedTime, _ := time.Parse(format, "Sep 10 14:19:40 2025 UTC") // pinned time for fixture
+		secondFixtureFixedTime, err := time.Parse(format, "Sep 10 14:19:40 2025 UTC") // pinned time for fixture
+		require.NoError(t, err)
+
 		time.Sleep(time.Until(secondFixtureFixedTime))
 		synctest.Wait()
 	
