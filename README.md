@@ -22,6 +22,7 @@ The list of required env vars is:
 - `EV_SYNTHETIC_ENDPOINT_URL` - an existing Relay destination for the given app
 - `EV_INITIALIZATION_ERROR_FUNCTION_NAME` - the name of a function which will fail when invoked
 - `EV_FUNCTION_NAME` - the name of a function which will run when invoked
+- `GOEXPERIMENT=synctest` - enable synctest experiment on Go 1.24
 
 ### Running the Tests
 

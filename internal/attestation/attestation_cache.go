@@ -11,11 +11,13 @@ import (
 	"net/url"
 	"sync"
 	"time"
+
+	"github.com/hf/nitrite"
 )
 
 type Cache struct {
 	cageURL  *url.URL
-	doc      []byte
+	doc      nitrite.Document
 	mutex    sync.RWMutex
 	client   http.Client
 	ticker   *time.Ticker
@@ -37,7 +39,7 @@ func NewAttestationCache(cageDomain string, pollingInterval time.Duration) (*Cac
 
 	cache := &Cache{
 		cageURL:  cageURL,
-		doc:      make([]byte, 0),
+		doc:      nitrite.Document{},
 		mutex:    sync.RWMutex{},
 		client:   http.Client{},
 		ticker:   time.NewTicker(pollingInterval),
@@ -54,16 +56,15 @@ func NewAttestationCache(cageDomain string, pollingInterval time.Duration) (*Cac
 	return cache, nil
 }
 
-func (c *Cache) Set(doc []byte) {
+func (c *Cache) Set(doc nitrite.Document) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	c.doc = doc
 }
 
-func (c *Cache) Get() []byte {
+func (c *Cache) Get() nitrite.Document {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
-
 	return c.doc
 }
 
@@ -128,6 +129,36 @@ func (c *Cache) handleError(message string, err error, attempt int) error {
 	return fmt.Errorf("%s: %w", message, err)
 }
 
+// To save on excess doc validation, the cache stores the validated document directly.
+// The doc is verified using the nitrite library, and PCRs 0,1, and 2 are validated to be set and
+// not empty.
+// 
+// The document is not considered valid if: it has an invalid structure, invalid signature, or is missing an expected PCR.
+// 
+// Further details on the verification can be found in [the nitrite docs](https://pkg.go.dev/github.com/hf/nitrite).
+func validateAttestationDoc(doc []byte) (nitrite.Document, error) {
+	validatedDoc, err := nitrite.Verify(doc, nitrite.VerifyOptions{CurrentTime: time.Now()})
+	if err != nil {
+		return nitrite.Document{}, fmt.Errorf("failed to verify loaded attestation doc: %v", err)
+	}
+
+	if !validatedDoc.SignatureOK {
+		return nitrite.Document{}, fmt.Errorf("signature validation failed on attestation document")
+	}
+
+	if _, ok := validatedDoc.Document.PCRs[0]; !ok {
+		return nitrite.Document{}, fmt.Errorf("PCR0 is required, but not set in received attestation document")
+	}
+	if _, ok := validatedDoc.Document.PCRs[1]; !ok {
+		return nitrite.Document{}, fmt.Errorf("PCR1 is required, but not set in received attestation document")
+	}
+	if _, ok := validatedDoc.Document.PCRs[2]; !ok {
+		return nitrite.Document{}, fmt.Errorf("PCR2 is required, but not set in received attestation document")
+	}
+
+	return *validatedDoc.Document, nil
+}
+
 func (c *Cache) LoadDoc(ctx context.Context) {
 	docBytes, err := c.getDoc(ctx)
 	if err != nil {
@@ -135,7 +166,13 @@ func (c *Cache) LoadDoc(ctx context.Context) {
 		return
 	}
 
-	c.Set(docBytes)
+	validatedDoc, err := validateAttestationDoc(docBytes)
+	if err != nil {
+		log.Printf("Failed to verify loaded attestation doc: %v", err)
+		return
+	}
+
+	c.Set(validatedDoc)
 }
 
 func (c *Cache) pollAPI() {

@@ -15,6 +15,9 @@ var ErrNoPCRs = errors.New("Error: no PCRs where provided to attest with")
 // ErrInvalidPCRProvider is returned when an invalid PCR provider type is passed to CagesClient.
 var ErrInvalidPCRProvider = errors.New("unsupported type, must be array or callback: func() ([]types.PCRs, error)")
 
+// ErrMissingPCR is retuned when an attestation document is missing an expected PCR value
+var ErrMissingPCR = errors.New("missing pcr in attestation document")
+
 // ErrAttestionFailure is retuned when a connection to a cage cannot be attested.
 var ErrAttestionFailure = errors.New("attestation failed")
 
