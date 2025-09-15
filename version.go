@@ -1,4 +1,4 @@
 package evervault
 
 // Current version of the evervault SDK.
-const ClientVersion = "1.3.1"
+const ClientVersion = "1.3.2"
