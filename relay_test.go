@@ -1,15 +1,16 @@
-//go:build unit_test
-// +build unit_test
-
 package evervault_test
 
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestOutboundClientRoutesToOutboundRelay(t *testing.T) {
@@ -23,9 +24,8 @@ func TestOutboundClientRoutesToOutboundRelay(t *testing.T) {
 		writer.WriteHeader(http.StatusOK)
 		writer.Header().Set("Content-Type", "application/json")
 
-		if err := json.NewEncoder(writer).Encode("OK"); err != nil {
-			t.Errorf("Failed to encode response %s", err)
-		}
+		err := json.NewEncoder(writer).Encode("OK")
+		require.NoError(t, err)
 	}))
 
 	defer mockRelayServer.Close()
@@ -34,26 +34,20 @@ func TestOutboundClientRoutesToOutboundRelay(t *testing.T) {
 	testClient := mockedClient(t, server)
 
 	relayClient, err := testClient.OutboundRelayClient()
-	if err != nil {
-		t.Errorf("Fialed to build oubound client, got %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	ctx := context.Background()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, targetURL, nil)
-	if err != nil {
-		t.Fatal("failed to build get request: %w", err)
-	}
+	require.NoError(t, err)
 
 	resp, err := relayClient.Do(req)
+	require.NoError(t, err)
+
+	assert.Equal(t, resp.StatusCode, http.StatusOK)
+
+	err = resp.Body.Close()
 	if err != nil {
-		t.Errorf("Expected status code 200, got %s", err)
+		log.Printf("Failed to close response body: %s", err)
 	}
-
-	if resp.StatusCode != http.StatusOK {
-		t.Errorf("Expected status code 200, got %d", resp.StatusCode)
-	}
-
-	resp.Body.Close()
 }

@@ -180,6 +180,7 @@ func (c *Client) makeRequest(url, method string, body []byte, useBasicAuth bool)
 		return clientResponse{}, fmt.Errorf("error making request %w", err)
 	}
 
+	//nolint:errcheck
 	defer resp.Body.Close()
 
 	statusCode := resp.StatusCode

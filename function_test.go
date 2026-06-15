@@ -1,6 +1,3 @@
-//go:build unit_test
-// +build unit_test
-
 package evervault_test
 
 import (
@@ -9,6 +6,7 @@ import (
 
 	"github.com/evervault/evervault-go"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGetFunctionRunToken(t *testing.T) {
@@ -19,14 +17,9 @@ func TestGetFunctionRunToken(t *testing.T) {
 	testClient := mockedClient(t, server)
 
 	res, err := testClient.CreateFunctionRunToken("test_function", "test_payload")
-	if err != nil {
-		t.Errorf("Failed to create run token, got %s", err)
-		return
-	}
+	require.NoError(t, err)
 
-	if res.Token != "test_token" {
-		t.Errorf("Expected encrypted string, got %s", res)
-	}
+	require.Equal(t, "test_token", res.Token)
 }
 
 func TestRunFunctionSuccess(t *testing.T) {
@@ -48,10 +41,7 @@ func TestRunFunctionSuccess(t *testing.T) {
 	payload := map[string]any{"name": "john", "age": 30}
 
 	res, err := testClient.RunFunction("test_function", payload)
-	if err != nil {
-		t.Errorf("Failed to run Function, got %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	assert.Equal(t, "success", res.Status)
 	assert.Equal(t, id, res.ID)
@@ -78,13 +68,12 @@ func TestRunFunctionFailure(t *testing.T) {
 	payload := map[string]any{"name": "john", "age": 30}
 
 	_, err := testClient.RunFunction("test_function", payload)
-	if runtimeError, ok := err.(evervault.FunctionRuntimeError); !ok {
-		t.Error("Expected FunctionRuntimeError, got", err)
-	} else {
-		assert.Equal(t, message, runtimeError.ErrorBody.Message)
-		assert.Equal(t, stack, runtimeError.ErrorBody.Stack)
-		assert.Equal(t, id, runtimeError.ID)
-	}
+
+	runtimeError, ok := err.(evervault.FunctionRuntimeError)
+	assert.True(t, ok)
+	assert.Equal(t, message, runtimeError.ErrorBody.Message)
+	assert.Equal(t, stack, runtimeError.ErrorBody.Stack)
+	assert.Equal(t, id, runtimeError.ID)
 }
 
 func TestRunFunctionTimeout(t *testing.T) {
@@ -106,11 +95,9 @@ func TestRunFunctionTimeout(t *testing.T) {
 	payload := map[string]any{"name": "john", "age": 30}
 
 	_, err := testClient.RunFunction("test_function", payload)
-	if functionTimeoutError, ok := err.(evervault.FunctionTimeoutError); !ok {
-		t.Error("Expected FunctionTimeoutError, got", err)
-	} else {
-		assert.Equal(t, message, functionTimeoutError.Message)
-	}
+	functionTimeoutError, ok := err.(evervault.FunctionTimeoutError)
+	assert.True(t, ok)
+	assert.Equal(t, message, functionTimeoutError.Message)
 }
 
 func TestRunFunctionNotReady(t *testing.T) {
@@ -132,11 +119,9 @@ func TestRunFunctionNotReady(t *testing.T) {
 	payload := map[string]any{"name": "john", "age": 30}
 
 	_, err := testClient.RunFunction("test_function", payload)
-	if functionNotReadyError, ok := err.(evervault.FunctionNotReadyError); !ok {
-		t.Error("Expected FunctionNotReadyError, got", err)
-	} else {
-		assert.Equal(t, message, functionNotReadyError.Message)
-	}
+	functionNotReadyError, ok := err.(evervault.FunctionNotReadyError)
+	assert.True(t, ok)
+	assert.Equal(t, message, functionNotReadyError.Message)
 }
 
 func TestRunFunctionUnauthorized(t *testing.T) {
@@ -159,10 +144,8 @@ func TestRunFunctionUnauthorized(t *testing.T) {
 	payload := map[string]any{"name": "john", "age": 30}
 
 	_, err := testClient.RunFunction("test_function", payload)
-	if evervaultError, ok := err.(evervault.APIError); !ok {
-		t.Error("Expected Evervault Error, got", err)
-	} else {
-		assert.Equal(t, code, evervaultError.Code)
-		assert.Equal(t, message, evervaultError.Message)
-	}
+	evervaultError, ok := err.(evervault.APIError)
+	assert.True(t, ok)
+	assert.Equal(t, code, evervaultError.Code)
+	assert.Equal(t, message, evervaultError.Message)
 }

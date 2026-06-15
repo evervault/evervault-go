@@ -1,6 +1,6 @@
 module github.com/evervault/evervault-go
 
-go 1.20
+go 1.24
 
 require (
 	github.com/hf/nitrite v0.0.0-20211104000856-f9e0dcc73703

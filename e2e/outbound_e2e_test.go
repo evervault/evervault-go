@@ -1,86 +1,58 @@
-//go:build e2e
-// +build e2e
-
 package e2e_test
 
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
-	"os"
+	"io"
+	"log"
 	"testing"
-)
 
-var syntheticEndpointUrl string = os.Getenv("EV_SYNTHETIC_ENDPOINT_URL")
+	"github.com/evervault/evervault-go/internal/testhelper"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
 
 func TestE2EOutboundRelay(t *testing.T) {
 	t.Parallel()
 
 	client := GetClient(t)
+	syntheticEndpointUrl := testhelper.LoadRequiredEnv(t, "EV_SYNTHETIC_ENDPOINT_URL")
 
 	encryptedString, err := client.EncryptString("some_string")
-	if err != nil {
-		t.Errorf("error encrypting string %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	encryptedNumber, err := client.EncryptInt(1234567890)
-	if err != nil {
-		t.Errorf("error encrypting number %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	encryptedBool, err := client.EncryptBool(true)
-	if err != nil {
-		t.Errorf("error encrypting bool %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	outboundRelayClient, err := client.OutboundRelayClient()
-	if err != nil {
-		t.Errorf("Error getting outbound client %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	data := map[string]string{"string": encryptedString, "number": encryptedNumber, "boolean": encryptedBool}
 
 	payload, err := json.Marshal(data)
-	if err != nil {
-		t.Errorf("error Marshalling payload %s", err)
-		return
-	}
+	require.NoError(t, err)
 
 	resp, err := outboundRelayClient.Post(syntheticEndpointUrl, "application/json", bytes.NewReader(payload))
-	if err != nil {
-		t.Errorf("error posting with outbound client %s", err)
-		return
-	}
+	require.NoError(t, err)
 
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		t.Errorf("error posting with outbound client %s", err)
-		return
-	}
+	body, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
 
 	// close response body
-	resp.Body.Close()
+	err = resp.Body.Close()
+	if err != nil {
+		log.Printf("Failed to close response body: %s", err)
+	}
 
 	responseData := make(map[string]map[string]bool)
 
-	json.Unmarshal(body, &responseData)
+	//nolint:errcheck
+	_ = json.Unmarshal(body, &responseData)
 
-	if responseData["request"]["string"] != false {
-		t.Errorf("Expected false as response %t", responseData["request"]["string"])
-		return
-	}
-
-	if responseData["request"]["number"] != false {
-		t.Errorf("Expected false as response %t", responseData["request"]["number"])
-		return
-	}
-
-	if responseData["request"]["boolean"] != false {
-		t.Errorf("Expected false as response %t", responseData["request"]["boolean"])
-		return
-	}
+	assert.False(t, responseData["request"]["string"])
+	assert.False(t, responseData["request"]["number"])
+	assert.False(t, responseData["request"]["boolean"])
 }

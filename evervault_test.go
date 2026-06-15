@@ -1,6 +1,3 @@
-//go:build unit_test
-// +build unit_test
-
 package evervault_test
 
 import (
@@ -21,6 +18,8 @@ import (
 	"github.com/evervault/evervault-go"
 	"github.com/evervault/evervault-go/internal/crypto"
 	"github.com/evervault/evervault-go/internal/datatypes"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDecryptString(t *testing.T) {
@@ -34,14 +33,9 @@ func TestDecryptString(t *testing.T) {
 	stringType := reflect.TypeOf("")
 
 	res, err := testClient.DecryptString("ev:abc123")
-	if err != nil {
-		t.Errorf("error decrypting data %s", err)
-		return
-	}
+	require.NoError(t, err)
 
-	if reflect.TypeOf(res) != stringType {
-		t.Errorf("Expected decrypted string, got %s", reflect.TypeOf(res))
-	}
+	require.Equal(t, stringType, reflect.TypeOf(res),)
 }
 
 func TestDecryptInt(t *testing.T) {
@@ -55,14 +49,9 @@ func TestDecryptInt(t *testing.T) {
 	intType := reflect.TypeOf(1)
 
 	res, err := testClient.DecryptInt("ev:abc123")
-	if err != nil {
-		t.Errorf("error decrypting data %s", err)
-		return
-	}
+	require.NoError(t, err)
 
-	if reflect.TypeOf(res) != intType {
-		t.Errorf("Expected decrypted int, got %s", reflect.TypeOf(res))
-	}
+	require.Equal(t, intType, reflect.TypeOf(res))
 }
 
 func TestDecryptFloat64(t *testing.T) {
@@ -76,14 +65,9 @@ func TestDecryptFloat64(t *testing.T) {
 	float64Type := reflect.TypeOf(1.1)
 
 	res, err := testClient.DecryptFloat64("ev:abc123")
-	if err != nil {
-		t.Errorf("error decrypting data %s", err)
-		return
-	}
+	require.NoError(t, err)
 
-	if reflect.TypeOf(res) != float64Type {
-		t.Errorf("Expected decrypted float64, got %s", reflect.TypeOf(res))
-	}
+	require.Equal(t, float64Type, reflect.TypeOf(res))
 }
 
 func TestDecryptBoolean(t *testing.T) {
@@ -97,14 +81,9 @@ func TestDecryptBoolean(t *testing.T) {
 	booleanType := reflect.TypeOf(true)
 
 	res, err := testClient.DecryptBool("ev:abc123")
-	if err != nil {
-		t.Errorf("error decrypting data %s", err)
-		return
-	}
+	require.NoError(t, err)
 
-	if reflect.TypeOf(res) != booleanType {
-		t.Errorf("Expected decrypted bool, got %s", reflect.TypeOf(res))
-	}
+	require.Equal(t, booleanType, reflect.TypeOf(res))
 }
 
 func TestDecryptByteArray(t *testing.T) {
@@ -118,14 +97,9 @@ func TestDecryptByteArray(t *testing.T) {
 	byteArrayType := reflect.TypeOf([]byte("Hello World!"))
 
 	res, err := testClient.DecryptByteArray("ev:abc123")
-	if err != nil {
-		t.Errorf("error decrypting data %s", err)
-		return
-	}
+	require.NoError(t, err)
 
-	if reflect.TypeOf(res) != byteArrayType {
-		t.Errorf("Expected decrypted byte array, got %s", reflect.TypeOf(res))
-	}
+	require.Equal(t, byteArrayType, reflect.TypeOf(res))
 }
 
 func TestDecryptJsonResponse(t *testing.T) {
@@ -139,14 +113,9 @@ func TestDecryptJsonResponse(t *testing.T) {
 	byteArrayType := reflect.TypeOf([]byte("Hello World!"))
 
 	res, err := testClient.DecryptByteArray("ev:abc123")
-	if err != nil {
-		t.Errorf("error decrypting data %s", err)
-		return
-	}
+	require.NoError(t, err)
 
-	if reflect.TypeOf(res) != byteArrayType {
-		t.Errorf("Expected decrypted byte array, got %s", reflect.TypeOf(res))
-	}
+	require.Equal(t, byteArrayType, reflect.TypeOf(res))
 }
 
 func TestCreateClientSideDecryptToken(t *testing.T) {
@@ -166,18 +135,10 @@ func TestCreateClientSideDecryptToken(t *testing.T) {
 	expiry := time.Now()
 
 	res, err := testClient.CreateClientSideDecryptToken(EncryptedCardData{"4242", "111", "01/23"}, expiry)
-	if err != nil {
-		t.Errorf("error creating decrypt token %s", err)
-		return
-	}
+	require.NoError(t, err)
 
-	if res.Token != "abcdefghij1234567890" {
-		t.Errorf("Expected token, got %s", res.Token)
-	}
-
-	if res.Expiry != expiry.UnixMilli() {
-		t.Errorf("Expected expiry, got %d", res.Expiry)
-	}
+	require.Equal(t, "abcdefghij1234567890", res.Token)
+	require.Equal(t, expiry.UnixMilli(), res.Expiry)
 }
 
 func TestEncryptString(t *testing.T) {
@@ -189,14 +150,9 @@ func TestEncryptString(t *testing.T) {
 	testClient := mockedClient(t, server)
 
 	res, err := testClient.EncryptString("plaintext")
-	if err != nil {
-		t.Errorf("error encrypting data %s", err)
-		return
-	}
+	require.NoError(t, err)
 
-	if !isValidEncryptedString(res, datatypes.String) {
-		t.Errorf("Expected encrypted string, got %s", res)
-	}
+	assertIsValidEncryptedString(t, res, datatypes.String)
 }
 
 func TestEncryptStringWithRole(t *testing.T) {
@@ -208,14 +164,9 @@ func TestEncryptStringWithRole(t *testing.T) {
 	testClient := mockedClient(t, server)
 
 	res, err := testClient.EncryptStringWithDataRole("plaintext", "role")
-	if err != nil {
-		t.Errorf("error encrypting data %s", err)
-		return
-	}
+	require.NoError(t, err)
 
-	if !isValidEncryptedString(res, datatypes.String) {
-		t.Errorf("Expected encrypted string, got %s", res)
-	}
+	assertIsValidEncryptedString(t, res, datatypes.String)
 }
 
 func TestEncryptInt(t *testing.T) {
@@ -227,14 +178,9 @@ func TestEncryptInt(t *testing.T) {
 	testClient := mockedClient(t, server)
 
 	res, err := testClient.EncryptInt(123)
-	if err != nil {
-		t.Errorf("error encrypting data %s", err)
-		return
-	}
+	require.NoError(t, err)
 
-	if !isValidEncryptedString(res, datatypes.Number) {
-		t.Errorf("Expected encrypted string, got %s", res)
-	}
+	assertIsValidEncryptedString(t, res, datatypes.Number)
 }
 
 func TestEncryptIntWithRole(t *testing.T) {
@@ -246,14 +192,9 @@ func TestEncryptIntWithRole(t *testing.T) {
 	testClient := mockedClient(t, server)
 
 	res, err := testClient.EncryptIntWithDataRole(123, "role")
-	if err != nil {
-		t.Errorf("error encrypting data %s", err)
-		return
-	}
+	require.NoError(t, err)
 
-	if !isValidEncryptedString(res, datatypes.Number) {
-		t.Errorf("Expected encrypted string, got %s", res)
-	}
+	assertIsValidEncryptedString(t, res, datatypes.Number)
 }
 
 func TestEncryptFloat64(t *testing.T) {
@@ -265,14 +206,9 @@ func TestEncryptFloat64(t *testing.T) {
 	testClient := mockedClient(t, server)
 
 	res, err := testClient.EncryptFloat64(1.1)
-	if err != nil {
-		t.Errorf("error encrypting data %s", err)
-		return
-	}
+	require.NoError(t, err)
 
-	if !isValidEncryptedString(res, datatypes.Number) {
-		t.Errorf("Expected encrypted string, got %s", res)
-	}
+	assertIsValidEncryptedString(t, res, datatypes.Number)
 }
 
 func TestEncryptFloat64WithRole(t *testing.T) {
@@ -284,14 +220,9 @@ func TestEncryptFloat64WithRole(t *testing.T) {
 	testClient := mockedClient(t, server)
 
 	res, err := testClient.EncryptFloat64WithDataRole(1.1, "role")
-	if err != nil {
-		t.Errorf("error encrypting data %s", err)
-		return
-	}
+	require.NoError(t, err)
 
-	if !isValidEncryptedString(res, datatypes.Number) {
-		t.Errorf("Expected encrypted string, got %s", res)
-	}
+	assertIsValidEncryptedString(t, res, datatypes.Number)
 }
 
 func TestEncryptBoolean(t *testing.T) {
@@ -303,14 +234,9 @@ func TestEncryptBoolean(t *testing.T) {
 	testClient := mockedClient(t, server)
 
 	res, err := testClient.EncryptBool(true)
-	if err != nil {
-		t.Errorf("error encrypting data %s", err)
-		return
-	}
+	require.NoError(t, err)
 
-	if !isValidEncryptedString(res, datatypes.Boolean) {
-		t.Errorf("Expected encrypted string, got %s", res)
-	}
+	assertIsValidEncryptedString(t, res, datatypes.Boolean)
 }
 
 func TestEncryptBooleanWithRole(t *testing.T) {
@@ -322,14 +248,9 @@ func TestEncryptBooleanWithRole(t *testing.T) {
 	testClient := mockedClient(t, server)
 
 	res, err := testClient.EncryptBoolWithDataRole(true, "role")
-	if err != nil {
-		t.Errorf("error encrypting data %s", err)
-		return
-	}
+	require.NoError(t, err)
 
-	if !isValidEncryptedString(res, datatypes.Boolean) {
-		t.Errorf("Expected encrypted string, got %s", res)
-	}
+	assertIsValidEncryptedString(t, res, datatypes.Boolean)
 }
 
 func TestEncryptByte(t *testing.T) {
@@ -341,14 +262,9 @@ func TestEncryptByte(t *testing.T) {
 	testClient := mockedClient(t, server)
 
 	res, err := testClient.EncryptByteArray([]byte("plaintext"))
-	if err != nil {
-		t.Errorf("error encrypting data %s", err)
-		return
-	}
+	require.NoError(t, err)
 
-	if !isValidEncryptedString(res, datatypes.String) {
-		t.Errorf("Expected encrypted string, got %s", res)
-	}
+	assertIsValidEncryptedString(t, res, datatypes.String)
 }
 
 func TestEncryptByteWithRole(t *testing.T) {
@@ -360,14 +276,19 @@ func TestEncryptByteWithRole(t *testing.T) {
 	testClient := mockedClient(t, server)
 
 	res, err := testClient.EncryptByteArrayWithDataRole([]byte("plaintext"), "role")
-	if err != nil {
-		t.Errorf("error encrypting data %s", err)
-		return
-	}
+	require.NoError(t, err)
 
-	if !isValidEncryptedString(res, datatypes.String) {
-		t.Errorf("Expected encrypted string, got %s", res)
-	}
+	assertIsValidEncryptedString(t, res, datatypes.String)
+}
+
+func TestCustomClientInitClientErrorWithoutApiKey(t *testing.T) {
+	t.Parallel()
+
+	server := startMockHTTPServer("", "")
+	defer server.Close()
+
+	_, err := evervault.MakeCustomClient("test_api_key", "", evervault.MakeConfig())
+	require.ErrorIs(t, err, evervault.ErrAppCredentialsRequired)
 }
 
 func TestClientInitClientErrorWithoutApiKey(t *testing.T) {
@@ -377,25 +298,16 @@ func TestClientInitClientErrorWithoutApiKey(t *testing.T) {
 	defer server.Close()
 
 	_, err := evervault.MakeClient("", "")
-
-	if err.Error() != evervault.ErrAppCredentialsRequired.Error() {
-		t.Errorf("Unexpected error, got error message %s", err)
-		return
-	}
-
-	_, err = evervault.MakeCustomClient("test_api_key", "", evervault.MakeConfig())
-	if err.Error() != evervault.ErrAppCredentialsRequired.Error() {
-		t.Errorf("Unexpected error, got error message %s", err)
-	}
+	require.ErrorIs(t, err, evervault.ErrAppCredentialsRequired)
 }
 
-func testFuncHandler(writer http.ResponseWriter, reader *http.Request, mockResponse any) {
+func testFuncHandler(writer http.ResponseWriter, reader *http.Request, mockResponse any) error {
 	apiKey := reader.Header.Get("API-KEY")
 	authHeader := reader.Header.Get("Authorization")
 
 	if apiKey == "" && authHeader == "" {
 		writer.WriteHeader(http.StatusUnauthorized)
-		return
+		return nil
 	}
 
 	writer.WriteHeader(http.StatusOK)
@@ -403,27 +315,25 @@ func testFuncHandler(writer http.ResponseWriter, reader *http.Request, mockRespo
 
 	switch v := mockResponse.(type) {
 	case []byte:
-		writer.Write(v)
+		_, err := writer.Write(v)
+		return err
 	case string:
 		var parsedResponse map[string]any
 		if err := json.Unmarshal([]byte(v), &parsedResponse); err != nil {
 			log.Printf("error parsing string to JSON: %s", err)
-			writer.Write([]byte(v))
-			return
+			_, err := writer.Write([]byte(v))
+			return err
 		}
 
-		json.NewEncoder(writer).Encode(parsedResponse)
+		return json.NewEncoder(writer).Encode(parsedResponse)
 	default:
-		if err := json.NewEncoder(writer).Encode(mockResponse); err != nil {
-			log.Printf("error encoding json: %s", err)
-		}
+		return json.NewEncoder(writer).Encode(mockResponse)
 	}
 }
 
-func handleRoute(writer http.ResponseWriter, reader *http.Request, mockResponse any, contentType string) {
+func handleRoute(writer http.ResponseWriter, reader *http.Request, mockResponse any, contentType string) error {
 	if reader.URL.Path == "/functions/test_function/runs" {
-		testFuncHandler(writer, reader, mockResponse)
-		return
+		return testFuncHandler(writer, reader, mockResponse)
 	}
 
 	if reader.URL.Path == "/v2/functions/test_function/run-token" {
@@ -433,10 +343,7 @@ func handleRoute(writer http.ResponseWriter, reader *http.Request, mockResponse 
 		writer.Header().Set("Content-Type", contentType)
 		writer.WriteHeader(http.StatusOK)
 
-		if err := json.NewEncoder(writer).Encode(evervault.RunTokenResponse{Token: "test_token"}); err != nil {
-			log.Printf("error encoding json: %s", err)
-		}
-		return
+		return json.NewEncoder(writer).Encode(evervault.RunTokenResponse{Token: "test_token"})
 	}
 
 	if reader.URL.Path == "/decrypt" {
@@ -450,23 +357,24 @@ func handleRoute(writer http.ResponseWriter, reader *http.Request, mockResponse 
 		// Handle the response based on type
 		switch v := mockResponse.(type) {
 		case string:
-			writer.Write([]byte(fmt.Sprintf("\"%s\"", v)))
+			_, err := fmt.Fprintf(writer, "\"%s\"", v)
+			return err
 		case int, int32, int64:
-			writer.Write([]byte(fmt.Sprintf("%d", v)))
+			_, err := fmt.Fprintf(writer, "%d", v)
+			return err
 		case float32, float64:
-			writer.Write([]byte(fmt.Sprintf("%f", v)))
+			_, err := fmt.Fprintf(writer, "%f", v)
+			return err
 		case bool:
-			writer.Write([]byte(fmt.Sprintf("%t", v)))
+			_, err := fmt.Fprintf(writer, "%t", v)
+			return err
 		default:
 			if contentType == "application/json" {
-				if err := json.NewEncoder(writer).Encode(mockResponse); err != nil {
-					log.Printf("error encoding json: %s", err)
-				}
-			} else {
-				writer.Write([]byte(fmt.Sprintf("%v", v)))
-			}
+				return json.NewEncoder(writer).Encode(mockResponse)
+			}	
+			_, err := fmt.Fprintf(writer, "%v", v)
+			return err
 		}
-		return
 	}
 
 	if reader.URL.Path == "/client-side-tokens" {
@@ -480,7 +388,7 @@ func handleRoute(writer http.ResponseWriter, reader *http.Request, mockResponse 
 
 		err := json.NewDecoder(reader.Body).Decode(&body)
 		if err != nil {
-			log.Printf("error decoding body: %s", err)
+			return err
 		}
 
 		returnData := map[string]interface{}{
@@ -488,10 +396,10 @@ func handleRoute(writer http.ResponseWriter, reader *http.Request, mockResponse 
 			"expiry": body["expiry"],
 		}
 
-		if err := json.NewEncoder(writer).Encode(returnData); err != nil {
-			log.Printf("error encoding json: %s", err)
-		}
+		return json.NewEncoder(writer).Encode(returnData)
 	}
+	
+	return nil
 }
 
 func hasSpecialPath(path string) bool {
@@ -508,8 +416,10 @@ func hasSpecialPath(path string) bool {
 func startMockHTTPServer(mockResponse any, contentType string) *httptest.Server {
 	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, reader *http.Request) {
 		if hasSpecialPath(reader.URL.Path) {
-			handleRoute(writer, reader, mockResponse, contentType)
-
+			err := handleRoute(writer, reader, mockResponse, contentType)
+			if err != nil {
+				log.Printf("error handling request: %s", err)
+			}
 			return
 		}
 
@@ -549,26 +459,19 @@ func mockedClient(t *testing.T, server *httptest.Server) *evervault.Client {
 	}
 
 	client, err := evervault.MakeCustomClient("test_api_key", "test_app_uuid", config)
-	if err != nil {
-		t.Fail()
-	}
+	require.NoError(t, err)
 
 	return client
 }
 
-func isValidEncryptedString(encryptedString string, datatype datatypes.Datatype) bool {
+func assertIsValidEncryptedString(t *testing.T, encryptedString string, datatype datatypes.Datatype) {
 	parts := strings.Split(encryptedString, ":")
-	if len(parts) < 6 {
-		return false
-	}
+	assert.False(t, len(parts) < 6)
 
 	if datatype == datatypes.Number || datatype == datatypes.Boolean {
 		correctDataType := parts[2] == "number" || parts[2] == "boolean"
 
-		if len(parts) < 7 && !correctDataType {
-			return false
-		}
+		assert.False(t, len(parts) < 7)
+		assert.True(t, correctDataType)
 	}
-
-	return true
 }
