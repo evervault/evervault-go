@@ -4,7 +4,7 @@ go 1.24
 
 require (
 	github.com/hf/nitrite v0.0.0-20211104000856-f9e0dcc73703
-	github.com/jarcoal/httpmock v1.3.1
+	github.com/jarcoal/httpmock v1.4.1
 	github.com/stretchr/testify v1.10.0
 )
 
