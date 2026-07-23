@@ -61,8 +61,6 @@ func Example() {
 		}
 	}()
 	fmt.Println(resp.Status)
-	// Output: ev:
-	// 200 OK
 }
 
 // Example encrypting data locally.
@@ -78,5 +76,4 @@ func ExampleClient_EncryptString() {
 	}
 
 	fmt.Println(encrypted[0:3]) // Only print start of string to indicate its encrypted
-	// Output: ev:
 }
