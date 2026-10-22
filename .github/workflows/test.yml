@@ -11,17 +11,17 @@ permissions:
   # Optional: allow read access to pull request. Use with `only-new-issues` option.
   # pull-requests: read
 
-env:
-  GOEXPERIMENT: synctest
-
 jobs:
   golangci:
     strategy:
       matrix:
-        go: ['1.24','1.25']
+        go: ['1.24', '1.25', '1.26.10', '1.27.3']
         os: [ubuntu-latest, macos-latest, windows-latest]
     name: lint
     runs-on: ${{ matrix.os }}
+    env:
+      # testing/synctest is only available behind this experiment on Go 1.24
+      GOEXPERIMENT: ${{ matrix.go == '1.24' && 'synctest' || '' }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v5
@@ -31,7 +31,7 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v9
         with:
-          version: v2.1
+          version: v2.15
           args: --timeout=5m
       - name: Test
         env:

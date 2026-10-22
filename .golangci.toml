@@ -16,7 +16,7 @@ check-type-assertions = true
 check-blank = true
 
 [linters.settings.exhaustive]
-check = ["switch", "map"]
+check = ["switch", "mapliteral"]
 default-signifies-exhaustive = true
 
 [linters.settings.govet]
