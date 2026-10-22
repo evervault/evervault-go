@@ -43,7 +43,7 @@ func NewFixture(t *testing.T, prefix string) Fixture {
 }
 
 func TestAttestationDocCacheInit(t *testing.T) {
-	synctest.Run(func () {
+	runInBubble(t, func(t *testing.T) {
 		format := "Jan 2 15:04:05 2006 MST"
 		fixedTime, err := time.Parse(format, "Sep 10 13:36:26 2025 UTC") // pinned time for fixture
 		require.NoError(t, err)
@@ -73,7 +73,7 @@ func TestAttestationDocCacheInit(t *testing.T) {
 }
 
 func TestAttestationDocCachePoll(t *testing.T) {
-	synctest.Run(func () {
+	runInBubble(t, func(t *testing.T) {
 		format := "Jan 2 15:04:05 2006 MST"
 		fixedTime, err := time.Parse(format, "Sep 10 13:36:26 2025 UTC") // pinned time for fixture
 		require.NoError(t, err)
